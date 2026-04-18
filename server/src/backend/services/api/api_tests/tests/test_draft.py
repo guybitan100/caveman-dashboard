@@ -132,14 +132,14 @@ class TestRandomEventsRequest:
 
     def test_with_weights(self):
         req = RandomEventsRequest(
-            total_events=10, event_weights={"call": 0.5, "sms": 0.5}
+            total_events=10, event_weights={"calls": 0.5, "sms/mms": 0.5}
         )
         assert req.total_events == 10
 
     def test_zero_sum_weights_rejected(self):
         with pytest.raises(Exception):
             RandomEventsRequest(
-                total_events=10, event_weights={"call": 0.0, "sms": 0.0}
+                total_events=10, event_weights={"calls": 0.0, "sms/mms": 0.0}
             )
 
 
@@ -154,7 +154,7 @@ class TestCreateRandomEvents:
 
     def test_with_custom_weights(self, mock_task_utils, mock_db):
         mock_db.build_generation_job.return_value = MOCK_JOB
-        weights = {"call": 0.7, "sms": 0.3}
+        weights = {"calls": 0.7, "sms/mms": 0.3}
         result = create_random_events(
             job_id="j1", total_events=50, event_weights=weights
         )
