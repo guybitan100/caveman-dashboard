@@ -12,7 +12,6 @@ lambda_client: LambdaClient = boto3.client("lambda", region_name=SETTINGS.AWS_RE
 
 
 def _get_k8s_client():
-    """Lazily create a Kubernetes BatchV1 API client using EKS cluster credentials."""
     from kubernetes import client as k8s_client, config as k8s_config
 
     eks = boto3.client("eks", region_name=SETTINGS.AWS_REGION)
@@ -69,12 +68,6 @@ def _get_k8s_client():
 
 
 def create_k8s_job(job_id: str) -> str:
-    """
-    Creates a Kubernetes Job on EKS to run a generation task.
-
-    :param job_id: The generation job ID to pass as an env var.
-    :return: The Kubernetes Job name.
-    """
     batch_api, k8s_client = _get_k8s_client()
     namespace = SETTINGS.GENERATION_JOB_EKS_NAMESPACE or "titan"
     job_name = f"gen-{job_id[:8]}-{uuid.uuid4().hex[:6]}"
@@ -125,12 +118,6 @@ def create_k8s_job(job_id: str) -> str:
 
 
 def delete_k8s_job(job_name: str) -> bool:
-    """
-    Deletes a Kubernetes Job on EKS (cancels the generation).
-
-    :param job_name: The Kubernetes Job name.
-    :return: True if deleted successfully.
-    """
     batch_api, k8s_client = _get_k8s_client()
     namespace = SETTINGS.GENERATION_JOB_EKS_NAMESPACE or "titan"
 
@@ -148,14 +135,6 @@ def delete_k8s_job(job_name: str) -> bool:
 
 
 def invoke_function(function_name: str, function_params: dict) -> bytes:
-    """
-    Invokes a Lambda function.
-
-    :param function_name: The name of the function to invoke.
-    :param function_params: The parameters of the function as a dict. This dict
-                                                    is serialized to JSON before it is sent to Lambda.
-    :return: The response from the function invocation.
-    """
     try:
         response = lambda_client.invoke(
             FunctionName=function_name,

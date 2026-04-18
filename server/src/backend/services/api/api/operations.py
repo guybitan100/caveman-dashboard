@@ -13,7 +13,6 @@ from model.types import EventType
 
 
 def run_job(job_id: str, dispatcher: Dispatcher) -> GenerationJob:
-    """Runs a draft generation job by its ID."""
     job = db_job_utils.build_generation_job(job_id=job_id)
     verify_uploaded_files_exist_or_fail(job=job)
     db_job_utils.update_job_status(job_id=job_id, status=JobStatus.Pending)
@@ -24,7 +23,6 @@ def run_job(job_id: str, dispatcher: Dispatcher) -> GenerationJob:
 
 
 def re_run_job(job_id: str, dispatcher: Dispatcher) -> GenerationJob:
-    """Re-runs an existing job by its ID."""
     try:
         status = db_job_utils.get_job_status(job_id=job_id)
         if status is JobStatus.Draft:
@@ -41,7 +39,6 @@ def re_run_job(job_id: str, dispatcher: Dispatcher) -> GenerationJob:
 
 
 def cancel_job(job_id: str, dispatcher: Dispatcher) -> bool:
-    """Cancels a running job by its ID. Returns True if the job was canceled, False if it was not running."""
     status = db_job_utils.get_job_status(job_id=job_id)
     
     match status:
@@ -61,7 +58,6 @@ def cancel_job(job_id: str, dispatcher: Dispatcher) -> bool:
 
 
 def delete_job(job_id: str, dispatcher: Dispatcher) -> str:
-    """Deletes a job by its ID after ensuring it is not running and returns its ID."""
     status = db_job_utils.get_job_status(job_id=job_id)
 
     # check if job isn't running so we can safely delete it from the DB:

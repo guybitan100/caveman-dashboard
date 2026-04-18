@@ -21,7 +21,6 @@ def insert_job(
         device_context: DeviceContext,
         device_info: list[DeviceInfoEntry]
 ) -> str:
-    """Insert a new draft job record"""
     db_job = DBJobModel(
 		user=user.lower(),
 		name=name,
@@ -118,8 +117,7 @@ def filter_job(
 
     return True
 
-def _get_job_most_relevant_timstamp(job: DBJobModel) -> str:
-    """Get the most relevant timestamp for a job based on its status."""
+def _get_job_most_relevant_timestamp(job: DBJobModel) -> str:
     match job.status:
         case JobStatus.Draft:
             return job.drafted_at.isoformat()
@@ -165,7 +163,7 @@ def get_all_jobs(
     )
 
     # Sort by timestamp ascending
-    jobs = sorted(filtered_jobs, key=lambda job: _get_job_most_relevant_timstamp(job), reverse=True)
+    jobs = sorted(filtered_jobs, key=lambda job: _get_job_most_relevant_timestamp(job), reverse=True)
 
     # Finally, calculate the total count of filtered jobs and return the results
     total_filtered_count = len(jobs)
@@ -179,7 +177,7 @@ def get_all_jobs(
             'id': job.id,
             'name': job.name,
             'status': job.status,
-            'timestamp': _get_job_most_relevant_timstamp(job),
+            'timestamp': _get_job_most_relevant_timestamp(job),
             'user': job.user,
         })
         for job in jobs
@@ -262,7 +260,6 @@ def delete_job(job_id: str):
 
 
 def build_generation_job(job_id: str) -> GenerationJob:
-    """Build a GenerationJob model from the DBJobModel and its related tasks and stories"""
     db_job = get_job_model(job_id=job_id)
     job = GenerationJob(
         job_id=db_job.id,
@@ -280,7 +277,6 @@ def build_generation_job(job_id: str) -> GenerationJob:
 
 
 def _build_root_tasks(db_tasks: list[DBGenerationTaskModel]) -> list[GenerationTask]:
-    """Build a hierarchical structure of root GenerationTask objects from flat DBGenerationTaskModel list"""
     root_tasks = []
     for db_task in db_tasks:
         if db_task.root_task_id is not None:

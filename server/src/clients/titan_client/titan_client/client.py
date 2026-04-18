@@ -20,7 +20,6 @@ class TitanClientError(Exception):
 
 
 def _handle_titan_client_errors(func: Callable) -> Callable:
-    """Decorator method for auto-handling TitanClient connection and response errors"""
 
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -37,12 +36,6 @@ def _handle_titan_client_errors(func: Callable) -> Callable:
 
 
 class TitanClient:
-    """
-    Create a new Cellebrite Titan client instance.
-
-    Arguments:
-        host: Cellebrite Titan host.
-    """
 
     def __init__(self, host: str = DEFAULT_TITAN_HOST):
         host = host if host.startswith("http://") else f"http://{host}"
@@ -60,15 +53,6 @@ class TitanClient:
 
     @_handle_titan_client_errors
     def create_job(self, job: GenerationJob) -> str:
-        """
-        Create a new Cellebrite Titan job.
-
-        Arguments:
-            job: Titan job object.
-
-        Returns:
-            the id of the created job.
-        """
         logger.info("Creating job...")
         response = requests.post(f"{self._url}/job", data=job.json())
         response.raise_for_status()
@@ -78,15 +62,6 @@ class TitanClient:
 
     @_handle_titan_client_errors
     def get_job_status(self, job_id: str) -> JobStatus:
-        """
-        Get the status of a Titan job.
-
-        Arguments:
-            job_id: The id of the requested job.
-
-        Returns:
-            the status of the job.
-        """
         response = requests.get(f"{self._url}/job/status/{job_id}")
         response.raise_for_status()
         job_status = JobStatus(response.json())
@@ -94,44 +69,27 @@ class TitanClient:
 
     @_handle_titan_client_errors
     def cancel_job(self, job_id: str):
-        """
-        Cancel a Titan job.
-
-        Arguments:
-            job_id: The id of the requested job.
-        """
         logger.info(f"Cancelling job {job_id}")
         response = requests.post(f"{self._url}/job/cancel/{job_id}")
         response.raise_for_status()
 
     @_handle_titan_client_errors
     def delete_job(self, job_id: str):
-        """
-        Delete a Titan job.
-
-        Arguments:
-            job_id: The id of the requested job.
-        """
         logger.info(f"Deleting job {job_id}")
         response = requests.delete(f"{self._url}/job/{job_id}")
         response.raise_for_status()
 
     @_handle_titan_client_errors
     def download_ufdr(self, job_id: str, dir_path: str | PathLike):
-        """
-        Download a Titan generated UFDR.
-
-        Arguments:
-            job_id: The id of the requested job.
-            dir_path: The path to download the file to.
-        """
         dir_path = Path(dir_path)
         if not dir_path.is_dir():
             raise TitanClientError(f'"{dir_path}" is not a directory')
 
         job_status = self.get_job_status(job_id=job_id)
         if job_status != JobStatus.Done:
-            raise TitanClientError(f"Job is not done, UFDR cannot be downloaded (status={job_status.value})")
+            raise TitanClientError(
+                f"Job is not done, UFDR cannot be downloaded (status={job_status.value})"
+            )
 
         logger.info(f"Retrieving UFDR download link for job {job_id}")
         response = requests.get(f"{self._url}/download/{job_id}")
@@ -141,7 +99,9 @@ class TitanClient:
         ufdr_filename = urlparse(download_url).path.rsplit("/", 1)[-1]
         ufdr_filepath = dir_path / ufdr_filename
 
-        logger.info(f'Downloading UFDR for job {job_id} to path "{ufdr_filepath.resolve()}"...')
+        logger.info(
+            f'Downloading UFDR for job {job_id} to path "{ufdr_filepath.resolve()}"...'
+        )
         with requests.get(download_url, stream=True) as r:
             with ufdr_filepath.open("wb") as f:
                 shutil.copyfileobj(r.raw, f)

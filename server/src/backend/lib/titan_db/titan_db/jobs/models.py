@@ -70,9 +70,6 @@ class TitanDynamoModel(Model):
 
 
 class StoryTaskJobIdIndex(GlobalSecondaryIndex):
-    """
-    This class represents a JobId global secondary index
-    """
 
     Meta = meta_factory(index_name="story-tasks-job-id-index")
 
@@ -80,9 +77,6 @@ class StoryTaskJobIdIndex(GlobalSecondaryIndex):
 
 
 class TaskJobIdIndex(GlobalSecondaryIndex):
-    """
-    This class represents a JobId global secondary index
-    """
 
     Meta = meta_factory(index_name="tasks-job-id-index")
 
@@ -111,9 +105,6 @@ GenerationTaskRefAttribute = create_relationship_set_attribute(DBGenerationTaskM
 
 
 class PhaseJobIdIndex(GlobalSecondaryIndex):
-    """
-    This class represents a JobId global secondary index
-    """
 
     Meta = meta_factory(index_name="phases-job-id-index")
 
