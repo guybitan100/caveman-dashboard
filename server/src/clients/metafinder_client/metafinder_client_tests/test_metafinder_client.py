@@ -208,3 +208,214 @@ class TestMetaFinderClientDownload:
         mock_s3.download_file.assert_called_once_with(
             bucket_name="bucket", s3_key="key", file_name="/tmp/file"
         )
+
+
+class TestGetterMethods:
+    """Test each getter method delegates to _get_data correctly."""
+
+    def _make_client(self):
+        return MetaFinderClient(host="http://mf")
+
+    @patch.object(MetaFinderClient, "_get_data", return_value=iter([MagicMock()]))
+    def test_get_images(self, mock_gd):
+        c = self._make_client()
+        result = list(c.get_images(count=5, categories=["nature"]))
+        assert len(result) == 1
+        mock_gd.assert_called_once()
+        assert mock_gd.call_args.kwargs["data_type"] == DataType.Image
+
+    @patch.object(MetaFinderClient, "_get_data", return_value=iter([MagicMock()]))
+    def test_get_audios(self, mock_gd):
+        c = self._make_client()
+        list(c.get_audios(count=3, min_duration=10, max_duration=60))
+        assert mock_gd.call_args.kwargs["data_type"] == DataType.Audio
+
+    @patch.object(MetaFinderClient, "_get_data", return_value=iter([MagicMock()]))
+    def test_get_videos(self, mock_gd):
+        c = self._make_client()
+        list(c.get_videos(count=2))
+        assert mock_gd.call_args.kwargs["data_type"] == DataType.Video
+
+    @patch.object(MetaFinderClient, "_get_data", return_value=iter([MagicMock()]))
+    def test_get_sentences(self, mock_gd):
+        c = self._make_client()
+        list(c.get_sentences(count=10, languages=["en"]))
+        assert mock_gd.call_args.kwargs["data_type"] == DataType.Chat
+
+    @patch.object(MetaFinderClient, "_get_data", return_value=iter([MagicMock()]))
+    def test_get_urls(self, mock_gd):
+        c = self._make_client()
+        list(c.get_urls(count=5, cctld="com"))
+        assert mock_gd.call_args.kwargs["data_type"] == DataType.URL
+
+    @patch.object(MetaFinderClient, "_get_data", return_value=iter([MagicMock()]))
+    def test_get_apps(self, mock_gd):
+        c = self._make_client()
+        list(c.get_apps(count=5, os="android"))
+        assert mock_gd.call_args.kwargs["data_type"] == DataType.Application
+
+    @patch.object(MetaFinderClient, "_get_data", return_value=iter([MagicMock()]))
+    def test_get_text(self, mock_gd):
+        c = self._make_client()
+        list(c.get_text(count=3))
+        assert mock_gd.call_args.kwargs["data_type"] == DataType.Text
+
+    @patch.object(MetaFinderClient, "_get_data", return_value=iter([MagicMock()]))
+    def test_get_cell_towers(self, mock_gd):
+        c = self._make_client()
+        list(c.get_cell_towers(count=2, latitude=32.0, longitude=34.0, mcc=425))
+        assert mock_gd.call_args.kwargs["data_type"] == DataType.CellTower
+
+    @patch.object(MetaFinderClient, "_get_data", return_value=iter([MagicMock()]))
+    def test_get_documents(self, mock_gd):
+        c = self._make_client()
+        list(c.get_documents(count=4, format="pdf"))
+        assert mock_gd.call_args.kwargs["data_type"] == DataType.Document
+
+    @patch.object(MetaFinderClient, "_get_data", return_value=iter([MagicMock()]))
+    def test_get_names(self, mock_gd):
+        c = self._make_client()
+        list(c.get_names(count=5, is_male=True, country_code="US"))
+        assert mock_gd.call_args.kwargs["data_type"] == DataType.Name
+
+    @patch.object(MetaFinderClient, "_get_data", return_value=iter([MagicMock()]))
+    def test_get_crypto(self, mock_gd):
+        c = self._make_client()
+        list(c.get_crypto(count=3, types=["wallet"], coins=["BTC"]))
+        assert mock_gd.call_args.kwargs["data_type"] == DataType.Crypto
+
+
+class TestGetData:
+    @patch("metafinder_client.client.SETTINGS", MagicMock(METAFINDER_MAX_ITEMS=100))
+    def test_zero_count_returns_nothing(self):
+        c = MetaFinderClient(host="http://mf")
+        result = list(c._get_data(data_type=DataType.Image, count=0))
+        assert result == []
+
+    @patch("metafinder_client.client.SETTINGS", MagicMock(METAFINDER_MAX_ITEMS=100))
+    @patch.object(MetaFinderClient, "_fetch_data")
+    def test_yields_validated_models(self, mock_fetch):
+        import asyncio
+
+        mock_fetch.return_value = [
+            [{"app_id": "a1", "name": "A", "category": "c", "os": "android"}]
+        ]
+        from metafinder_core.models import AppModel
+
+        c = MetaFinderClient(host="http://mf")
+        result = list(
+            c._get_data(data_type=DataType.Application, count=1, data_class=AppModel)
+        )
+        assert len(result) == 1
+        assert result[0].app_id == "a1"
+
+    @patch("metafinder_client.client.SETTINGS", MagicMock(METAFINDER_MAX_ITEMS=100))
+    @patch.object(MetaFinderClient, "_fetch_data")
+    def test_yields_raw_dicts(self, mock_fetch):
+        mock_fetch.return_value = [[{"x": 1}, {"x": 2}]]
+        c = MetaFinderClient(host="http://mf")
+        result = list(c._get_data(data_type=DataType.Image, count=2, data_class=None))
+        assert len(result) == 2
+        assert result[0]["x"] == 1
+
+
+class TestFetchRequest:
+    @patch(
+        "metafinder_client.client.SETTINGS",
+        MagicMock(METAFINDER_CLIENT_MAX_CONCURRENCY=5),
+    )
+    def test_fetch_request_success(self):
+        import asyncio
+        from unittest.mock import AsyncMock
+
+        c = MetaFinderClient(host="http://mf")
+        mock_resp = AsyncMock()
+        mock_resp.raise_for_status = MagicMock()
+        mock_resp.json = AsyncMock(return_value=[{"id": 1}])
+        mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
+        mock_resp.__aexit__ = AsyncMock(return_value=False)
+
+        mock_session = AsyncMock()
+        mock_session.post = MagicMock(return_value=mock_resp)
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("aiohttp.ClientSession", return_value=mock_session):
+            result = asyncio.run(
+                c._fetch_request(data_type=DataType.Image, chunk_count=1)
+            )
+            assert result == [{"id": 1}]
+
+    @patch(
+        "metafinder_client.client.SETTINGS",
+        MagicMock(METAFINDER_CLIENT_MAX_CONCURRENCY=5),
+    )
+    def test_fetch_request_empty_raises(self):
+        import asyncio
+        from unittest.mock import AsyncMock
+
+        c = MetaFinderClient(host="http://mf")
+        mock_resp = AsyncMock()
+        mock_resp.raise_for_status = MagicMock()
+        mock_resp.json = AsyncMock(return_value=[])
+        mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
+        mock_resp.__aexit__ = AsyncMock(return_value=False)
+
+        mock_session = AsyncMock()
+        mock_session.post = MagicMock(return_value=mock_resp)
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("aiohttp.ClientSession", return_value=mock_session):
+            with pytest.raises(MetaFinderError, match="no results"):
+                asyncio.run(c._fetch_request(data_type=DataType.Image, chunk_count=1))
+
+
+class TestGetTermOptionsRange:
+    @patch.object(
+        MetaFinderClient, "_get_response", return_value={"min": 0, "max": 100}
+    )
+    def test_returns_response(self, mock_resp):
+        from model.metafinder.data_types import KeywordTerms, RangeTerms
+
+        c = MetaFinderClient(host="http://mf")
+        result = c.get_term_options_range(
+            data_type=DataType.Image,
+            term=KeywordTerms.Categories,
+            range=RangeTerms.Width,
+        )
+        assert result == {"min": 0, "max": 100}
+
+
+class TestGetReportEventFields:
+    @patch.object(MetaFinderClient, "_get_data")
+    def test_returns_fields(self, mock_gd):
+        from metafinder_core.models import (
+            ReportModelField,
+            ReportModelFieldType,
+        )
+
+        mock_gd.return_value = [
+            {
+                "version": "1.0",
+                "model_type": "calls",
+                "field_type": ReportModelFieldType.FIELD.value,
+                "name": "duration",
+                "value_type": "number",
+                "is_sub_field": False,
+            }
+        ]
+        c = MetaFinderClient(host="http://mf")
+        result = c.get_report_event_fields()
+        assert len(result) == 1
+
+
+class TestGetAppsByIdsWarning:
+    @patch.object(MetaFinderClient, "_get_response")
+    def test_missing_apps_logs_warning(self, mock_resp):
+        mock_resp.return_value = [
+            {"app_id": "app1", "name": "App1", "category": "c", "os": "android"},
+        ]
+        c = MetaFinderClient(host="http://mf")
+        result = c.get_apps_by_app_ids(["app1", "app2"])
+        assert len(result) == 1
