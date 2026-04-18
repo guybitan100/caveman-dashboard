@@ -1,9 +1,9 @@
+from datetime import timedelta
 from pathlib import Path
 from typing import Literal
 
-from pydantic import AnyHttpUrl, Field, PositiveInt, field_validator, SecretStr
+from pydantic import Field, PositiveInt, field_validator, SecretStr
 from pydantic.types import NonNegativeInt
-from pydantic_core.core_schema import timedelta
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT_PATH = Path(__file__).parent.parent.parent.parent.parent.parent.resolve(
@@ -52,7 +52,7 @@ class TitanSettings(BaseSettings):
     )
     METAFINDER_ATHENA_DATABASE_NAME: str = "metafinder"
 
-    API_URL: AnyHttpUrl = "http://localhost:5050"
+    API_URL: str = "http://localhost:5050"
     API_PORT: int = 5050
 
     # Old job age for deletion
@@ -115,4 +115,4 @@ class TitanSettings(BaseSettings):
         return timedelta(days=int(jobmanager_job_expiry_days))
 
 
-SETTINGS = TitanSettings()
+SETTINGS = TitanSettings()  # type: ignore[call-arg]  # populated from env
