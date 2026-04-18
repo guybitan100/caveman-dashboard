@@ -17,8 +17,8 @@ def run_job(job_id: str, dispatcher: Dispatcher) -> GenerationJob:
     job = db_job_utils.build_generation_job(job_id=job_id)
     verify_uploaded_files_exist_or_fail(job=job)
     db_job_utils.update_job_status(job_id=job_id, status=JobStatus.Pending)
-    ecs_task_id = dispatcher.run_generation_job(job_id=job_id)
-    db_job_utils.update_job_ecs_task_id(job_id=job_id, ecs_task_id=ecs_task_id)
+    k8s_job_name = dispatcher.run_generation_job(job_id=job_id)
+    db_job_utils.update_job_k8s_job_name(job_id=job_id, k8s_job_name=k8s_job_name)
     job.status = JobStatus.Pending
     return job
 
@@ -31,8 +31,8 @@ def re_run_job(job_id: str, dispatcher: Dispatcher) -> GenerationJob:
             raise Exception(f"Job is still a draft")
         db_job_utils.delete_job_phases(job_id=job_id)
         db_job_utils.update_job_status(job_id=job_id, status=JobStatus.Pending)
-        ecs_task_id = dispatcher.run_generation_job(job_id=job_id)
-        db_job_utils.update_job_ecs_task_id(job_id=job_id, ecs_task_id=ecs_task_id)
+        k8s_job_name = dispatcher.run_generation_job(job_id=job_id)
+        db_job_utils.update_job_k8s_job_name(job_id=job_id, k8s_job_name=k8s_job_name)
         job = db_job_utils.build_generation_job(job_id=job_id)
         return job
     except Exception as e:
@@ -50,8 +50,8 @@ def cancel_job(job_id: str, dispatcher: Dispatcher) -> bool:
             return False
         
         case JobStatus.Generating | JobStatus.Converting | JobStatus.Finalizing:
-            ecs_task_id = db_job_utils.get_ecs_task_id(job_id=job_id)
-            canceled = dispatcher.stop_generation_job(ecs_task_id=ecs_task_id)
+            k8s_job_name = db_job_utils.get_k8s_job_name(job_id=job_id)
+            canceled = dispatcher.stop_generation_job(k8s_job_name=k8s_job_name)
             if not canceled:
                 raise Exception(f'Could not cancel job {job_id}')
             db_job_utils.update_job_status(job_id=job_id, status=JobStatus.Cancelled)

@@ -1,6 +1,12 @@
 from networkx import DiGraph
-from pynamodb.attributes import TTLAttribute, ListAttribute, NumberAttribute, UnicodeAttribute, UTCDateTimeAttribute, \
-    JSONAttribute
+from pynamodb.attributes import (
+    TTLAttribute,
+    ListAttribute,
+    NumberAttribute,
+    UnicodeAttribute,
+    UTCDateTimeAttribute,
+    JSONAttribute,
+)
 from pynamodb.indexes import AllProjection, GlobalSecondaryIndex
 from pynamodb.models import Model, MetaTable
 
@@ -12,37 +18,39 @@ from model.status import GenerationTaskStatus, JobStatus, PhaseStatus
 from model.types import EventType, Entity, DeviceInfoEntry, OwnerEntity
 from model.stories import StoryType
 from model.utils import str_uuid, now
-from titan_db.jobs.attributes import create_enum_attribute, create_pydantic_attribute, CustomEventsAttribute, \
-    PickledGraphAttribute
+from titan_db.jobs.attributes import (
+    create_enum_attribute,
+    create_pydantic_attribute,
+    CustomEventsAttribute,
+    PickledGraphAttribute,
+)
 from titan_db.jobs.attributes import create_relationship_set_attribute
 
 
-def meta_factory(table_name: str | None = None, index_name: str | None = None) -> type[MetaTable]:
+def meta_factory(
+    table_name: str | None = None, index_name: str | None = None
+) -> type[MetaTable]:
     base_dict = {
-        'region': SETTINGS.AWS_REGION,
-        'write_capacity_units': 1,
-        'read_capacity_units': 1,
-        'billing_mode': 'PAY_PER_REQUEST',
-        'tags': {
-            'environment': SETTINGS.ENVIRONMENT,
-            'project': 'titan'
-        }
+        "region": SETTINGS.AWS_REGION,
+        "write_capacity_units": 1,
+        "read_capacity_units": 1,
+        "billing_mode": "PAY_PER_REQUEST",
+        "tags": {"environment": SETTINGS.ENVIRONMENT, "project": "titan"},
     }
 
     if index_name:
-        base_dict.update({
-            'index_name': index_name,
-            'projection': AllProjection()
-        })
+        base_dict.update({"index_name": index_name, "projection": AllProjection()})
 
     else:
         if not table_name:
-            raise Exception('Either table_name or index_name must be specified')
-        base_dict.update({
-            'table_name': table_name,
-        })
+            raise Exception("Either table_name or index_name must be specified")
+        base_dict.update(
+            {
+                "table_name": table_name,
+            }
+        )
 
-    return type('Meta', (), base_dict)
+    return type("Meta", (), base_dict)
 
 
 JobStatusAttribute = create_enum_attribute(JobStatus)
@@ -65,7 +73,8 @@ class StoryTaskJobIdIndex(GlobalSecondaryIndex):
     """
     This class represents a JobId global secondary index
     """
-    Meta = meta_factory(index_name='story-tasks-job-id-index')
+
+    Meta = meta_factory(index_name="story-tasks-job-id-index")
 
     job_id = UnicodeAttribute(hash_key=True)
 
@@ -74,13 +83,14 @@ class TaskJobIdIndex(GlobalSecondaryIndex):
     """
     This class represents a JobId global secondary index
     """
-    Meta = meta_factory(index_name='tasks-job-id-index')
+
+    Meta = meta_factory(index_name="tasks-job-id-index")
 
     job_id = UnicodeAttribute(hash_key=True)
 
 
 class DBGenerationTaskModel(TitanDynamoModel):
-    Meta = meta_factory(table_name=f'titan-tasks-{SETTINGS.ENVIRONMENT}')
+    Meta = meta_factory(table_name=f"titan-tasks-{SETTINGS.ENVIRONMENT}")
 
     task_id = UnicodeAttribute(hash_key=True)
     job_id_index = TaskJobIdIndex()
@@ -104,13 +114,14 @@ class PhaseJobIdIndex(GlobalSecondaryIndex):
     """
     This class represents a JobId global secondary index
     """
-    Meta = meta_factory(index_name='phases-job-id-index')
+
+    Meta = meta_factory(index_name="phases-job-id-index")
 
     job_id = UnicodeAttribute(hash_key=True)
 
 
 class DBJobPhaseModel(TitanDynamoModel):
-    Meta = meta_factory(table_name=f'titan-phases-{SETTINGS.ENVIRONMENT}')
+    Meta = meta_factory(table_name=f"titan-phases-{SETTINGS.ENVIRONMENT}")
 
     id = UnicodeAttribute(hash_key=True)
     job_id_index = PhaseJobIdIndex()
@@ -123,7 +134,7 @@ class DBJobPhaseModel(TitanDynamoModel):
 
 class DBJobModel(TitanDynamoModel):
 
-    Meta = meta_factory(table_name=f'titan-jobs-{SETTINGS.ENVIRONMENT}')
+    Meta = meta_factory(table_name=f"titan-jobs-{SETTINGS.ENVIRONMENT}")
 
     id = UnicodeAttribute(hash_key=True, default_for_new=str_uuid)
     user = UnicodeAttribute()
@@ -145,7 +156,7 @@ class DBJobModel(TitanDynamoModel):
     total_events = NumberAttribute(default=0)
     manifest = JSONAttribute(null=True)
     size = NumberAttribute(default=0)
-    ecs_task_id = UnicodeAttribute(null=True)
+    k8s_job_name = UnicodeAttribute(null=True)
 
 
 tables = [DBJobModel, DBJobPhaseModel, DBGenerationTaskModel]
@@ -156,12 +167,12 @@ def create_tables(force: bool = False):
         delete_tables()
     for table in tables:
         if not table.exists():
-            logger.info(f'Creating table {table.Meta.table_name}')
+            logger.info(f"Creating table {table.Meta.table_name}")
             table.create_table(wait=True)
 
 
 def delete_tables():
     for table in tables:
         if table.exists():
-            logger.info(f'Deleting table {table.Meta.table_name}')
+            logger.info(f"Deleting table {table.Meta.table_name}")
             table.delete_table()

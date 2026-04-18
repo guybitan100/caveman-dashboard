@@ -50,7 +50,7 @@ export class ApiStack extends cdk.NestedStack {
       initialPolicy: [
         dynamodbPolicy,
         new iam.PolicyStatement({
-          actions: ["ecs:*"],
+          actions: ["eks:DescribeCluster"],
           resources: ["*"],
         }),
       ],

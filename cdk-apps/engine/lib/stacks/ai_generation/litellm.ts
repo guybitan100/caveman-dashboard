@@ -1,3 +1,8 @@
+/**
+ * @deprecated LiteLLM is now deployed to EKS via Helm chart (ci/eks/helm/titan-litellm).
+ * This file is retained for reference only and is no longer used by the CDK stack.
+ */
+
 import * as cdk from "aws-cdk-lib";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as ecs from "aws-cdk-lib/aws-ecs";
@@ -35,7 +40,7 @@ export class LiteLlm extends Construct {
     taskDefinition.addContainer("LiteLlmContainer", {
       containerName: "litellm",
       image: ecs.ContainerImage.fromAsset(dockerFilePath, {
-        file: "./docker/llm_gateway.ecs.Dockerfile",
+        file: "./docker/llm_gateway.Dockerfile",
       }),
       command: ["--port", "80", "--config", "config.yaml"],
       environment: {},

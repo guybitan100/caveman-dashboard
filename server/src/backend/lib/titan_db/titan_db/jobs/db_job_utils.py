@@ -294,16 +294,16 @@ def add_job_manifest(job_id: str, manifest: Manifest):
     update_job_model(job_id=job_id, actions=[DBJobModel.manifest.set(manifest.model_dump(mode='json'))])
 
 
-def update_job_ecs_task_id(job_id: str, ecs_task_id: str):
-    update_job_model(job_id=job_id, actions=[DBJobModel.ecs_task_id.set(ecs_task_id)])
+def update_job_k8s_job_name(job_id: str, k8s_job_name: str):
+    update_job_model(job_id=job_id, actions=[DBJobModel.k8s_job_name.set(k8s_job_name)])
 
 
-def get_ecs_task_id(job_id: str) -> str:
+def get_k8s_job_name(job_id: str) -> str:
     try:
-        response = DBJobModel.get(job_id, attributes_to_get=[DBJobModel.ecs_task_id])
+        response = DBJobModel.get(job_id, attributes_to_get=[DBJobModel.k8s_job_name])
     except DoesNotExist:
         raise JobNotFoundError(job_id=job_id)
-    return response.ecs_task_id
+    return response.k8s_job_name
 
 
 def insert_phase(job_id: str, phase: TitanPhase):
