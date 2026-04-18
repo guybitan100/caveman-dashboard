@@ -159,9 +159,10 @@ class TestAddStory:
         _add_story(stories_graph=g, story=story)
         assert "s1" in g.nodes
 
-    def test_add_event_story_auto_creates_app(self):
+    def test_add_call_story_with_app(self):
         g = DiGraph()
-        story = _make_call_story(story_id="s1", app_id="com.example.app")
+        story = _make_call_story(story_id="s1")
+        story.app_id = "com.example.phone"
         _add_story(stories_graph=g, story=story)
         assert "s1" in g.nodes
         # app story should have been auto-created

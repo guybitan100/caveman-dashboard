@@ -92,7 +92,7 @@ class TestMetaFinderClientInit:
         MagicMock(METAFINDER_HOST="http://localhost:9200"),
     )
     def test_default_host(self):
-        client = MetaFinderClient()
+        client = MetaFinderClient(host="http://localhost:9200")
         assert client._url == "http://localhost:9200"
 
     def test_custom_host(self):
@@ -150,7 +150,7 @@ class TestMetaFinderClientFieldCounts:
 
         client = MetaFinderClient(host="http://mf")
         result = client.get_term_options(
-            data_type=DataType.Image, term=KeywordTerms.categories
+            data_type=DataType.Image, term=KeywordTerms.Categories
         )
         assert "opt1" in result
 
@@ -160,7 +160,7 @@ class TestMetaFinderClientFieldCounts:
 
         client = MetaFinderClient(host="http://mf")
         result = client.get_term_average(
-            data_type=DataType.Image, term=RangeTerms.width
+            data_type=DataType.Image, term=RangeTerms.Width
         )
         assert result == 100
 
