@@ -1,8 +1,11 @@
+import base64
 import json
+import tempfile
 import uuid
 
 import boto3
 from botocore.exceptions import ClientError
+from botocore.signers import RequestSigner
 from mypy_boto3_lambda import LambdaClient
 
 from core.config import SETTINGS
@@ -12,7 +15,7 @@ lambda_client: LambdaClient = boto3.client("lambda", region_name=SETTINGS.AWS_RE
 
 
 def _get_k8s_client():
-    from kubernetes import client as k8s_client, config as k8s_config
+    from kubernetes import client as k8s_client
 
     eks = boto3.client("eks", region_name=SETTINGS.AWS_REGION)
     cluster_info = eks.describe_cluster(name=SETTINGS.GENERATION_JOB_EKS_CLUSTER)[
@@ -20,9 +23,6 @@ def _get_k8s_client():
     ]
     endpoint = cluster_info["endpoint"]
     ca_data = cluster_info["certificateAuthority"]["data"]
-
-    # Get a bearer token via STS
-    from botocore.signers import RequestSigner
 
     sts = boto3.client("sts", region_name=SETTINGS.AWS_REGION)
     service_id = sts.meta.service_model.service_id
@@ -45,13 +45,10 @@ def _get_k8s_client():
     signed_url = signer.generate_presigned_url(
         params, region_name=SETTINGS.AWS_REGION, expires_in=60, operation_name=""
     )
-    import base64
 
     token = "k8s-aws-v1." + base64.urlsafe_b64encode(signed_url.encode("utf-8")).decode(
         "utf-8"
     ).rstrip("=")
-
-    import tempfile, os
 
     ca_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pem")
     ca_file.write(base64.b64decode(ca_data))

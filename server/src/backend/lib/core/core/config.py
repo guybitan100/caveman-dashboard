@@ -106,8 +106,6 @@ class TitanSettings(BaseSettings):
     WEBSOCKET_API_KEY: SecretStr | None = Field(None)
     WEBSOCKET_NAMESPACE: str = Field("default")
 
-    CLIENT_INFO_FILE: str
-
     model_config = SettingsConfigDict(
         env_prefix="titan_", env_file=get_env_dotenv_file(), extra="ignore"
     )

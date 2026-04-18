@@ -3,6 +3,7 @@
 **Titan** is a unified UFDR (Unified Forensic Data Repository) platform that combines AI-powered UFDR generation with a full UFDR runtime creation center. Built with React 18, Material-UI 6, TypeScript, Vite, Zustand, and SWR.
 
 The repository is split by ownership boundary:
+
 - `web/` contains the current React/Vite application and all frontend tests.
 - `server/` contains the imported Titan backend services, shared Python libraries, local backend clients, and Dockerfiles.
 
@@ -13,12 +14,14 @@ The current repository now contains the web client plus the available Titan back
 ## Features
 
 ### AI UFDR Generation
+
 - **Conversational pipeline** — describe a scenario in natural language and a 7-step AI pipeline expands it into entities, social graphs, timelines, device selections, and full UFDR jobs.
 - **Draft management** — create, rename, run, cancel, and delete UFDR generation jobs from a sidebar job list with real-time status polling.
 - **Cart & entities** — inspect and edit the generated device context, entities, stories, tasks, and custom events before submission.
 - **Download service** — track in-progress downloads with a floating indicator and browser-safe delivery.
 
 ### UFDR Runtime Creation Center
+
 - **Builder tab** — step-by-step form for configuring UFDR duplication requests: choose execution mode (duplicate / summary / upload-only), source (local file or S3 evidence), model duplication strategy (copies / uniform / explicit), file and media transforms, and output/retention options.
 - **Launch tab** — review the full request summary, start or cancel runs, and watch live progress with an embedded or pop-out runtime console.
 - **Summary tab** — preview the source UFDR metadata (model counts, file totals, type distribution) before launching.
@@ -31,7 +34,7 @@ The current repository now contains the web client plus the available Titan back
 ## Tech Stack
 
 | Layer | Technology |
-|-------|------------|
+| ----- | ---------- |
 | **UI framework** | React 18.3.1 |
 | **Component library** | Material-UI (MUI) 6.1.10 |
 | **State management** | Zustand 5.0.2 + Immer |
@@ -46,7 +49,7 @@ The current repository now contains the web client plus the available Titan back
 
 ## Project Structure
 
-```
+```text
 titan/
 ├── cdk-apps/                     # AWS CDK applications recovered from the Titan snapshot
 ├── web/
@@ -90,10 +93,12 @@ titan/
 ## Getting Started
 
 ### Prerequisites
+
 - **Node.js** >= 18
 - **npm** >= 9
 
 ### Install dependencies
+
 ```bash
 cd titan-web-core
 npm install
@@ -102,12 +107,15 @@ npm install
 For local web-to-backend wiring, copy `.env.example` to `.env` if you do not already have a local Vite env file.
 
 ### Development
+
 ```bash
 npm run dev
 ```
+
 Opens Vite dev server at `http://localhost:5176`.
 
 ### Backend Services
+
 ```bash
 npm run server:start
 ```
@@ -121,9 +129,11 @@ npm run server:stop
 Backend services still require a populated `server/.env`. Start from `server/example.env`.
 
 ### Build
+
 ```bash
 npm run build
 ```
+
 Type-checks with `tsc`, then bundles with Vite to `dist/`.
 
 ### Tests
@@ -145,6 +155,7 @@ npm run test:e2e
 Coverage thresholds: 70% lines, functions, branches, and statements.
 
 ### Lint
+
 ```bash
 npm run lint
 ```
@@ -154,7 +165,7 @@ npm run lint
 ## Environment Variables
 
 | Variable | Description | Default |
-|----------|-------------|---------|
+| -------- | ----------- | ------- |
 | `VITE_TITAN_API_URL` | Base URL for the Titan UFDR generation API | `http://localhost:8000` |
 | `VITE_TITAN_METAFINDER_URL` | Base URL for the MetaFinder backend | `http://localhost:8001` |
 | `VITE_AI_GENERATOR_URL` | Base URL for the AI generation pipeline service | `http://localhost:8002` |
@@ -165,26 +176,34 @@ npm run lint
 ## Architecture
 
 ### View Switching
+
 The app uses a state-driven view context (`AppView`) to switch between:
+
 - **AI Generate** — the conversational UFDR generation pipeline (default view)
 - **UFDR Runtime** — the UFDR Creation Center for manual duplication/upload
 
 The header includes a toggle button for switching between views.
 
 ### State Management
+
 All state is managed with **Zustand** stores using the **Immer** middleware for immutable updates:
+
 - `conversationStore` — orchestrates the 7-step AI pipeline
 - `jobStore` — manages the job list sidebar
 - `cartStore` — manages the current job's entities and tasks
 - `ufdrRuntimeStore` — manages the runtime creation center (form, job, files, console)
 
 ### API Layer
+
 Each backend domain has its own API module built on **Axios**:
+
 - `jobsApi` / `pipelineApi` / `ufdrApi` — AI generation backend
 - `ufdrRuntimeApi` — UFDR runtime server (health, files, run, cancel, summary)
 
 ### In-Repo Backend
+
 The `server/` directory contains the imported Titan backend snapshot with:
+
 - shared libraries under `server/src/backend/lib`
 - services under `server/src/backend/services`
 - local Python client packages under `server/src/clients`
@@ -193,10 +212,12 @@ The `server/` directory contains the imported Titan backend snapshot with:
 This backend tree covers the Titan generation/API side. The UFDR runtime server consumed by `ufdrRuntimeApi` was not present in the source snapshot; the missing contract is documented in `server/src/backend/services/ufdr-runtime/README.md`.
 
 Additional snapshot logic recovered from `tmp/Titan` now lives at the repo root:
+
 - `cdk-apps/` for AWS CDK infrastructure/application stacks
 - `tools/titan-cli/` for the legacy repo-management CLI
 
 ### Testing Strategy
+
 - **Unit tests** with Vitest + Testing Library (440+ tests)
 - **Component tests** render with a `ThemeProvider` wrapper via custom `render()` from `test/utils/test-utils.tsx`
 - **API tests** mock `axios.create` and verify endpoint calls
@@ -210,7 +231,7 @@ Additional snapshot logic recovered from `tmp/Titan` now lives at the repo root:
 The UFDR Creation Center communicates with a Node.js + Python runtime server. Endpoints:
 
 | Method | Path | Description |
-|--------|------|-------------|
+| ------ | ---- | ----------- |
 | GET | `/api/health` | Health check |
 | GET | `/api/info` | App name, Python command, available UFDRs |
 | GET | `/api/system/stats` | Hostname, memory, CPU load, uptime |
