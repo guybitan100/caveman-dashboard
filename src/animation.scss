@@ -1,0 +1,196 @@
+@use "sass:math";
+@use "sass:list";
+
+// $n: 15; // 流星數量
+// $s: 300; // star數量
+
+// html,
+// body {
+//   height: 100%;
+//   overflow: hidden;
+//   background-image: radial-gradient(ellipse at top, #080e21 0%, #1b2735 95%);
+// }
+
+// $shadow: ();
+
+// @for $i from 1 through $s {
+//   $x: random(1920);
+//   $y: random(1000);
+//   $shadow: $shadow, ($x + px $y + px #fff) !global;
+// }
+
+// .star {
+//   width: 1px;
+//   height: 1px;
+//   background: transparent;
+//   box-shadow: $shadow;
+// }
+
+// @for $i from 1 through $n {
+//   $v: random(90) + 9; // left
+//   $h: random(250) + 50; // top
+//   $d: random(70) / 10 + 3; // 秒數
+//   .meteor-#{$i} {
+//     position: absolute;
+//     top: $h + px;
+//     left: $v * 1%;
+//     width: 300px;
+//     height: 1px;
+//     transform: rotate(-45deg);
+//     background-image: linear-gradient(to right, #fff, rgba(255, 255, 255, 0));
+//     animation: meteor $d + s linear infinite;
+//     &:before {
+//       content: "";
+//       position: absolute;
+//       width: 4px;
+//       height: 5px;
+//       border-radius: 50%;
+//       margin-top: -2px;
+//       background: rgba(#fff, 0.7);
+//       box-shadow: 0 0 15px 3px #fff;
+//     }
+//   }
+// }
+
+// @keyframes meteor {
+//   0% {
+//     opacity: 1;
+//     margin-top: -300px;
+//     margin-right: -300px;
+//   }
+//   12% {
+//     opacity: 0;
+//   }
+//   15% {
+//     margin-top: 300px;
+//     margin-left: -600px;
+//     opacity: 0;
+//   }
+//   100% {
+//     opacity: 0;
+//   }
+// }
+
+// ===== Config =====
+$n: 15; // 流星數量 (meteor count)
+$s: 300; // star數量 (star count)
+
+/* Speed control:
+ * Increase $speedFactor to slow down all meteors uniformly.
+ * e.g., 1 = original speed, 2 = twice as slow, 3 = three times slower, etc.
+ */
+$speedFactor: 2.5;
+
+/* Color palette for meteors (head/trail/glow).
+ * Add/remove colors as needed.
+ */
+$meteorColors: (
+  #a6c8ff,
+  // soft blue
+  #ffd6a5,
+  // warm peach
+  #bfffa3,
+  // gentle lime
+  #ffadad,
+  // pastel red
+  #caffbf,
+  // mint
+  #9bf6ff,
+  // cyan
+  #f1c0e8 // lavender
+);
+
+// ===== Background & base =====
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  background-image: radial-gradient(ellipse at top, #080e21 0%, #1b2735 95%);
+}
+
+// ===== Stars (static points) =====
+$shadow: (); // will be filled with random positions
+
+@for $i from 1 through $s {
+  $x: math.random(1920);
+  $y: math.random(1000);
+  $shadow: $shadow, ($x + px $y + px #fff) !global;
+}
+
+.star {
+  width: 1px;
+  height: 1px;
+  background: transparent;
+  box-shadow: $shadow;
+}
+
+// ===== Meteors =====
+@for $i from 1 through $n {
+  // Random position & duration baseline
+  $v: math.random(90) + 9; // left (%)
+  $h: math.random(250) + 50; // top (px)
+  $dBase: math.div(math.random(70), 10) + 3; // original seconds: ~3s to ~10s
+  $d: $dBase * $speedFactor; // slowed by factor
+
+  // Pick a random color from the palette
+  $colorIndex: math.random(list.length($meteorColors));
+  $c: list.nth($meteorColors, $colorIndex);
+
+  // Optional: vary trail length subtly for each meteor
+  $trailLen: math.random(120) + 180; // 180–300px
+
+  .meteor-#{$i} {
+    position: absolute;
+    top: $h + px;
+    left: $v * 1%;
+    width: $trailLen + px;
+    height: 1px;
+    transform: rotate(-45deg);
+    // Trail gradient: solid meteor color fading to transparent
+    background-image: linear-gradient(to right, $c, rgba($c, 0));
+    animation: meteor $d + s linear infinite;
+
+    // Meteor head (glow)
+    &:before {
+      content: "";
+      position: absolute;
+      width: 4px;
+      height: 5px;
+      border-radius: 50%;
+      margin-top: -2px;
+      background: rgba($c, 0.8);
+      box-shadow: 0 0 18px 4px rgba($c, 0.85), 0 0 3px 1px $c;
+    }
+  }
+}
+
+// ===== Motion keyframes =====
+// Keeps the same path but you can tweak distances for subtlety
+@keyframes meteor {
+  0% {
+    opacity: 1;
+    margin-top: -300px;
+    margin-right: -300px;
+  }
+  12% {
+    opacity: 0; // fade out early to stay subtle
+  }
+  15% {
+    margin-top: 300px;
+    margin-left: -600px;
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+// ===== Respect reduced motion =====
+@media (prefers-reduced-motion: reduce) {
+  @for $i from 1 through $n {
+    .meteor-#{$i} {
+      animation: none !important;
+      opacity: 0.2; // keep them faint and static
+    }
+  }
+}

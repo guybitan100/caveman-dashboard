@@ -1,0 +1,537 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.4 [39m[90m/Users/guy.bitan/Projects/performance-web-core/six2[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [31m❯[39m src/types/__tests__/storyParams.test.ts [2m([22m[2m28 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 13[2mms[22m[39m
+     [32m✓[39m DELETED_STATE_OPTIONS has 3 options[32m 1[2mms[22m[39m
+     [32m✓[39m LOCATION_CATEGORY_OPTIONS has entries[32m 0[2mms[22m[39m
+     [32m✓[39m MESSAGE_STATUS_OPTIONS has 2 options[32m 1[2mms[22m[39m
+     [32m✓[39m CALL_DIRECTION_OPTIONS has 3 options[32m 0[2mms[22m[39m
+     [32m✓[39m CALL_TYPE_OPTIONS has 6 options[32m 0[2mms[22m[39m
+     [32m✓[39m EMAIL_FOLDER_OPTIONS has 2 options[32m 0[2mms[22m[39m
+     [32m✓[39m POWERING_EVENT_TYPE_OPTIONS has 6 options[32m 0[2mms[22m[39m
+     [32m✓[39m FILE_STORY_TYPES includes media types[32m 0[2mms[22m[39m
+     [32m✓[39m GROUP_STORY_TYPES includes chat and route[32m 0[2mms[22m[39m
+     [32m✓[39m returns config for location[32m 0[2mms[22m[39m
+     [32m✓[39m returns config for call[32m 0[2mms[22m[39m
+     [32m✓[39m returns config for sms/mms[32m 0[2mms[22m[39m
+     [32m✓[39m returns config for email[32m 0[2mms[22m[39m
+     [32m✓[39m returns config for image[32m 0[2mms[22m[39m
+[31m     [31m×[31m returns empty array for unknown type[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m creates defaults for location[39m[32m 1[2mms[22m[39m
+     [32m✓[39m creates defaults for contact[32m 0[2mms[22m[39m
+     [32m✓[39m creates defaults for app[32m 0[2mms[22m[39m
+[31m     [31m×[31m creates defaults for call[39m[32m 0[2mms[22m[39m
+     [32m✓[39m creates defaults for image[32m 0[2mms[22m[39m
+[31m     [31m×[31m returns empty object for unknown type[39m[32m 0[2mms[22m[39m
+     [32m✓[39m returns true for image[32m 0[2mms[22m[39m
+     [32m✓[39m returns true for video[32m 0[2mms[22m[39m
+     [32m✓[39m returns false for location[32m 0[2mms[22m[39m
+     [32m✓[39m returns false for call[32m 0[2mms[22m[39m
+     [32m✓[39m returns true for chat[32m 0[2mms[22m[39m
+     [32m✓[39m returns true for route[32m 0[2mms[22m[39m
+     [32m✓[39m returns false for image[32m 0[2mms[22m[39m
+ [31m❯[39m src/stores/__tests__/ufdrRuntimeStore.test.ts [2m([22m[2m42 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 24[2mms[22m[39m
+       [32m✓[39m should have default form state[32m 1[2mms[22m[39m
+       [32m✓[39m should have empty job[32m 0[2mms[22m[39m
+       [32m✓[39m should have builder as active tab[32m 0[2mms[22m[39m
+       [32m✓[39m should update a form field[32m 1[2mms[22m[39m
+       [32m✓[39m should update boolean fields[32m 0[2mms[22m[39m
+       [32m✓[39m should update string fields[32m 0[2mms[22m[39m
+       [32m✓[39m should change active tab[32m 0[2mms[22m[39m
+       [32m✓[39m should toggle console visibility[32m 0[2mms[22m[39m
+       [32m✓[39m should close popout when toggling[32m 0[2mms[22m[39m
+       [32m✓[39m should toggle popout and ensure visible[32m 0[2mms[22m[39m
+       [32m✓[39m returns false when idle[32m 0[2mms[22m[39m
+       [32m✓[39m returns true when running[32m 0[2mms[22m[39m
+       [32m✓[39m returns false when no local file selected[32m 0[2mms[22m[39m
+       [32m✓[39m returns true when local file is in files list[32m 0[2mms[22m[39m
+       [32m✓[39m returns true for S3 mode with evidence id[32m 0[2mms[22m[39m
+       [32m✓[39m returns false for S3 mode without evidence id[32m 0[2mms[22m[39m
+       [32m✓[39m returns null when no file selected[32m 0[2mms[22m[39m
+       [32m✓[39m returns file details when matched[32m 0[2mms[22m[39m
+       [32m✓[39m sets console visible[32m 0[2mms[22m[39m
+       [32m✓[39m sets console popped out[32m 0[2mms[22m[39m
+       [32m✓[39m loads files and auto-selects first[32m 1[2mms[22m[39m
+       [32m✓[39m handles error[32m 0[2mms[22m[39m
+       [32m✓[39m handles non-Error thrown values[32m 0[2mms[22m[39m
+       [32m✓[39m keeps existing selection if file still in list[32m 1[2mms[22m[39m
+       [32m✓[39m updates job snapshot[32m 0[2mms[22m[39m
+       [32m✓[39m shows console when job starts running[32m 0[2mms[22m[39m
+       [32m✓[39m loads app info[32m 1[2mms[22m[39m
+       [32m✓[39m loads system stats[32m 1[2mms[22m[39m
+       [32m✓[39m silently handles error[32m 0[2mms[22m[39m
+       [32m✓[39m calls all loaders in parallel[32m 1[2mms[22m[39m
+[31m       [31m×[31m sets pageError on failure[39m[32m 4[2mms[22m[39m
+       [32m✓[39m sets error when canSubmit is false[32m 0[2mms[22m[39m
+       [32m✓[39m runs summary and updates state[32m 1[2mms[22m[39m
+       [32m✓[39m handles summary error[32m 1[2mms[22m[39m
+       [32m✓[39m sets error when canSubmit is false[32m 1[2mms[22m[39m
+       [32m✓[39m delegates to handlePreviewSummary for summary mode[32m 1[2mms[22m[39m
+       [32m✓[39m runs job for non-summary mode[32m 0[2mms[22m[39m
+       [32m✓[39m handles run error[32m 1[2mms[22m[39m
+       [32m✓[39m cancels and updates job[32m 1[2mms[22m[39m
+       [32m✓[39m handles cancel error[32m 1[2mms[22m[39m
+       [32m✓[39m resets and reloads[32m 0[2mms[22m[39m
+       [32m✓[39m handles reset error[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/__tests__/downloadService.test.ts [2m([22m[2m24 tests[22m[2m)[22m[33m 391[2mms[22m[39m
+ [32m✓[39m src/api/__tests__/draftApi.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+[90mstderr[2m | src/stores/__tests__/metafinderStore.test.ts[2m > [22m[2mmetafinderStore[2m > [22m[2mhandles initialization error
+[22m[39mMetaFinder initialization failed: Error: API down
+    at [90m/Users/guy.bitan/Projects/performance-web-core/six2/[39msrc/stores/__tests__/metafinderStore.test.ts:69:47
+    at [90mfile:///Users/guy.bitan/Projects/performance-web-core/six2/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:302:11
+    at [90mfile:///Users/guy.bitan/Projects/performance-web-core/six2/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:1903:26
+    at [90mfile:///Users/guy.bitan/Projects/performance-web-core/six2/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel [90m(file:///Users/guy.bitan/Projects/performance-web-core/six2/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2323:10[90m)[39m
+    at [90mfile:///Users/guy.bitan/Projects/performance-web-core/six2/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/guy.bitan/Projects/performance-web-core/six2/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2272:10[90m)[39m
+    at [90mfile:///Users/guy.bitan/Projects/performance-web-core/six2/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2955:64
+
+[90mstderr[2m | src/stores/__tests__/metafinderStore.test.ts[2m > [22m[2mmetafinderStore[2m > [22m[2mhandles non-Error thrown values
+[22m[39mMetaFinder initialization failed: string error
+
+ [32m✓[39m src/stores/__tests__/metafinderStore.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 59[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/InventoryTab.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 129[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/JobStatusIndicator.test.tsx [2m([22m[2m22 tests[22m[2m)[22m[32m 149[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/ConsolePanel.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 130[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/NewJobButton.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[32m 253[2mms[22m[39m
+ [32m✓[39m src/components/download/__tests__/DownloadProgress.test.tsx [2m([22m[2m33 tests[22m[2m)[22m[33m 342[2mms[22m[39m
+ [32m✓[39m src/components/download/__tests__/BrowserWarning.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[32m 266[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/SearchBar.test.tsx [2m([22m[2m19 tests[22m[2m)[22m[33m 513[2mms[22m[39m
+ [32m✓[39m src/api/__tests__/uploadsApi.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/JobCard.test.tsx [2m([22m[2m30 tests[22m[2m)[22m[33m 585[2mms[22m[39m
+[90mstderr[2m | src/components/cart/__tests__/RightSidebar.test.tsx[2m > [22m[2mRightSidebar - Job Status Display Tests[2m > [22m[2mStatus Transition Scenarios[2m > [22m[2mshould correctly transition from Draft to Done and show Download
+[22m[39mWarning: An update to RightSidebar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at RightSidebar (/Users/guy.bitan/Projects/performance-web-core/six2/src/components/cart/RightSidebar.tsx:289:109)
+    at DefaultPropsProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/DefaultPropsProvider/DefaultPropsProvider.js:17:3)
+    at RtlProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/RtlProvider/index.js:15:3)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/private-theming/node/ThemeProvider/ThemeProvider.js:40:5)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/ThemeProvider/ThemeProvider.js:56:5)
+    at ThemeProviderNoVars (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProviderNoVars.js:15:10)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProvider.js:16:3)
+    at Wrapper (/Users/guy.bitan/Projects/performance-web-core/six2/src/test/utils/test-utils.tsx:12:24)
+Warning: An update to RightSidebar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at RightSidebar (/Users/guy.bitan/Projects/performance-web-core/six2/src/components/cart/RightSidebar.tsx:289:109)
+    at DefaultPropsProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/DefaultPropsProvider/DefaultPropsProvider.js:17:3)
+    at RtlProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/RtlProvider/index.js:15:3)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/private-theming/node/ThemeProvider/ThemeProvider.js:40:5)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/ThemeProvider/ThemeProvider.js:56:5)
+    at ThemeProviderNoVars (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProviderNoVars.js:15:10)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProvider.js:16:3)
+    at Wrapper (/Users/guy.bitan/Projects/performance-web-core/six2/src/test/utils/test-utils.tsx:12:24)
+
+[90mstderr[2m | src/components/cart/__tests__/RightSidebar.test.tsx[2m > [22m[2mRightSidebar - Job Status Display Tests[2m > [22m[2mStatus Transition Scenarios[2m > [22m[2mshould correctly show processing states during generation
+[22m[39mWarning: An update to RightSidebar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at RightSidebar (/Users/guy.bitan/Projects/performance-web-core/six2/src/components/cart/RightSidebar.tsx:289:109)
+    at DefaultPropsProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/DefaultPropsProvider/DefaultPropsProvider.js:17:3)
+    at RtlProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/RtlProvider/index.js:15:3)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/private-theming/node/ThemeProvider/ThemeProvider.js:40:5)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/ThemeProvider/ThemeProvider.js:56:5)
+    at ThemeProviderNoVars (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProviderNoVars.js:15:10)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProvider.js:16:3)
+    at Wrapper (/Users/guy.bitan/Projects/performance-web-core/six2/src/test/utils/test-utils.tsx:12:24)
+Warning: An update to RightSidebar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at RightSidebar (/Users/guy.bitan/Projects/performance-web-core/six2/src/components/cart/RightSidebar.tsx:289:109)
+    at DefaultPropsProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/DefaultPropsProvider/DefaultPropsProvider.js:17:3)
+    at RtlProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/RtlProvider/index.js:15:3)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/private-theming/node/ThemeProvider/ThemeProvider.js:40:5)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/ThemeProvider/ThemeProvider.js:56:5)
+    at ThemeProviderNoVars (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProviderNoVars.js:15:10)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProvider.js:16:3)
+    at Wrapper (/Users/guy.bitan/Projects/performance-web-core/six2/src/test/utils/test-utils.tsx:12:24)
+Warning: An update to RightSidebar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at RightSidebar (/Users/guy.bitan/Projects/performance-web-core/six2/src/components/cart/RightSidebar.tsx:289:109)
+    at DefaultPropsProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/DefaultPropsProvider/DefaultPropsProvider.js:17:3)
+    at RtlProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/RtlProvider/index.js:15:3)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/private-theming/node/ThemeProvider/ThemeProvider.js:40:5)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/ThemeProvider/ThemeProvider.js:56:5)
+    at ThemeProviderNoVars (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProviderNoVars.js:15:10)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProvider.js:16:3)
+    at Wrapper (/Users/guy.bitan/Projects/performance-web-core/six2/src/test/utils/test-utils.tsx:12:24)
+Warning: An update to RightSidebar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at RightSidebar (/Users/guy.bitan/Projects/performance-web-core/six2/src/components/cart/RightSidebar.tsx:289:109)
+    at DefaultPropsProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/DefaultPropsProvider/DefaultPropsProvider.js:17:3)
+    at RtlProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/RtlProvider/index.js:15:3)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/private-theming/node/ThemeProvider/ThemeProvider.js:40:5)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/ThemeProvider/ThemeProvider.js:56:5)
+    at ThemeProviderNoVars (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProviderNoVars.js:15:10)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProvider.js:16:3)
+    at Wrapper (/Users/guy.bitan/Projects/performance-web-core/six2/src/test/utils/test-utils.tsx:12:24)
+Warning: An update to RightSidebar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at RightSidebar (/Users/guy.bitan/Projects/performance-web-core/six2/src/components/cart/RightSidebar.tsx:289:109)
+    at DefaultPropsProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/DefaultPropsProvider/DefaultPropsProvider.js:17:3)
+    at RtlProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/RtlProvider/index.js:15:3)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/private-theming/node/ThemeProvider/ThemeProvider.js:40:5)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/ThemeProvider/ThemeProvider.js:56:5)
+    at ThemeProviderNoVars (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProviderNoVars.js:15:10)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProvider.js:16:3)
+    at Wrapper (/Users/guy.bitan/Projects/performance-web-core/six2/src/test/utils/test-utils.tsx:12:24)
+Warning: An update to RightSidebar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at RightSidebar (/Users/guy.bitan/Projects/performance-web-core/six2/src/components/cart/RightSidebar.tsx:289:109)
+    at DefaultPropsProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/DefaultPropsProvider/DefaultPropsProvider.js:17:3)
+    at RtlProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/RtlProvider/index.js:15:3)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/private-theming/node/ThemeProvider/ThemeProvider.js:40:5)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/ThemeProvider/ThemeProvider.js:56:5)
+    at ThemeProviderNoVars (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProviderNoVars.js:15:10)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProvider.js:16:3)
+    at Wrapper (/Users/guy.bitan/Projects/performance-web-core/six2/src/test/utils/test-utils.tsx:12:24)
+Warning: An update to RightSidebar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at RightSidebar (/Users/guy.bitan/Projects/performance-web-core/six2/src/components/cart/RightSidebar.tsx:289:109)
+    at DefaultPropsProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/DefaultPropsProvider/DefaultPropsProvider.js:17:3)
+    at RtlProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/RtlProvider/index.js:15:3)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/private-theming/node/ThemeProvider/ThemeProvider.js:40:5)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/ThemeProvider/ThemeProvider.js:56:5)
+    at ThemeProviderNoVars (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProviderNoVars.js:15:10)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProvider.js:16:3)
+    at Wrapper (/Users/guy.bitan/Projects/performance-web-core/six2/src/test/utils/test-utils.tsx:12:24)
+Warning: An update to RightSidebar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at RightSidebar (/Users/guy.bitan/Projects/performance-web-core/six2/src/components/cart/RightSidebar.tsx:289:109)
+    at DefaultPropsProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/DefaultPropsProvider/DefaultPropsProvider.js:17:3)
+    at RtlProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/RtlProvider/index.js:15:3)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/private-theming/node/ThemeProvider/ThemeProvider.js:40:5)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/ThemeProvider/ThemeProvider.js:56:5)
+    at ThemeProviderNoVars (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProviderNoVars.js:15:10)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProvider.js:16:3)
+    at Wrapper (/Users/guy.bitan/Projects/performance-web-core/six2/src/test/utils/test-utils.tsx:12:24)
+
+[90mstderr[2m | src/components/cart/__tests__/RightSidebar.test.tsx[2m > [22m[2mRightSidebar - Job Status Display Tests[2m > [22m[2mRegression: Job Status from Sidebar Selection[2m > [22m[2mshould maintain correct status when switching between jobs
+[22m[39mWarning: An update to RightSidebar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at RightSidebar (/Users/guy.bitan/Projects/performance-web-core/six2/src/components/cart/RightSidebar.tsx:289:109)
+    at DefaultPropsProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/DefaultPropsProvider/DefaultPropsProvider.js:17:3)
+    at RtlProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/RtlProvider/index.js:15:3)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/private-theming/node/ThemeProvider/ThemeProvider.js:40:5)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/ThemeProvider/ThemeProvider.js:56:5)
+    at ThemeProviderNoVars (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProviderNoVars.js:15:10)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProvider.js:16:3)
+    at Wrapper (/Users/guy.bitan/Projects/performance-web-core/six2/src/test/utils/test-utils.tsx:12:24)
+Warning: An update to RightSidebar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at RightSidebar (/Users/guy.bitan/Projects/performance-web-core/six2/src/components/cart/RightSidebar.tsx:289:109)
+    at DefaultPropsProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/DefaultPropsProvider/DefaultPropsProvider.js:17:3)
+    at RtlProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/RtlProvider/index.js:15:3)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/private-theming/node/ThemeProvider/ThemeProvider.js:40:5)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/ThemeProvider/ThemeProvider.js:56:5)
+    at ThemeProviderNoVars (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProviderNoVars.js:15:10)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProvider.js:16:3)
+    at Wrapper (/Users/guy.bitan/Projects/performance-web-core/six2/src/test/utils/test-utils.tsx:12:24)
+Warning: An update to RightSidebar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at RightSidebar (/Users/guy.bitan/Projects/performance-web-core/six2/src/components/cart/RightSidebar.tsx:289:109)
+    at DefaultPropsProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/DefaultPropsProvider/DefaultPropsProvider.js:17:3)
+    at RtlProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/RtlProvider/index.js:15:3)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/private-theming/node/ThemeProvider/ThemeProvider.js:40:5)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/system/ThemeProvider/ThemeProvider.js:56:5)
+    at ThemeProviderNoVars (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProviderNoVars.js:15:10)
+    at ThemeProvider (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@mui/material/node/styles/ThemeProvider.js:16:3)
+    at Wrapper (/Users/guy.bitan/Projects/performance-web-core/six2/src/test/utils/test-utils.tsx:12:24)
+
+ [32m✓[39m src/components/cart/__tests__/RightSidebar.test.tsx [2m([22m[2m16 tests[22m[2m)[22m[32m 149[2mms[22m[39m
+ [32m✓[39m src/api/__tests__/pipelineApi.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/api/__tests__/metafinderApi.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/ufdrRuntime.test.ts [2m([22m[2m51 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/date.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/stores/__tests__/jobStore.test.ts [2m([22m[2m34 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/components/cart/dialogs/__tests__/RandomEventsDialog.test.tsx [2m([22m[2m24 tests[22m[2m)[22m[33m 1014[2mms[22m[39m
+[90mstderr[2m | src/contexts/__tests__/AuthContext.test.tsx[2m > [22m[2mAuthContext[2m > [22m[2mthrows when used outside provider
+[22m[39mThe above error occurred in the <TestComponent> component:
+
+    at TestComponent (/Users/guy.bitan/Projects/performance-web-core/six2/node_modules/@testing-library/react/dist/pure.js:328:5)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+ [32m✓[39m src/contexts/__tests__/AuthContext.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/SummaryTab.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/stores/__tests__/cartStore.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/api/__tests__/ufdrRuntimeApi.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/api/__tests__/deviceModelsApi.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 16[2mms[22m[39m
+[90mstderr[2m | src/stores/__tests__/deviceModelsStore.test.ts[2m > [22m[2mdeviceModelsStore[2m > [22m[2mhandles initialization error
+[22m[39mDevice models initialization failed: Error: Network error
+    at [90m/Users/guy.bitan/Projects/performance-web-core/six2/[39msrc/stores/__tests__/deviceModelsStore.test.ts:52:47
+    at [90mfile:///Users/guy.bitan/Projects/performance-web-core/six2/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:302:11
+    at [90mfile:///Users/guy.bitan/Projects/performance-web-core/six2/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:1903:26
+    at [90mfile:///Users/guy.bitan/Projects/performance-web-core/six2/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel [90m(file:///Users/guy.bitan/Projects/performance-web-core/six2/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2323:10[90m)[39m
+    at [90mfile:///Users/guy.bitan/Projects/performance-web-core/six2/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/guy.bitan/Projects/performance-web-core/six2/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2272:10[90m)[39m
+    at [90mfile:///Users/guy.bitan/Projects/performance-web-core/six2/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2955:64
+
+[90mstderr[2m | src/stores/__tests__/deviceModelsStore.test.ts[2m > [22m[2mdeviceModelsStore[2m > [22m[2mhandles non-Error thrown values
+[22m[39mDevice models initialization failed: string error
+
+ [32m✓[39m src/stores/__tests__/deviceModelsStore.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/api/__tests__/jobsApi.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/userStorage.test.ts [2m([22m[2m28 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/stores/__tests__/downloadStore.test.ts [2m([22m[2m32 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/stores/__tests__/conversationStore.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/stores/__tests__/taskProgressStore.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/api/__tests__/jobsApiExtra.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/types/__tests__/taskParams.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/types/__tests__/pipeline.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/types/__tests__/taskProgress.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/types/__tests__/cart.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/api/__tests__/ufdrApi.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/types/__tests__/job.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/entity.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/theme/__tests__/animations.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/storyIcons.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 5 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/stores/__tests__/ufdrRuntimeStore.test.ts[2m > [22mufdrRuntimeStore[2m > [22mloadAppBoot[2m > [22msets pageError on failure
+[31m[1mAssertionError[22m: expected null to be 'boot fail' // Object.is equality[39m
+
+[32m- Expected:[39m
+"boot fail"
+
+[31m+ Received:[39m
+null
+
+[36m [2m❯[22m src/stores/__tests__/ufdrRuntimeStore.test.ts:[2m365:56[22m[39m
+    [90m363|[39m       })[33m;[39m
+    [90m364|[39m
+    [90m365|[39m       expect(useUfdrRuntimeStore.getState().pageError).toBe("boot fail…
+    [90m   |[39m                                                        [31m^[39m
+    [90m366|[39m     })[33m;[39m
+    [90m367|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/types/__tests__/storyParams.test.ts[2m > [22mgetStoryFieldConfig[2m > [22mreturns empty array for unknown type
+[31m[1mAssertionError[22m: expected [ { name: 'text', …(5) }, …(4) ] to deeply equal [][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [][39m
+[31m+ [[39m
+[31m+   {[39m
+[31m+     "label": "Message",[39m
+[31m+     "name": "text",[39m
+[31m+     "placeholder": "Enter message text...",[39m
+[31m+     "required": true,[39m
+[31m+     "rows": 3,[39m
+[31m+     "type": "textarea",[39m
+[31m+   },[39m
+[31m+   {[39m
+[31m+     "label": "Timestamp",[39m
+[31m+     "name": "time",[39m
+[31m+     "required": true,[39m
+[31m+     "type": "datetime",[39m
+[31m+   },[39m
+[31m+   {[39m
+[31m+     "defaultValue": "Read",[39m
+[31m+     "label": "Status",[39m
+[31m+     "name": "status",[39m
+[31m+     "options": [[39m
+[31m+       "Sent",[39m
+[31m+       "Read",[39m
+[31m+     ],[39m
+[31m+     "type": "select",[39m
+[31m+   },[39m
+[31m+   {[39m
+[31m+     "label": "Attachments",[39m
+[31m+     "name": "attachments",[39m
+[31m+     "placeholder": "Select attachments (optional)",[39m
+[31m+     "storyRefTypes": [[39m
+[31m+       "image",[39m
+[31m+       "audio",[39m
+[31m+       "video",[39m
+[31m+       "document",[39m
+[31m+       "contact",[39m
+[31m+     ],[39m
+[31m+     "type": "story_refs",[39m
+[31m+   },[39m
+[31m+   {[39m
+[31m+     "defaultValue": false,[39m
+[31m+     "label": "Forwarded message",[39m
+[31m+     "name": "forwarded",[39m
+[31m+     "type": "boolean",[39m
+[31m+   },[39m
+[31m+ ][39m
+
+[36m [2m❯[22m src/types/__tests__/storyParams.test.ts:[2m95:20[22m[39m
+    [90m 93|[39m   [34mit[39m([32m'returns empty array for unknown type'[39m[33m,[39m () [33m=>[39m {
+    [90m 94|[39m     [35mconst[39m config [33m=[39m [34mgetStoryFieldConfig[39m([32m'chat message'[39m [35mas[39m any)[33m;[39m
+    [90m 95|[39m     [34mexpect[39m(config)[33m.[39m[34mtoEqual[39m([])[33m;[39m
+    [90m   |[39m                    [31m^[39m
+    [90m 96|[39m   })[33m;[39m
+    [90m 97|[39m })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/types/__tests__/storyParams.test.ts[2m > [22mcreateDefaultStoryParams[2m > [22mcreates defaults for location
+[31m[1mAssertionError[22m: expected 'Unknown' to be 'Mentioned' // Object.is equality[39m
+
+Expected: [32m"Mentioned"[39m
+Received: [31m"Unknown"[39m
+
+[36m [2m❯[22m src/types/__tests__/storyParams.test.ts:[2m103:29[22m[39m
+    [90m101|[39m     [35mconst[39m params [33m=[39m [34mcreateDefaultStoryParams[39m([32m'location'[39m)[33m;[39m
+    [90m102|[39m     [34mexpect[39m(params[33m.[39mcoordinate)[33m.[39m[34mtoEqual[39m({ latitude[33m:[39m [34m0[39m[33m,[39m longitude[33m:[39m [34m0[39m })[33m;[39m
+    [90m103|[39m     [34mexpect[39m(params[33m.[39mcategory)[33m.[39m[34mtoBe[39m([32m'Mentioned'[39m)[33m;[39m
+    [90m   |[39m                             [31m^[39m
+    [90m104|[39m   })[33m;[39m
+    [90m105|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/types/__tests__/storyParams.test.ts[2m > [22mcreateDefaultStoryParams[2m > [22mcreates defaults for call
+[31m[1mAssertionError[22m: expected {} to have property "direction"[39m
+[36m [2m❯[22m src/types/__tests__/storyParams.test.ts:[2m123:20[22m[39m
+    [90m121|[39m   [34mit[39m([32m'creates defaults for call'[39m[33m,[39m () [33m=>[39m {
+    [90m122|[39m     [35mconst[39m params [33m=[39m [34mcreateDefaultStoryParams[39m([32m'call'[39m)[33m;[39m
+    [90m123|[39m     [34mexpect[39m(params)[33m.[39m[34mtoHaveProperty[39m([32m'direction'[39m)[33m;[39m
+    [90m   |[39m                    [31m^[39m
+    [90m124|[39m   })[33m;[39m
+    [90m125|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/types/__tests__/storyParams.test.ts[2m > [22mcreateDefaultStoryParams[2m > [22mreturns empty object for unknown type
+[31m[1mAssertionError[22m: expected { status: 'Read', forwarded: false } to deeply equal {}[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- {}[39m
+[31m+ {[39m
+[31m+   "forwarded": false,[39m
+[31m+   "status": "Read",[39m
+[31m+ }[39m
+
+[36m [2m❯[22m src/types/__tests__/storyParams.test.ts:[2m133:20[22m[39m
+    [90m131|[39m   [34mit[39m([32m'returns empty object for unknown type'[39m[33m,[39m () [33m=>[39m {
+    [90m132|[39m     [35mconst[39m params [33m=[39m [34mcreateDefaultStoryParams[39m([32m'chat message'[39m [35mas[39m any)[33m;[39m
+    [90m133|[39m     [34mexpect[39m(params)[33m.[39m[34mtoEqual[39m({})[33m;[39m
+    [90m   |[39m                    [31m^[39m
+    [90m134|[39m   })[33m;[39m
+    [90m135|[39m })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m40 passed[39m[22m[90m (42)[39m
+[2m      Tests [22m [1m[31m5 failed[39m[22m[2m | [22m[1m[32m686 passed[39m[22m[90m (691)[39m
+[2m   Start at [22m 12:54:12
+[2m   Duration [22m 4.56s[2m (transform 2.69s, setup 11.64s, import 18.08s, tests 4.36s, environment 8.89s)[22m
+

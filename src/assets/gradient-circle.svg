@@ -1,0 +1,33 @@
+<svg width="1106" height="1106" viewBox="0 0 1106 1106" fill="none"
+    xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <filter id="blur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="100"/>
+        </filter>
+        <linearGradient id="outerGradient" x1="100%" y1="0%" x2="0%" y2="100%" gradientUnits="userSpaceOnUse">
+            <stop offset="0.12" stop-color="#3D1860"/>
+            <stop offset="0.15" stop-color="#351452"/>
+            <stop offset="0.22" stop-color="#280F40"/>
+            <stop offset="0.29" stop-color="#1A0A2D"/>
+            <stop offset="0.38" stop-color="#10051A"/>
+            <stop offset="0.48" stop-color="#08020E"/>
+            <stop offset="0.6" stop-color="#020006"/>
+            <stop offset="0.83" stop-color="#000000"/>
+        </linearGradient>
+        <linearGradient id="overlayGradient" x1="80%" y1="30%" x2="120%" y2="10%" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#4A3570" stop-opacity="0"/>
+            <stop offset="1" stop-color="#3E2368"/>
+        </linearGradient>
+        <linearGradient id="innerGradient" x1="0%" y1="100%" x2="50%" y2="50%" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#030B20"/>
+            <stop offset="1" stop-color="#5E3D80"/>
+        </linearGradient>
+    </defs>
+    <g style="mix-blend-mode:screen" opacity="0.9">
+        <circle cx="553" cy="553" r="553" fill="url(#outerGradient)" fill-opacity="0.6" style="mix-blend-mode:screen"/>
+        <circle cx="553" cy="553" r="553" fill="url(#overlayGradient)" fill-opacity="0.2"/>
+    </g>
+    <g style="mix-blend-mode:screen" opacity="0.9" filter="url(#blur)">
+        <circle cx="614" cy="442" r="415" fill="url(#innerGradient)" fill-opacity="0.6" style="mix-blend-mode:screen"/>
+    </g>
+</svg>
