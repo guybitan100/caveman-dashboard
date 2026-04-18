@@ -84,8 +84,8 @@ titan/
 │   └── README.md                 # Backend layout and run instructions
 ├── tools/
 │   └── titan-cli/                  # Legacy Titan project-management CLI adapted to this repo layout
-├── package.json
-└── build.sh
+├── package.json                  # npm workspace root
+└── ci/build.sh                   # CI build script
 ```
 
 ---
@@ -104,7 +104,7 @@ cd titan-web-core
 npm install
 ```
 
-For local web-to-backend wiring, copy `.env.example` to `.env` if you do not already have a local Vite env file.
+For local web-to-backend wiring, copy `web/.env.example` to `web/.env` if you do not already have a local Vite env file.
 
 ### Development
 

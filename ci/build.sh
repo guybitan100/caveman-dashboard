@@ -1,5 +1,9 @@
 #!/bin/bash
 set -ex
+
+# Navigate to repo root
+cd "$(dirname "$0")/.."
+
 npm config set --location project legacy-peer-deps=true
 npm install
 
