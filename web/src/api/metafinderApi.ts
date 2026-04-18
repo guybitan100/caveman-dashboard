@@ -1,7 +1,8 @@
 import axios from "axios";
+import { SIX_METAFINDER_BASE_URL } from "./config.ts";
 
 const metafinderClient = axios.create({
-  baseURL: import.meta.env.VITE_SIX_METAFINDER_URL,
+  baseURL: SIX_METAFINDER_BASE_URL,
   timeout: 30000,
 });
 

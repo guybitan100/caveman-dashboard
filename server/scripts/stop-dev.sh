@@ -30,5 +30,6 @@ stop_service() {
 
 stop_service "API" "$SERVER_ROOT/logs/api.pid"
 stop_service "Metafinder" "$SERVER_ROOT/logs/metafinder.pid"
+stop_service "AI Generator" "$SERVER_ROOT/logs/ai-generator.pid"
 
 echo "All tracked server services are stopped"

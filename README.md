@@ -6,7 +6,7 @@ The repository is split by ownership boundary:
 - `web/` contains the current React/Vite application and all frontend tests.
 - `server/` contains the imported SiX backend services, shared Python libraries, local backend clients, and Dockerfiles.
 
-The current repository now contains the web client plus the available SiX backend snapshot. The separate UFDR runtime server used by the web app is still external to this repository.
+The current repository now contains the web client plus the available SiX backend snapshot. The separate UFDR runtime server used by the web app is still missing; its expected contract is documented under `server/src/backend/services/ufdr-runtime/`.
 
 ---
 
@@ -95,6 +95,8 @@ cd titan-web-core
 npm install
 ```
 
+For local web-to-backend wiring, copy `.env.example` to `.env` if you do not already have a local Vite env file.
+
 ### Development
 ```bash
 npm run dev
@@ -106,11 +108,13 @@ Opens Vite dev server at `http://localhost:5176`.
 npm run server:start
 ```
 
-Starts the imported API and Metafinder services from `server/`. Stop them with:
+Starts the imported API, Metafinder, and AI Generator services from `server/` using local ports `8000`, `8001`, and `8002`. Stop them with:
 
 ```bash
 npm run server:stop
 ```
+
+Backend services still require a populated `server/.env`. Start from `server/example.env`.
 
 ### Build
 ```bash
@@ -147,7 +151,9 @@ npm run lint
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `VITE_SIX_API_URL` | Base URL for the Six UFDR generation API | — |
+| `VITE_SIX_API_URL` | Base URL for the Six UFDR generation API | `http://localhost:8000` |
+| `VITE_SIX_METAFINDER_URL` | Base URL for the MetaFinder backend | `http://localhost:8001` |
+| `VITE_AI_GENERATOR_URL` | Base URL for the AI generation pipeline service | `http://localhost:8002` |
 | `VITE_UFDR_RUNTIME_URL` | Base URL for the UFDR runtime server | `http://localhost:8081` |
 
 ---
@@ -179,7 +185,7 @@ The `server/` directory contains the imported SiX backend snapshot with:
 - services under `server/src/backend/services`
 - local Python client packages under `server/src/clients`
 
-This backend tree covers the SiX generation/API side. The UFDR runtime server consumed by `ufdrRuntimeApi` was not present in the source snapshot and remains external.
+This backend tree covers the SiX generation/API side. The UFDR runtime server consumed by `ufdrRuntimeApi` was not present in the source snapshot; the missing contract is documented in `server/src/backend/services/ufdr-runtime/README.md`.
 
 ### Testing Strategy
 - **Unit tests** with Vitest + Testing Library (440+ tests)

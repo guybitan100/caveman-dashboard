@@ -9,8 +9,9 @@ import {
   JobStatusResponse,
   SubmittedJob,
 } from "../types/pipeline.ts";
+import { SIX_API_UFDR_BASE_URL } from "./config.ts";
 
-const API_BASE_URL = import.meta.env.VITE_SIX_API_URL + "/UFDR";
+const API_BASE_URL = SIX_API_UFDR_BASE_URL;
 
 /**
  * Generate a new UUID v4.

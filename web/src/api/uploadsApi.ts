@@ -1,7 +1,8 @@
 import axios from "axios";
+import { SIX_API_UFDR_BASE_URL } from "./config.ts";
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_SIX_API_URL + "/UFDR",
+  baseURL: SIX_API_UFDR_BASE_URL,
   timeout: 30000,
 });
 

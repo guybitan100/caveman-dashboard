@@ -6,12 +6,10 @@ import type {
   AppInfo,
   SystemStats,
 } from "../types/ufdrRuntime.ts";
-
-const RUNTIME_BASE_URL =
-  import.meta.env.VITE_UFDR_RUNTIME_URL || "http://localhost:8081";
+import { UFDR_RUNTIME_BASE_URL } from "./config.ts";
 
 export const runtimeClient = axios.create({
-  baseURL: RUNTIME_BASE_URL,
+  baseURL: UFDR_RUNTIME_BASE_URL,
   timeout: 30000,
 });
 

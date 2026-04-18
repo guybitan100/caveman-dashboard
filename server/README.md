@@ -6,6 +6,7 @@ This directory now contains the backend logic imported from the SiX snapshot tha
 
 - `src/backend/lib/` shared Python packages used across the services
 - `src/backend/services/` deployable services and server-side handlers
+- `src/backend/services/ufdr-runtime/` placeholder contract for the missing runtime service
 - `src/clients/` local Python client packages referenced by backend services
 - `docker/` Dockerfiles for backend deployments
 - `scripts/validate-connectivity/` backend connectivity validation tooling
@@ -19,6 +20,7 @@ This directory now contains the backend logic imported from the SiX snapshot tha
 - `ai-generator/` AI generation service package
 - `llm-gateway/` LiteLLM proxy package
 - `location_thumbnail/` Node-based thumbnail helper
+- `ufdr-runtime/` placeholder for the still-missing runtime backend
 
 ## Local Development
 
@@ -38,6 +40,7 @@ This starts:
 
 - API on `http://localhost:8000`
 - Metafinder on `http://localhost:8001`
+- AI Generator on `http://localhost:8002`
 
 Stop them with:
 
@@ -49,5 +52,8 @@ Logs are written to `server/logs/`.
 
 ## Notes
 
+- Copy `server/example.env` to `server/.env` and fill the backend-specific values before starting services.
+- `server/scripts/start-dev.sh` pins the local development URLs used by the web app and by the backend service-to-service calls.
 - The imported backend tree preserves the original relative paths used by the service `pyproject.toml` files.
 - The separate UFDR runtime server used by `web/src/api/ufdrRuntimeApi.ts` was not present in the SiX snapshot and is still not implemented inside this repository.
+- The missing runtime contract is documented in `server/src/backend/services/ufdr-runtime/README.md`.
