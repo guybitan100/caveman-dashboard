@@ -2,6 +2,12 @@
 
 **Titan** is a unified UFDR (Unified Forensic Data Repository) platform that combines AI-powered UFDR generation with a full UFDR runtime creation center. Built with React 18, Material-UI 6, TypeScript, Vite, Zustand, and SWR.
 
+The repository is split by ownership boundary:
+- `web/` contains the current React/Vite application and all frontend tests.
+- `server/` is reserved for in-repo backend/runtime logic.
+
+At the moment, this repository only contains the web client. The backend services described below are external services consumed over HTTP.
+
 ---
 
 ## Features
@@ -42,65 +48,32 @@
 
 ```
 titan/
-├── src/
-│   ├── api/                      # API client modules
-│   │   ├── jobsApi.ts            # Job CRUD + task progress
-│   │   ├── pipelineApi.ts        # 7-step AI pipeline endpoints
-│   │   ├── ufdrApi.ts            # UFDR submission + status polling
-│   │   ├── ufdrRuntimeApi.ts     # UFDR runtime backend (health, files, run, cancel)
-│   │   ├── draftApi.ts           # Draft entity/story management
-│   │   ├── metafinderApi.ts      # MetaFinder data types
-│   │   └── uploadsApi.ts         # File uploads
-│   ├── components/
-│   │   ├── layout/               # AppLayout, SplitScreenLayout
-│   │   ├── home/                 # HomeHeader, GenerateInput
-│   │   ├── chat/                 # ChatPanel (conversational pipeline)
-│   │   ├── generation/           # GenerationPanel (pipeline steps)
-│   │   ├── sidebar/              # LeftSidebar, JobCard, SearchBar
-│   │   ├── cart/                 # RightSidebar, AccordionSection
-│   │   ├── download/             # DownloadIndicator, DownloadProgress
-│   │   ├── ufdr-runtime/         # UFDR Creation Center components
-│   │   │   ├── UfdrRuntimePage   # Main page shell with tabs + header
-│   │   │   ├── BuilderTab        # Request configuration form
-│   │   │   ├── LaunchTab         # Launch review + console
-│   │   │   ├── SummaryTab        # Summary output display
-│   │   │   ├── InventoryTab      # Local UFDR file browser
-│   │   │   └── ConsolePanel      # Live log stream with filtering
-│   │   ├── shared/               # Reusable UI elements
-│   │   └── icons/                # SVG icon components
-│   ├── stores/                   # Zustand state stores
-│   │   ├── conversationStore.ts  # AI pipeline conversation state
-│   │   ├── jobStore.ts           # Job list + selection
-│   │   ├── cartStore.ts          # Current job entities/tasks
-│   │   ├── ufdrRuntimeStore.ts   # UFDR runtime form + job state
-│   │   ├── downloadStore.ts      # Download tracking
-│   │   ├── taskProgressStore.ts  # Task progress polling
-│   │   ├── metafinderStore.ts    # MetaFinder options cache
-│   │   └── deviceModelsStore.ts  # Device model catalog
-│   ├── types/                    # TypeScript type definitions
-│   │   ├── ufdrRuntime.ts        # Runtime types (FormState, JobSnapshot, etc.)
-│   │   ├── job.ts                # Job status + list types
-│   │   ├── pipeline.ts           # Pipeline step configuration
-│   │   ├── cart.ts               # Cart/entity/story types
-│   │   ├── taskParams.ts         # Event-specific parameter types
-│   │   └── taskProgress.ts       # Task progress types
-│   ├── utils/
-│   │   ├── ufdrRuntime.ts        # Runtime utilities (formatting, command preview, log classification)
-│   │   └── userStorage.ts        # User persistence
-│   ├── contexts/                 # React contexts (Auth)
-│   ├── hooks/                    # Custom hooks
-│   ├── services/                 # Business logic services
-│   ├── theme/                    # MUI theme configuration
-│   ├── pages/                    # Page-level components
-│   ├── test/                     # Test setup + utilities
-│   ├── App.tsx                   # Root component with view switching
-│   └── main.tsx                  # Vite entry point
-├── e2e/                          # Playwright E2E tests
+├── web/
+│   ├── src/
+│   │   ├── api/                  # API client modules
+│   │   ├── components/           # React UI components
+│   │   ├── stores/               # Zustand state stores
+│   │   ├── types/                # TypeScript types
+│   │   ├── utils/                # Frontend utilities
+│   │   ├── contexts/             # React contexts
+│   │   ├── hooks/                # Custom hooks
+│   │   ├── services/             # Browser-side service logic
+│   │   ├── theme/                # MUI theme configuration
+│   │   ├── pages/                # Page-level components
+│   │   ├── test/                 # Test setup + utilities
+│   │   ├── App.tsx               # Root component with view switching
+│   │   └── main.tsx              # Vite entry point
+│   ├── public/                   # Static assets served by Vite
+│   ├── e2e/                      # Playwright E2E tests
+│   ├── index.html                # Vite HTML entry
+│   ├── vite.config.ts            # Vite config for the web app
+│   ├── vitest.config.ts          # Vitest config for the web app
+│   ├── playwright.config.ts      # Playwright config for the web app
+│   └── tsconfig.json             # TypeScript project refs for the web app
+├── server/
+│   └── README.md                 # Placeholder for future in-repo backend logic
 ├── package.json
-├── vite.config.ts
-├── vitest.config.ts
-├── tsconfig.json
-└── tsconfig.app.json
+└── build.sh
 ```
 
 ---
@@ -113,7 +86,7 @@ titan/
 
 ### Install dependencies
 ```bash
-cd titan
+cd titan-web-core
 npm install
 ```
 
