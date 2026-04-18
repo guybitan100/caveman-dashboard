@@ -25,23 +25,9 @@ class CryptoGenerator(DataGenerator):
         return artifact
 
     def generate(self, n: int) -> Iterator[CryptoModel]:
-        """
-        Generate crypto artifacts.
-
-        Arguments:
-            n: The number of artifacts to generate.
-        """
         yield from (self._generate() for _ in range(n))
 
     def enrich_string(self, input_string: str) -> str:
-        """
-        Enrich a string with a crypto artifact.
-        If the crypto artifact is a mnemonic, replace the string with the artifact value.
-        Else add the artifact value in a random position in the string.
-
-        Arguments:
-            input_string: The string to enrich.
-        """
         artifact = self._generate()
 
         if artifact.type == "mnemonic":

@@ -16,9 +16,6 @@ from model.utils import AbstractData, AutoUID
 
 
 class StoryType(StrEnum):
-    """
-    Enum representing Titan supported stories.
-    """
 
     LOCATION = 'location'
     IMAGE = 'image'
@@ -124,12 +121,6 @@ class StoryData(AbstractData, ABC):
     )
 
     def get_story_ref_fields(self) -> dict[str, str | list[str] | None]:
-        """
-        Get all fields with StoryRef type and their values from a StoryData object.
-
-        Returns:
-            Dict mapping from the field name to the value(s) of each StoryRef field.
-        """
         return {
             field_name: getattr(self, field_name)
             for field_name in self.story_ref_fields
@@ -159,14 +150,6 @@ def _is_story_data(field_annotation: Any) -> bool:
 
 
 def story_data(story_type: StoryType) -> Callable:
-    """
-    Decorator method that globally registers a StoryData class to a StoryType
-
-    Examples:
-        >>> @story_data(story_type=StoryType.LOCATION)
-        ... class LocationStoryData(StoryData):
-        ...     ...
-    """
 
     def _register(data_class: type[StoryData]) -> type[StoryData]:
         if story_type in _story_data_registry:
@@ -184,15 +167,6 @@ def story_data(story_type: StoryType) -> Callable:
 
 
 def get_story_data_class(story_type: StoryType) -> type[StoryData]:
-    """
-    Get the data class by StoryType.
-
-    Arguments:
-        story_type: StoryType for the requested StoryData.
-
-    Returns:
-        StoryData inherited class for the StoryType.
-    """
     data_class = _story_data_registry.get(story_type)
     if data_class is None:  # Corresponding data class does not exist, raise error
         raise Exception(f'Story type {story_type} does not have a corresponding StoryData subclass')

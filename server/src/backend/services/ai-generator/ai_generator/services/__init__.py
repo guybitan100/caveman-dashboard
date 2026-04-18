@@ -1,4 +1,3 @@
-"""Services for the AI story generation pipeline."""
 
 from ai_generator.services.geocoding import (
     GeoCoordinates,

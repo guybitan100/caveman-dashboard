@@ -1,4 +1,3 @@
-"""Geocoding service using AWS Location Service for resolving place names to coordinates."""
 
 import asyncio
 import logging
@@ -13,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class GeoCoordinates(BaseModel):
-    """Geographic coordinates for a location."""
     
     latitude: float = Field(description="Latitude in decimal degrees")
     longitude: float = Field(description="Longitude in decimal degrees")
@@ -24,7 +22,6 @@ class GeoCoordinates(BaseModel):
 
 
 class GeocodingResult(BaseModel):
-    """Result of a geocoding lookup."""
     
     original_query: str = Field(description="The original place name queried")
     
@@ -73,7 +70,6 @@ class GeocodingResult(BaseModel):
 
 @dataclass
 class GeocodingConfig:
-    """Configuration for the geocoding service."""
     
     # AWS Location Service index name
     place_index_name: str = "titan-place-index"
@@ -97,11 +93,6 @@ class GeocodingConfig:
 
 
 class GeocodingService:
-    """
-    Service for geocoding place names to coordinates using AWS Location Service.
-    
-    Provides caching and fallback mechanisms for reliable coordinate resolution.
-    """
     
     def __init__(self, config: GeocodingConfig | None = None) -> None:
         self.config = config or GeocodingConfig()
@@ -109,7 +100,6 @@ class GeocodingService:
         self._cache: dict[str, GeocodingResult] = {}
     
     async def _get_client(self) -> Any:
-        """Get or create the AWS Location Service client."""
         if self._session is None:
             self._session = aioboto3.Session()
         return self._session.client(
@@ -118,7 +108,6 @@ class GeocodingService:
         )
     
     def _normalize_query(self, query: str) -> str:
-        """Normalize a query string for caching."""
         return query.lower().strip()
     
     async def geocode(
@@ -126,16 +115,6 @@ class GeocodingService:
         place_name: str,
         country_bias: str | None = None,
     ) -> GeocodingResult:
-        """
-        Geocode a place name to coordinates.
-        
-        Args:
-            place_name: Name of the place to geocode (e.g., "Central Park, New York")
-            country_bias: Optional ISO country code to bias results
-        
-        Returns:
-            GeocodingResult with coordinates if found
-        """
         normalized = self._normalize_query(place_name)
         
         # Check cache first
@@ -219,17 +198,6 @@ class GeocodingService:
         country_bias: str | None = None,
         concurrency: int = 5,
     ) -> dict[str, GeocodingResult]:
-        """
-        Geocode multiple place names concurrently.
-        
-        Args:
-            place_names: List of place names to geocode
-            country_bias: Optional ISO country code to bias results
-            concurrency: Max concurrent requests
-        
-        Returns:
-            Dict mapping place names to their geocoding results
-        """
         semaphore = asyncio.Semaphore(concurrency)
         
         async def geocode_with_semaphore(name: str) -> tuple[str, GeocodingResult]:
@@ -243,7 +211,6 @@ class GeocodingService:
         return dict(results)
     
     def clear_cache(self) -> None:
-        """Clear the geocoding cache."""
         self._cache.clear()
 
 
@@ -258,7 +225,6 @@ FALLBACK_COORDINATES: dict[str, GeoCoordinates] = {
 
 
 def get_fallback_coordinates(place_type: str) -> GeoCoordinates | None:
-    """Get fallback coordinates for common place types."""
     return FALLBACK_COORDINATES.get(place_type.lower())
 
 
@@ -267,7 +233,6 @@ _geocoding_service: GeocodingService | None = None
 
 
 def get_geocoding_service(config: GeocodingConfig | None = None) -> GeocodingService:
-    """Get the singleton geocoding service instance."""
     global _geocoding_service
     if _geocoding_service is None:
         _geocoding_service = GeocodingService(config)

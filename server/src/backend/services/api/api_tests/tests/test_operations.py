@@ -322,10 +322,8 @@ def test_missing_uploads(mocker: MockerFixture):
 
 
 class TestGetAllJobs:
-    """Tests for get_all_jobs operation with various filter combinations."""
 
     def test_get_all_jobs_with_status_filter(self, mocker: MockerFixture):
-        """Test filtering jobs by status."""
         db_patch = mocker.patch("titan_db.jobs.db_job_utils.get_all_jobs")
         mock_jobs = [{"id": "job-1", "status": "Done"}]
         db_patch.return_value = (mock_jobs, 1)
@@ -352,7 +350,6 @@ class TestGetAllJobs:
         )
 
     def test_get_all_jobs_with_exclude_status(self, mocker: MockerFixture):
-        """Test filtering jobs by exclude_status (e.g., exclude drafts)."""
         db_patch = mocker.patch("titan_db.jobs.db_job_utils.get_all_jobs")
         mock_jobs = [
             {"id": "job-1", "status": "Done"},
@@ -382,7 +379,6 @@ class TestGetAllJobs:
         )
 
     def test_get_all_jobs_with_user_filter(self, mocker: MockerFixture):
-        """Test filtering jobs by user."""
         db_patch = mocker.patch("titan_db.jobs.db_job_utils.get_all_jobs")
         mock_jobs = [{"id": "job-1", "user": "alice"}]
         db_patch.return_value = (mock_jobs, 1)
@@ -409,7 +405,6 @@ class TestGetAllJobs:
         )
 
     def test_get_all_jobs_with_name_search(self, mocker: MockerFixture):
-        """Test filtering jobs by name prefix."""
         db_patch = mocker.patch("titan_db.jobs.db_job_utils.get_all_jobs")
         mock_jobs = [{"id": "job-1", "name": "test-job-1"}]
         db_patch.return_value = (mock_jobs, 1)
@@ -436,7 +431,6 @@ class TestGetAllJobs:
         )
 
     def test_get_all_jobs_pagination(self, mocker: MockerFixture):
-        """Test pagination with different page sizes."""
         db_patch = mocker.patch("titan_db.jobs.db_job_utils.get_all_jobs")
         mock_jobs = [{"id": f"job-{i}"} for i in range(10)]
         db_patch.return_value = (mock_jobs, 50)
@@ -465,7 +459,6 @@ class TestGetAllJobs:
         )
 
     def test_get_all_jobs_with_event_type_filter(self, mocker: MockerFixture):
-        """Test filtering jobs by event type."""
         db_patch = mocker.patch("titan_db.jobs.db_job_utils.get_all_jobs")
         mock_jobs = [{"id": "job-1", "event_types": ["chat messages"]}]
         db_patch.return_value = (mock_jobs, 1)
@@ -492,7 +485,6 @@ class TestGetAllJobs:
         )
 
     def test_get_all_jobs_empty_result(self, mocker: MockerFixture):
-        """Test handling empty results."""
         db_patch = mocker.patch("titan_db.jobs.db_job_utils.get_all_jobs")
         db_patch.return_value = ([], 0)
 
@@ -512,10 +504,8 @@ class TestGetAllJobs:
 
 
 class TestReRunJob:
-    """Tests for re-run job operation."""
 
     def test_re_run_draft_job_raises_exception(self, mocker: MockerFixture):
-        """Test that re-running a draft job raises an exception."""
         mocker.patch(
             "titan_db.jobs.db_job_utils.get_job_status", return_value=JobStatus.Draft
         )
@@ -526,7 +516,6 @@ class TestReRunJob:
 
 
 class TestCancelJob:
-    """Tests for cancel job operation with return value verification."""
 
     @pytest.mark.parametrize(
         "job_status",
@@ -539,7 +528,6 @@ class TestCancelJob:
     def test_cancel_running_job_returns_true(
         self, mocker: MockerFixture, job_status: JobStatus
     ):
-        """Test that canceling a running job returns True."""
         job_id = "running-job-123"
         mocker.patch(
             "titan_db.jobs.db_job_utils.get_job_status", return_value=job_status
@@ -568,7 +556,6 @@ class TestCancelJob:
     def test_cancel_non_running_job_returns_false(
         self, mocker: MockerFixture, job_status: JobStatus
     ):
-        """Test that canceling a non-running job returns False."""
         job_id = "non-running-job-123"
         mocker.patch(
             "titan_db.jobs.db_job_utils.get_job_status", return_value=job_status
@@ -581,7 +568,6 @@ class TestCancelJob:
         assert result is False
 
     def test_cancel_job_raises_when_dispatcher_fails(self, mocker: MockerFixture):
-        """Test that cancel raises exception when dispatcher fails to stop K8s job."""
         job_id = "job-123"
         mocker.patch(
             "titan_db.jobs.db_job_utils.get_job_status",
@@ -598,10 +584,8 @@ class TestCancelJob:
 
 
 class TestGetTaskProgress:
-    """Tests for get_task_progress operation."""
 
     def test_get_task_progress(self, mocker: MockerFixture):
-        """Test retrieving task progress."""
         from model.status import GenerationTaskStatus
 
         db_patch = mocker.patch("titan_db.jobs.db_task_utils.get_task_progress")
@@ -616,10 +600,8 @@ class TestGetTaskProgress:
 
 
 class TestUploadOperations:
-    """Tests for upload-related operations."""
 
     def test_does_uploaded_file_exists_returns_true(self, mocker: MockerFixture):
-        """Test checking if uploaded file exists returns True when file exists."""
         s3_client_mock = mocker.Mock()
         s3_client_mock.does_prefix_exist.return_value = True
 
@@ -633,7 +615,6 @@ class TestUploadOperations:
         )
 
     def test_does_uploaded_file_exists_returns_false(self, mocker: MockerFixture):
-        """Test checking if uploaded file exists returns False when file doesn't exist."""
         s3_client_mock = mocker.Mock()
         s3_client_mock.does_prefix_exist.return_value = False
 
@@ -644,7 +625,6 @@ class TestUploadOperations:
         assert result is False
 
     def test_get_upload_presigned_url(self, mocker: MockerFixture):
-        """Test getting upload presigned URL."""
         from model.uploads import UploadedFilePresignedUrl
 
         s3_client_mock = mocker.Mock()

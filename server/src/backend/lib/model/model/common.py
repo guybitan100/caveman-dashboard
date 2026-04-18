@@ -12,7 +12,6 @@ _email_regex = re.compile(r'^[a-zA-Z][a-zA-Z._-]*[a-zA-Z]@cellebrite\.com$')
 
 
 class JobSummary(BaseModel):
-	"""Simplified job model for list views - contains only essential fields."""
 	id: str
 	name: str
 	status: JobStatus
@@ -21,7 +20,6 @@ class JobSummary(BaseModel):
 
 
 class CreateDraftJobRequest(BaseModel):
-	"""Request model for creating a new draft job."""
 	user: str
 	name: str | None = None
 
@@ -33,12 +31,10 @@ class CreateDraftJobRequest(BaseModel):
 
 
 class CreateDraftJobResponse(BaseModel):
-	"""Response model for draft job creation operations."""
 	job_id: str
 	name: str
 
 
 class DraftJobOperationResponse(BaseModel):
-	"""Response model for draft job operations. Holds either a job and/or validation result."""
 	job: GenerationJob | None = None
 	validation: ValidationResult | None = None      # validation of the (task) operation

@@ -6,15 +6,6 @@ from ai_generator.settings import SETTINGS
 
 
 def get_model(model_name: str = "claude-sonnet-4-5") -> OpenAIChatModel:
-    """
-    Get a PydanticAI OpenAI model configured for LiteLLM proxy.
-
-    Args:
-        model_name: Name of the model to use (e.g., 'claude-sonnet-4-5')
-
-    Returns:
-        Configured OpenAIChatModel instance
-    """
     return OpenAIChatModel(
         model_name=model_name,
         provider=OpenAIProvider(
@@ -29,17 +20,6 @@ def get_app_id_for_story_type(
     device_type: str | DeviceType,
     context_notes: dict[str, str] | None = None,
 ) -> str | None:
-    """
-    Get appropriate app_id based on story type and device.
-    
-    Args:
-        story_type: Story type string (e.g., "call", "sms/mms", "chat")
-        device_type: Device type string or enum
-        context_notes: Optional context with app hints
-    
-    Returns:
-        App ID string or None if no appropriate app found
-    """
     context_notes = context_notes or {}
     
     # Map device type string to enum

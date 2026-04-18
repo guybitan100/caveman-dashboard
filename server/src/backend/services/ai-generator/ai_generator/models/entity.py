@@ -6,14 +6,12 @@ from pydantic import BaseModel, Field
 
 
 class Gender(StrEnum):
-    """Gender representation for entities."""
     MALE = "male"
     FEMALE = "female"
     UNKNOWN = "unknown"
 
 
 class VoiceCharacteristics(BaseModel):
-    """Voice characteristics for audio generation using Nova Sonic."""
 
     voice_id: str | None = Field(
         default=None,
@@ -33,7 +31,6 @@ class VoiceCharacteristics(BaseModel):
 
 
 class EntityCharacteristics(BaseModel):
-    """Detailed characteristics of an entity."""
     
     age: int | None = Field(
         default=None,
@@ -94,12 +91,6 @@ class Language(BaseModel):
 
 
 class Entity(BaseModel):
-    """
-    Represents a person in the story.
-    
-    Entities can be owners (whose phone extractions will be simulated) or
-    other characters who interact with owners.
-    """
     
     entity_id: str = Field(
         description="Unique identifier for this entity"

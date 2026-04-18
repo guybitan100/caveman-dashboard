@@ -1,4 +1,3 @@
-"""Story generation orchestration - coordinates specialized agents for different story types."""
 
 import asyncio
 import logging
@@ -26,27 +25,6 @@ async def generate_stories_from_plan(
     timeline: list[TimelineEvent],
     entities: list[Entity],
 ) -> Dict[str, List[StoryData]]:
-    """
-    Generate all stories from a StoryGenerationPlan using specialized agents.
-    
-    This is the new orchestration function that replaces the old monolithic approach.
-    It groups stories by type and delegates to specialized agents:
-    - Email → Email Thread Agent (two-phase: planning + generation)
-    - Chat → Chat Thread Agent (two-phase: planning + generation)
-    - SMS → SMS Thread Agent (two-phase: planning + generation)
-    - Others → Simple Story Agent (direct generation)
-    
-    Multi-phone duplication is handled after generation for communication stories.
-    Stories are generated in parallel batches of at least 15.
-    
-    Args:
-        plan: Complete story generation plan
-        timeline: All timeline events
-        entities: All entities
-        
-    Returns:
-        Dictionary mapping phone entity IDs to lists of generated stories
-    """
     logger.info("Starting story generation orchestration")
     
     # Build event lookup
@@ -144,7 +122,6 @@ async def _generate_email_threads_parallel(
     entities: list[Entity],
     phone_stories: Dict[str, List[StoryData]],
 ) -> None:
-    """Generate email threads for all phones with parallel story generation."""
     logger.info("Generating email threads for %d phones", len(phone_planned_map))
     
     # Phase 1: Plan all threads for all phones in parallel
@@ -238,7 +215,6 @@ async def _generate_chat_threads_parallel(
     entities: list[Entity],
     phone_stories: Dict[str, List[StoryData]],
 ) -> None:
-    """Generate chat threads for all phones with parallel generation."""
     logger.info("Generating chat threads for %d phones", len(phone_planned_map))
     
     # Phase 1: Plan all threads for all phones in parallel
@@ -306,7 +282,6 @@ async def _generate_sms_threads_parallel(
     entities: list[Entity],
     phone_stories: Dict[str, List[StoryData]],
 ) -> None:
-    """Generate SMS threads for all phones with parallel story generation."""
     logger.info("Generating SMS threads for %d phones", len(phone_planned_map))
     
     # Phase 1: Plan all threads for all phones in parallel
@@ -390,7 +365,6 @@ async def _generate_simple_stories_parallel(
     entities: list[Entity],
     phone_stories: Dict[str, List[StoryData]],
 ) -> None:
-    """Generate simple (non-thread) stories in parallel batches."""
     total_stories = sum(len(planned_list) for planned_list in phone_planned_map.values())
     logger.info("Generating %d simple stories across %d phones", total_stories, len(phone_planned_map))
     
@@ -463,7 +437,6 @@ def _add_email_to_other_phones(
     original_phone_id: str,
     phone_stories: Dict[str, List[StoryData]],
 ) -> None:
-    """Add email copies to other participants' phones."""
     story_from = getattr(email_story, 'from_', None)
     story_to = getattr(email_story, 'to', [])
     
@@ -497,7 +470,6 @@ def _add_chat_to_other_phones(
     original_phone_id: str,
     phone_stories: Dict[str, List[StoryData]],
 ) -> None:
-    """Add chat copies to other participants' phones."""
     chat_data = getattr(chat_story, 'chat', None)
     if not chat_data:
         return
@@ -526,7 +498,6 @@ def _add_sms_to_other_phone(
     original_phone_id: str,
     phone_stories: Dict[str, List[StoryData]],
 ) -> None:
-    """Add SMS copy to the other party's phone."""
     sender_id = timeline_entry.sender
     receiver_id = timeline_entry.receiver
     involved_entities = [sender_id, receiver_id]
@@ -548,7 +519,6 @@ def _add_call_to_other_phone(
     original_phone_id: str,
     phone_stories: Dict[str, List[StoryData]],
 ) -> None:
-    """Add call copy to the other participant's phone."""
     participant = getattr(call_story, 'participant', None)
     if not participant or participant == original_phone_id:
         return

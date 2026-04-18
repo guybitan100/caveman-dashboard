@@ -1,4 +1,3 @@
-"""Story generators for converting routine activities to concrete StoryData objects."""
 
 import logging
 import random
@@ -243,7 +242,6 @@ SMS_MESSAGE_TEMPLATES: dict[str, list[str]] = {
 
 
 class RoutineStoryGenerator:
-    """Generates concrete StoryData objects from routine activities."""
 
     def __init__(
         self,
@@ -251,13 +249,6 @@ class RoutineStoryGenerator:
         device_type: DeviceType,
         seed: int | None = None,
     ):
-        """Initialize the story generator.
-
-        Args:
-            entity: The entity owning the phone
-            device_type: Type of device (affects app selection)
-            seed: Optional random seed for reproducibility
-        """
         self.entity = entity
         self.device_type = device_type
         self.rng = random.Random(seed)
@@ -275,17 +266,6 @@ class RoutineStoryGenerator:
         activity_time: datetime,
         duration_minutes: int | None = None,
     ) -> StoryData | Sequence[StoryData] | None:
-        """
-        Generate a StoryData object from a routine activity.
-
-        Args:
-            activity: The routine activity to convert
-            activity_time: The randomized time for this activity
-            duration_minutes: Optional randomized duration
-
-        Returns:
-            StoryData object, Sequence of StoryData (for routes), or None if generation fails
-        """
         story_type = activity.story_type
 
         try:
@@ -317,7 +297,6 @@ class RoutineStoryGenerator:
         activity_time: datetime,
         duration_minutes: int | None = None,
     ) -> AppStoryData:
-        """Generate an app usage story."""
         params = activity.parameters
 
         # Get app category from parameters
@@ -372,7 +351,6 @@ class RoutineStoryGenerator:
         activity: RoutineActivity,
         activity_time: datetime,
     ) -> LocationStoryData:
-        """Generate a location story."""
         params = activity.parameters
 
         location_type = params.get("location_type", "home")
@@ -393,7 +371,6 @@ class RoutineStoryGenerator:
         activity: RoutineActivity,
         activity_time: datetime,
     ) -> WebHistoryStoryData:
-        """Generate a web history story."""
         params = activity.parameters
 
         category = params.get("category", "news")
@@ -427,7 +404,6 @@ class RoutineStoryGenerator:
         activity: RoutineActivity,
         activity_time: datetime,
     ) -> PoweringEventStoryData:
-        """Generate a powering event story (charging)."""
         params = activity.parameters
 
         event_type = params.get("event_type", "charging_end")
@@ -460,7 +436,6 @@ class RoutineStoryGenerator:
         activity_time: datetime,
         duration_minutes: int | None = None,
     ) -> list[LocationStoryData]:
-        """Generate location stories for a route (start and end points)."""
         params = activity.parameters
 
         from_location = params.get("from", "home")
@@ -496,16 +471,6 @@ class RoutineStoryGenerator:
         activity_time: datetime,
         duration_minutes: int | None = None,
     ) -> CallStoryData:
-        """Generate a call story for routine phone calls.
-
-        Args:
-            activity: The routine activity
-            activity_time: When the call occurs
-            duration_minutes: Optional duration in minutes
-
-        Returns:
-            CallStoryData representing the call
-        """
         params = activity.parameters
 
         # Get contact category and direction
@@ -540,15 +505,6 @@ class RoutineStoryGenerator:
         activity: RoutineActivity,
         activity_time: datetime,
     ) -> InstantMessageStoryData:
-        """Generate an SMS/instant message story.
-
-        Args:
-            activity: The routine activity
-            activity_time: When the message is sent/received
-
-        Returns:
-            InstantMessageStoryData representing the SMS
-        """
         params = activity.parameters
 
         # Get contact category and message category
@@ -573,14 +529,6 @@ class RoutineStoryGenerator:
         )
 
     def _get_base_coordinates_for_entity(self) -> tuple[float, float]:
-        """Get base coordinates based on entity location.
-
-        Looks up the entity's location field and returns appropriate base coordinates.
-        Falls back to NYC if no location is specified or not found.
-
-        Returns:
-            Tuple of (latitude, longitude) for the entity's base location.
-        """
         # Default to NYC if no location specified
         default_coords = (40.7128, -74.0060)
 
@@ -611,14 +559,6 @@ class RoutineStoryGenerator:
         return default_coords
 
     def _extract_location_from_text(self, text: str) -> str | None:
-        """Try to extract a city name from text (e.g., background description).
-
-        Args:
-            text: Text that may contain a city name
-
-        Returns:
-            City name if found, None otherwise
-        """
         import re
 
         text_lower = text.lower()
@@ -638,11 +578,6 @@ class RoutineStoryGenerator:
         return None
 
     def _get_location_coordinate(self, location_type: str) -> Coordinate:
-        """Get or generate a coordinate for a location type.
-
-        Uses entity's location to generate realistic coordinates in their city.
-        Caches coordinates so the same location type returns consistent coordinates.
-        """
         if location_type in self._location_cache:
             return self._location_cache[location_type]
 
@@ -672,7 +607,6 @@ class RoutineStoryGenerator:
         return coordinate
 
     def get_app_for_category(self, category: ActivityCategory) -> str | None:
-        """Get an appropriate app ID for a given activity category."""
         category_to_app_category = {
             ActivityCategory.SOCIAL_MEDIA: AppCategory.SOCIAL,
             ActivityCategory.COMMUNICATION: AppCategory.MESSAGING,

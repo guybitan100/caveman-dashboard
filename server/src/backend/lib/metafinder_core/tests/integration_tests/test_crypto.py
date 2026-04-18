@@ -2,9 +2,6 @@ from metafinder_core.queries import CryptoQueryParams
 
 
 def test_crypto_languages_query():
-    """
-    Test that crypto query with languages returns the correct items
-    """
     query = CryptoQueryParams(
         languages=['en', 'es'],
     )
@@ -16,9 +13,6 @@ def test_crypto_languages_query():
 
 
 def test_crypto_coins_query():
-    """
-    Test that crypto query with coins returns the correct items
-    """
     query = CryptoQueryParams(
         coins=['BTC', 'ETH'],
     )
@@ -30,9 +24,6 @@ def test_crypto_coins_query():
 
 
 def test_crypto_types_query():
-    """
-    Test that crypto query with types returns the correct items
-    """
     query = CryptoQueryParams(
         types=['wallet', 'transaction'],
     )
@@ -44,9 +35,6 @@ def test_crypto_types_query():
 
 
 def test_crypto_combined_query():
-    """
-    Test that crypto query with multiple parameters returns the correct items
-    """
     query = CryptoQueryParams(
         coins=['BTC'],
         types=['transaction'],

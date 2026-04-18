@@ -15,9 +15,6 @@ from model_tests.test_utils import create_test_generation_job
 class TestInsertJob:
 
     def test_insert_job(self, mocker):
-        """
-        Tests that a valid job with tasks can be saved to the database.
-        """
         from titan_db.jobs.models import DBJobModel
         from titan_db.jobs.db_job_utils import insert_job
 
@@ -36,9 +33,6 @@ class TestInsertJob:
         job_model_patch.assert_called_once()
 
     def test_insert_job_empty_tasks(self, mocker):
-        """
-        Tests that a job with empty tasks can be saved to the database.
-        """
         from titan_db.jobs.models import DBJobModel
         from titan_db.jobs.db_job_utils import insert_job
 
@@ -54,9 +48,6 @@ class TestInsertJob:
         job_model_patch.assert_called_once()
 
     def test_insert_job_database_write_failure(self, mocker):
-        """
-        Tests that a job cannot be saved to the database if the write operation fails.
-        """
         from titan_db.jobs.models import DBJobModel
         from titan_db.jobs.db_job_utils import insert_job
 
@@ -74,14 +65,10 @@ class TestInsertJob:
             insert_job(job)
         job_model_patch.assert_called_once()
 
-
 @moto.mock_aws
 class TestFilterJob:
 
     def test_job_matches_all_filters(self):
-        """
-        Tests that the function returns True when all filters match the job.
-        """
 
         from titan_db.jobs.db_job_utils import filter_job
         from titan_db.jobs.models import DBJobModel
@@ -96,9 +83,6 @@ class TestFilterJob:
         assert filter_job(job, 'test_job', JobStatus.Done, EventType.CHAT, 2, 5) is True
 
     def test_job_matches_some_filters(self):
-        """
-        Tests that the function returns False when some filters match the job but not others.
-        """
         from titan_db.jobs.db_job_utils import filter_job
         from titan_db.jobs.models import DBJobModel
 
@@ -111,9 +95,6 @@ class TestFilterJob:
         assert filter_job(job, 'test_job', JobStatus.Done, EventType.POWERING_EVENT, 2, 5) is False
 
     def test_empty_fields(self):
-        """
-        Tests that the function returns True when all filters are empty.
-        """
         from titan_db.jobs.db_job_utils import filter_job
         from titan_db.jobs.models import DBJobModel
 
@@ -126,9 +107,6 @@ class TestFilterJob:
         assert filter_job(job, None, None, None, None, None) is True
 
     def test_job_matches_only_name_filter(self):
-        """
-        Tests that the function returns True when only name filter matches the job.
-        """
         from titan_db.jobs.db_job_utils import filter_job
         from titan_db.jobs.models import DBJobModel
 
@@ -141,9 +119,6 @@ class TestFilterJob:
         assert filter_job(job, 'test_job', '', '', None, None) is True
 
     def test_job_not_matches_only_name_filter(self):
-        """
-        Tests that the function returns True when only name filter matches the job.
-        """
         from titan_db.jobs.db_job_utils import filter_job
         from titan_db.jobs.models import DBJobModel
 
@@ -156,9 +131,6 @@ class TestFilterJob:
         assert filter_job(job, 'prod_job', '', '', None, None) is False
 
     def test_job_matches_only_status_filter(self):
-        """
-        Tests that the function returns True when only status filter matches the job.
-        """
         from titan_db.jobs.db_job_utils import filter_job
         from titan_db.jobs.models import DBJobModel
 
@@ -171,9 +143,6 @@ class TestFilterJob:
         assert filter_job(job, '', JobStatus.Done, '', None, None) is True
 
     def test_job_not_matches_only_status_filter(self):
-        """
-        Tests that the function returns True when only status filter matches the job.
-        """
         from titan_db.jobs.db_job_utils import filter_job
         from titan_db.jobs.models import DBJobModel
 
@@ -186,9 +155,6 @@ class TestFilterJob:
         assert filter_job(job, '', JobStatus.Generating, '', None, None) is False
 
     def test_job_matches_only_event_type_filter(self):
-        """
-        Tests that the function returns True when only EventType filter matches the job.
-        """
         from titan_db.jobs.db_job_utils import filter_job
         from titan_db.jobs.models import DBJobModel
 
@@ -201,9 +167,6 @@ class TestFilterJob:
         assert filter_job(job, '', None, EventType.CHAT, None, None) is True
 
     def test_job_not_matches_only_event_type_filter(self):
-        """
-        Tests that the function returns True when only EventType filter matches the job.
-        """
         from titan_db.jobs.db_job_utils import filter_job
         from titan_db.jobs.models import DBJobModel
 
@@ -216,9 +179,6 @@ class TestFilterJob:
         assert filter_job(job, '', None, EventType.LOCATION, None, None) is False
 
     def test_job_matches_only_min_events_filter(self):
-        """
-        Tests that the function returns True when only Min events filter matches the job.
-        """
         from titan_db.jobs.db_job_utils import filter_job
         from titan_db.jobs.models import DBJobModel
 
@@ -231,9 +191,6 @@ class TestFilterJob:
         assert filter_job(job, '', None, None, 2, None) is True
 
     def test_job_not_matches_only_min_events_filter(self):
-        """
-        Tests that the function returns True when only Min events filter matches the job.
-        """
         from titan_db.jobs.db_job_utils import filter_job
         from titan_db.jobs.models import DBJobModel
 
@@ -246,9 +203,6 @@ class TestFilterJob:
         assert filter_job(job, '', None, None, 5, None) is False
 
     def test_job_matches_only_max_events_filter(self):
-        """
-        Tests that the function returns True when only Max events filter matches the job.
-        """
         from titan_db.jobs.db_job_utils import filter_job
         from titan_db.jobs.models import DBJobModel
 
@@ -261,9 +215,6 @@ class TestFilterJob:
         assert filter_job(job, '', None, None, None, 5) is True
 
     def test_job_not_matches_only_max_events_filter(self):
-        """
-        Tests that the function returns True when only Max events filter matches the job.
-        """
         from titan_db.jobs.db_job_utils import filter_job
         from titan_db.jobs.models import DBJobModel
 
@@ -275,14 +226,10 @@ class TestFilterJob:
         )
         assert filter_job(job, '', None, None, None, 0) is False
 
-
 @moto.mock_aws
 class TestGetAllJobs:
 
     def test_get_all_jobs(self, mocker):
-        """
-        Tests the function with valid inputs for all parameters.
-        """
         from titan_db.jobs.db_job_utils import get_all_jobs
         from titan_db.jobs.models import DBJobModel
 
@@ -303,9 +250,6 @@ class TestGetAllJobs:
         assert result[1]['name'] == 'job1'
 
     def test_get_all_jobs_empty_params(self, mocker):
-        """
-        Tests the function with valid inputs for some parameters and leaving others empty.
-        """
         from titan_db.jobs.db_job_utils import get_all_jobs
         from titan_db.jobs.models import DBJobModel
 
@@ -327,9 +271,6 @@ class TestGetAllJobs:
 
     # Tests the function with invalid inputs for parameters (e.g. non-existent job name).
     def test_get_all_jobs_invalid_input(self, mocker):
-        """
-        Tests the function with invalid inputs for parameters (e.g. non-existent job name).
-        """
         from titan_db.jobs.db_job_utils import get_all_jobs
         from titan_db.jobs.models import DBJobModel
 
@@ -349,9 +290,6 @@ class TestGetAllJobs:
         assert count == 0
 
     def test_get_all_jobs_sorting(self, mocker):
-        """
-        Tests that the jobs are sorted by creation date in descending order.
-        """
         from titan_db.jobs.db_job_utils import get_all_jobs
         from titan_db.jobs.models import DBJobModel
 
@@ -374,15 +312,10 @@ class TestGetAllJobs:
         assert result[0]['name'] == 'job2'
         assert result[1]['name'] == 'job1'
 
-
 @moto.mock_aws
 class TestGetAllJobsMatchingPrefix:
 
     def test_multiple_jobs_matching_prefix(self, mocker):
-        """
-        Tests that the function returns a list of dictionaries containing job
-        attributes for multiple jobs that match the given prefix.
-        """
         from titan_db.jobs.db_job_utils import get_all_jobs_matching_prefix
         from titan_db.jobs.models import DBJobModel
 
@@ -398,10 +331,6 @@ class TestGetAllJobsMatchingPrefix:
         assert result[1]['name'] == 'test_job1'
 
     def test_one_job_matching_prefix(self, mocker):
-        """
-        Tests that the function returns a list of dictionaries containing job attributes
-         for one job that matches the given prefix.
-        """
 
         from titan_db.jobs.db_job_utils import get_all_jobs_matching_prefix
         from titan_db.jobs.models import DBJobModel
@@ -416,9 +345,6 @@ class TestGetAllJobsMatchingPrefix:
         assert result[0]['name'] == 'test_job'
 
     def test_empty_prefix(self, mocker):
-        """
-        Tests that the function returns an empty list when an empty string is passed as prefix.
-        """
         from titan_db.jobs.db_job_utils import get_all_jobs_matching_prefix
         from titan_db.jobs.models import DBJobModel
 

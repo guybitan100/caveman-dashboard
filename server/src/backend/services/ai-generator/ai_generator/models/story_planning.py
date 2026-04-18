@@ -1,4 +1,3 @@
-"""Models for story planning - deciding which stories to generate from timeline events."""
 
 from enum import StrEnum
 
@@ -7,7 +6,6 @@ from pydantic import BaseModel, Field
 
 
 class StoryPerspective(StrEnum):
-    """How a story relates to the phone owner."""
     SENDER = "sender"           # Phone owner sent this (outgoing call, sent message)
     RECEIVER = "receiver"       # Phone owner received this (incoming call, received message)
     CREATOR = "creator"         # Phone owner created content (took photo, recorded video)
@@ -16,11 +14,6 @@ class StoryPerspective(StrEnum):
 
 
 class PlannedStory(BaseModel):
-    """
-    A decision to generate a specific story on a specific phone.
-    
-    This is just the PLAN - not the actual StoryData yet.
-    """
     
     phone_entity_id: str = Field(description="Which phone this story will appear on")
     story_type: StoryType = Field(
@@ -44,11 +37,6 @@ class PlannedStory(BaseModel):
 
 
 class EventStoryPlan(BaseModel):
-    """
-    Plan for all stories that should be generated from a single timeline event.
-    
-    This describes WHAT to generate, not the actual data.
-    """
     
     timeline_event_id: str = Field(description="The timeline event this plan is for")
     
@@ -64,11 +52,6 @@ class EventStoryPlan(BaseModel):
 
 
 class StoryGenerationPlan(BaseModel):
-    """
-    Complete plan for generating stories across all phones.
-    
-    This is the output of the planning phase, before actual generation.
-    """
     
     event_plans: list[EventStoryPlan] = Field(
         description="Plans for each timeline event"
@@ -76,11 +59,9 @@ class StoryGenerationPlan(BaseModel):
     
     @property
     def total_planned_stories(self) -> int:
-        """Total number of stories planned across all events."""
         return sum(len(plan.planned_stories) for plan in self.event_plans)
     
     def get_stories_for_phone(self, phone_entity_id: str) -> list[PlannedStory]:
-        """Get all planned stories for a specific phone."""
         stories = []
         for event_plan in self.event_plans:
             for story in event_plan.planned_stories:
@@ -89,7 +70,6 @@ class StoryGenerationPlan(BaseModel):
         return stories
     
     def get_sync_groups(self) -> dict[str, list[PlannedStory]]:
-        """Group stories by sync_group_id."""
         sync_groups: dict[str, list[PlannedStory]] = {}
         for event_plan in self.event_plans:
             for story in event_plan.planned_stories:
@@ -100,14 +80,12 @@ class StoryGenerationPlan(BaseModel):
         return sync_groups
     
     def get_event_plan(self, event_id: str) -> EventStoryPlan | None:
-        """Get the plan for a specific event."""
         for event_plan in self.event_plans:
             if event_plan.timeline_event_id == event_id:
                 return event_plan
         return None
     
     def add_stories_to_event(self, event_id: str, stories: list[PlannedStory]) -> None:
-        """Add additional stories to an event's plan."""
         event_plan = self.get_event_plan(event_id)
         if event_plan:
             event_plan.planned_stories.extend(stories)

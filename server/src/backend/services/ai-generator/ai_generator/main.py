@@ -1,4 +1,3 @@
-"""Command-line interface for the AI story generation pipeline."""
 
 import asyncio
 import sys
@@ -7,7 +6,6 @@ from ai_generator.pipeline import Pipeline
 
 
 async def main():
-    """Run the AI story generation pipeline."""
     if len(sys.argv) < 2:
         description = "A detective investigating a murder in a small town"
         print(f"No description provided. Using default: {description}")

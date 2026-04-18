@@ -25,19 +25,6 @@ def validate_country_info(country_info) -> CountryInfo | None:
 
 
 class DeviceContext(BaseModel):
-    """
-    context of the extraction's device.
-
-    Will be added to the report.xml at the conversion phase.
-
-    Events timestamp will be randomly distributed between start_date and end_date
-
-    Attributes:
-        device:         The device model.
-        start_date:     Timestamp of the start of the extraction.
-        end_date:       Timestamp of the end of the extraction.
-        country_info:   Country info of device. If this is a string,
-    """
 
     device: DeviceModel
     start_date: date
@@ -70,14 +57,12 @@ class DeviceContext(BaseModel):
 
     @cached_property
     def timezone(self) -> tzinfo | None:
-        """Retrieves a random tzinfo object from the timezone list of the country (if provided)"""
         if self.country_info is not None:
             return pytz.timezone(random.choice(list(self.country_info.timezones)))
         return None
 
     @cached_property
     def languages(self) -> list[str] | None:
-        """Retrieves languages codes corresponding to the country (if provided)"""
         if self.country_info is not None:
             return list(self.country_info.languages)
         return None
@@ -123,35 +108,12 @@ CustomEventModelFieldValue.model_rebuild()
 
 
 class CustomEvent(BaseModel):
-    """
-    Custom event to be added to the report.xml at the conversion phase.
-
-    Attributes:
-        event_id:   Auto-generated event id.
-        model_type: The event's report.xml model type.
-        fields:     The custom event fields.
-    """
     event_id: AutoUID
     model_type: str
     fields: dict[str, CustomEventFieldValues]
 
 
 class GenerationJob(BaseModel):
-    """
-    Represents a generation job.
-
-    Attributes:
-        job_id:         The job id.
-        name:           The job name.
-        status:         The current job status.
-        tasks:          List of tasks to be passed to the generation phase.
-        context:        The device context for this job.
-        device_info:    List of device info entries to be passed to the conversion phase.
-        custom_events:  List of custom report.xml object to be passed to the conversion phase.
-        stories:        Serialized graph of story data events.
-        owner_entity:   Device owner entity
-        entities:       List of additional entities to add to the device's social context
-    """
 
     job_id: str
     name: str

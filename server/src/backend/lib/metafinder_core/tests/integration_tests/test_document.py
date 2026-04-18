@@ -3,9 +3,6 @@ from model.metafinder.queries import QueryOperator, ArrayQuery
 
 
 def test_document_single_format_query():
-	"""
-	Test that document single format query returns the correct items
-	"""
 	query = DocumentQueryParams(
 		formats=['docx'],
 	)
@@ -17,9 +14,6 @@ def test_document_single_format_query():
 		
 
 def test_document_min_size_query():
-	"""
-	Test that document min size query returns the correct items
-	"""
 	query = DocumentQueryParams(
 		min_size=1000,
 	)
@@ -31,9 +25,6 @@ def test_document_min_size_query():
 		
 		
 def test_document_max_size_query():
-	"""
-	Test that document max size query returns the correct items
-	"""
 	query = DocumentQueryParams(
 		max_size=100000,
 	)
@@ -45,9 +36,6 @@ def test_document_max_size_query():
 		
 
 def test_document_min_max_size_query():
-	"""
-	Test that document min and max size query returns the correct items
-	"""
 	query = DocumentQueryParams(
 		min_size=1000,
 		max_size=20000,
@@ -60,9 +48,6 @@ def test_document_min_max_size_query():
 		
 
 def test_document_multiple_queries():
-	"""
-	Test that multiple document queries return the correct items
-	"""
 	query = DocumentQueryParams(
 		formats=['docx', 'txt'],
 		min_size=1000,

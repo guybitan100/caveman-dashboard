@@ -12,19 +12,6 @@ def register_contractor(
         *,
         dependencies: set[EventType] = None
 ) -> Callable[[type[Contractor]], type[Contractor]]:
-    """
-    Decorator method that globally registers a Contractor class to an EventType.
-
-    Arguments:
-        event_type:     EventType to associate the Contractor with.
-        dependencies:   EventTypes whose generated data this contractor relies on and must be executed beforehand.
-
-    Examples:
-        >>> @register_contractor(EventType.CHAT, dependencies={*FILE_EVENT_TYPES, EventType.CONTACT, EventType.LOCATION})
-            class ChatContractor(EventContractor):
-                def __init__(self, **kwargs):
-                    super().__init__(**kwargs)
-    """
 
     dependencies = dependencies or set()
     if event_type in dependencies:

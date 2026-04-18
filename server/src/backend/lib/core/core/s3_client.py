@@ -11,14 +11,11 @@ from core.titan_logger import logger
 
 _FILE_DL_UL_EXPIRES_SECONDS = 60 * 60 * 24   # 24 hours
 
-
 class S3ClientError(Exception):
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
 
-
 def _handle_s3_client_errors(func: Callable) -> Callable:
-    """Decorator method for auto-handling MetaFinder connection and response errors"""
 
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -32,7 +29,6 @@ def _handle_s3_client_errors(func: Callable) -> Callable:
             raise S3ClientError(f"Error in boto3 client: {e}", e)
 
     return wrapper
-
 
 class TitanS3Client:
     def __init__(self, validate_connection: bool = False):

@@ -1,4 +1,3 @@
-"""Document generator for PDF, DOCX, and TXT files."""
 
 import io
 import logging
@@ -16,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class DocumentFormat(str, Enum):
-    """Supported document formats."""
     
     PDF = "pdf"
     DOCX = "docx"
@@ -24,12 +22,6 @@ class DocumentFormat(str, Enum):
 
 
 class DocumentGenerator(BaseMediaGenerator):
-    """
-    Document generator for creating PDF, DOCX, and TXT files.
-    
-    Uses reportlab for PDF and python-docx for DOCX generation.
-    Content is generated from story descriptions and metadata.
-    """
     
     DEFAULT_FORMAT = DocumentFormat.PDF
     
@@ -41,21 +33,6 @@ class DocumentGenerator(BaseMediaGenerator):
         format: DocumentFormat = DEFAULT_FORMAT,
         **kwargs,
     ) -> GenerationResult:
-        """
-        Generate a document.
-        
-        Args:
-            story_id: Unique identifier for the story
-            prompt: Document content text
-            title: Optional document title
-            format: Document format (pdf, docx, txt)
-            
-        Returns:
-            GenerationResult with document file info
-            
-        Raises:
-            MediaGenerationError: On generation failure
-        """
         # Normalize format to DocumentFormat enum
         if isinstance(format, str):
             try:
@@ -105,18 +82,6 @@ class DocumentGenerator(BaseMediaGenerator):
             raise MediaGenerationError(error_msg, story_id=story_id)
     
     def _generate_pdf(self, content: str, title: Optional[str] = None) -> bytes:
-        """
-        Generate PDF document bytes.
-        
-        Uses reportlab for PDF generation.
-        
-        Args:
-            content: Document text content
-            title: Optional document title
-            
-        Returns:
-            PDF file as bytes
-        """
         try:
             from reportlab.lib.pagesizes import letter
             from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -154,18 +119,6 @@ class DocumentGenerator(BaseMediaGenerator):
         return buffer.getvalue()
     
     def _generate_docx(self, content: str, title: Optional[str] = None) -> bytes:
-        """
-        Generate DOCX document bytes.
-        
-        Uses python-docx for DOCX generation.
-        
-        Args:
-            content: Document text content
-            title: Optional document title
-            
-        Returns:
-            DOCX file as bytes
-        """
         try:
             from docx import Document
             from docx.shared import Pt
@@ -192,16 +145,6 @@ class DocumentGenerator(BaseMediaGenerator):
         return buffer.getvalue()
     
     def _generate_txt(self, content: str, title: Optional[str] = None) -> bytes:
-        """
-        Generate plain text document bytes.
-        
-        Args:
-            content: Document text content
-            title: Optional document title
-            
-        Returns:
-            TXT file as bytes (UTF-8 encoded)
-        """
         lines = []
         
         if title:
@@ -214,15 +157,6 @@ class DocumentGenerator(BaseMediaGenerator):
         return "\n".join(lines).encode("utf-8")
     
     def _build_prompt(self, story_context: dict) -> str:
-        """
-        Build document content from story context.
-        
-        Args:
-            story_context: Dictionary containing story metadata
-            
-        Returns:
-            Document content text
-        """
         # For documents, we typically use the full description
         content = story_context.get("body", "")
         if not content:

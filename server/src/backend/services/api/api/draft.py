@@ -23,7 +23,6 @@ from titan_db.jobs import db_job_utils, db_task_utils, db_story_utils
 
 
 def create_job(request: CreateDraftJobRequest) -> GenerationJob:
-    """Creates a new draft job and returns a blank job."""
     name = request.name or randomname.get_name()
     device = random.choice(DEVICE_MODELS)
     end_date = date.today()
@@ -46,7 +45,6 @@ def create_job(request: CreateDraftJobRequest) -> GenerationJob:
 
 
 def verify_job_is_draft(route_func: Callable) -> Callable:
-    """API route method decorator that verifies that a job is in Draft status before allowing modifications."""
     @wraps(route_func)
     def wrapper(job_id: str, *args, **kwargs):
         status = db_job_utils.get_job_status(job_id=job_id)
@@ -57,14 +55,12 @@ def verify_job_is_draft(route_func: Callable) -> Callable:
 
 
 def update_job_name(job_id: str, name: str) -> GenerationJob:
-    """Updates the name of a draft job."""
     db_job_utils.update_job_name(job_id=job_id, name=name)
     job = db_job_utils.build_generation_job(job_id=job_id)
     return job
 
 
 def update_device_context(job_id: str, device_context: DeviceContext) -> GenerationJob:
-    """Updates device context for a draft job."""
     job_device_info = db_job_utils.get_device_info(job_id=job_id)
     device_info = generate_updated_device_info(context=device_context, device_info=job_device_info)
     db_job_utils.update_device_context_and_info(job_id=job_id, device_context=device_context, device_info=device_info)
@@ -73,7 +69,6 @@ def update_device_context(job_id: str, device_context: DeviceContext) -> Generat
 
 
 def update_device_info(job_id: str, device_info: list[DeviceInfoEntry]) -> GenerationJob:
-    """Updates device info for a draft job."""
     db_job_utils.update_device_info(job_id=job_id, device_info=device_info)
     job = db_job_utils.build_generation_job(job_id=job_id)
     return job
@@ -118,7 +113,6 @@ def create_random_events(job_id: str, total_events: int, event_weights: dict[Eve
 
 
 def create_task(job_id: str, task: GenerationTask, metafinder_client: MetaFinderClient) -> DraftJobOperationResponse:
-    """Creates a new generation task for a draft job."""
     validation = validate_task(task=task, metafinder_client=metafinder_client)
     if validation.status is ValidationStatus.Failure:
         return DraftJobOperationResponse(validation=validation)
@@ -133,7 +127,6 @@ def update_task(
         task: GenerationTask,
         metafinder_client: MetaFinderClient
 ) -> DraftJobOperationResponse:
-    """Updates an existing generation task for a draft job."""
     validation = validate_task(task=task, metafinder_client=metafinder_client)
     if validation.status is ValidationStatus.Failure:
         return DraftJobOperationResponse(validation=validation)
@@ -143,21 +136,18 @@ def update_task(
 
 
 def delete_task(job_id: str, task_id: str) -> GenerationJob:
-    """Deletes a generation task from a draft job."""
     db_task_utils.delete_task(job_id=job_id, task_id=task_id)
     job = db_job_utils.build_generation_job(job_id=job_id)
     return job
 
 
 def create_story(job_id: str, story: StoryData) -> GenerationJob:
-    """Creates a new story task for a draft job."""
     db_story_utils.insert_story(job_id=job_id, story=story)
     job = db_job_utils.build_generation_job(job_id=job_id)
     return job
 
 
 def create_stories(job_id: str, stories: list[StoryData]) -> GenerationJob:
-    """Creates multiple new story tasks for a draft job."""
     db_story_utils.insert_stories(job_id=job_id, stories=stories)
     job = db_job_utils.build_generation_job(job_id=job_id)
     return job

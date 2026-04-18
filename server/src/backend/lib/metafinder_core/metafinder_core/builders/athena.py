@@ -136,18 +136,5 @@ class AthenaMetafinderQueryBuilder(BaseMetafinderQueryBuilder):
 	
 	@staticmethod
 	def report_field_query(body: dict, model_type: str | None = None) -> dict:
-		"""WITH version_ranking AS (
-    SELECT
-        version,
-        ROW_NUMBER() OVER (ORDER BY version DESC) AS rank
-    FROM "metafinder"."fields_index"
-    GROUP BY version
-)
-SELECT t.*
-FROM "metafinder"."fields_index" t
-JOIN version_ranking vr
-    ON t.version = vr.version
-WHERE vr.rank = 1
-LIMIT 10000;"""
 		body["with"] = "VERSION_RANKING AS (SELECT version, ROW_NUMBER() OVER (ORDER BY version DESC) AS rank FROM metafinder.fields_index GROUP BY version)"
 		return body

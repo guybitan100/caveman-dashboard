@@ -3,9 +3,6 @@ from model.metafinder.queries import ArrayQuery, QueryOperator
 
 
 def test_url_single_category_query():
-    """
-    Test that URL single category query returns the correct items
-    """
     query = UrlQueryParams(
         categories=ArrayQuery(values=['Business']),
     )
@@ -17,9 +14,6 @@ def test_url_single_category_query():
 
 
 def test_url_multiple_categories_query():
-    """
-    Test that URL multiple categories OR query returns the correct items
-    """
     query = UrlQueryParams(
         categories=ArrayQuery(values=['Business', 'Arts'], operator=QueryOperator.OR),
     )
@@ -32,9 +26,6 @@ def test_url_multiple_categories_query():
 
 
 def test_url_single_cctld_query():
-    """
-    Test that URL single cctld query returns the correct items
-    """
     query = UrlQueryParams(
         cctld=['.us'],
     )
@@ -46,9 +37,6 @@ def test_url_single_cctld_query():
 
 
 def test_url_multiple_cctld_query():
-    """
-    Test that URL multiple cctld query returns the correct items
-    """
     query = UrlQueryParams(
         cctld=['.us', '.uk'],
     )
@@ -60,9 +48,6 @@ def test_url_multiple_cctld_query():
         
 
 def test_url_combined_query():
-    """
-    Test that URL combined query returns the correct items
-    """
     query = UrlQueryParams(
         categories=ArrayQuery(values=['Business', 'Arts'], operator=QueryOperator.OR),
         cctld=['.us', '.uk'],

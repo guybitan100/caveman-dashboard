@@ -2,9 +2,6 @@ from metafinder_core.queries import CellTowerQueryParams
 
 
 def test_cell_tower_lat_lon_query():
-    """
-    Test that cell tower query with latitude and longitude returns the correct items
-    """
     lat = 52.5200
     lon = 13.4050
     
@@ -18,9 +15,6 @@ def test_cell_tower_lat_lon_query():
 
 
 def test_cell_tower_single_mcc_query():
-    """
-    Test that cell tower query with single MCC returns the correct items
-    """
     query = CellTowerQueryParams(
         mcc=[262]
     )
@@ -32,9 +26,6 @@ def test_cell_tower_single_mcc_query():
 
 
 def test_cell_tower_multiple_mcc_query():
-    """
-    Test that cell tower query with multiple MCCs returns the correct items
-    """
     query = CellTowerQueryParams(
         mcc=[262, 310]
     )
@@ -46,9 +37,6 @@ def test_cell_tower_multiple_mcc_query():
 
 
 def test_cell_tower_lat_lon_mcc_query():
-    """
-    Test that cell tower query with latitude, longitude, and MCC returns the correct items
-    """
     lat = 52.5200
     lon = 13.4050
     

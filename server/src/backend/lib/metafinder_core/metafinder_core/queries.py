@@ -70,7 +70,6 @@ def metafinder_queries_schema_extra(schema: dict[str, Any], query_class: type["M
 
 
 class MetaFinderQueryParams[T: MetafinderModel](ABC, BaseModel):
-    """Abstract class of MetaFinder query objects"""
     
     data_type: Literal[DataType]
     metafinder_model_class: type[T]
@@ -102,35 +101,15 @@ class MetaFinderQueryParams[T: MetafinderModel](ABC, BaseModel):
         return super().__new__(cls)
     
     def build(self, count: int = None) -> dict:
-        """
-        Build the query body for the given query parameters
-        :param count:
-        :return: query body
-        """
         raise NotImplementedError()
     
     def execute(self, query: dict | str) -> Any:
-        """
-        Execute the query
-        :param query:
-        :return:
-        """
         return self._client.query(index=self.index, body=query)
     
     def parse(self, response: Any) -> list[T]:
-        """
-        Parse the response
-        :param response:
-        :return:
-        """
         return self._parser.parse(response, model_class=self.metafinder_model_class)
     
     def query(self, count: int = None) -> list[T]:
-        """
-        Execute the query and parse the response
-        :param count:
-        :return:
-        """
         try:
             logger.debug(f"Requesting {count} {self.data_type} from MetaFinder")
             query = self.build(count)

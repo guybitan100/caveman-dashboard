@@ -16,7 +16,6 @@ MAX_ENTITIES = 100_000
 
 
 class LocationIdAllocation(BaseModel):
-    """Represents the total locations allocated for a task and the numbering of the linked location events' UUIDs"""
     event_type: EventType   # Task event type (needed by LocationContractor)
     base_idx: int           # UUID: "<base_idx 0-padded up to 8>-0000-0000-0000-<num_locations 0-padded up to 12>"
     num_locations: int      # Total locations allocated for a task

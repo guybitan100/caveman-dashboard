@@ -1,4 +1,3 @@
-"""Data models for the AI story generation pipeline."""
 
 # Phase 1: Story generation models
 from ai_generator.models.story import StoryExpansion

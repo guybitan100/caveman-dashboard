@@ -1,16 +1,9 @@
-"""Story expansion model - output of the story expansion agent."""
 
 from datetime import datetime
 from pydantic import BaseModel, Field
 
 
 class StoryExpansion(BaseModel):
-    """
-    Represents an expanded narrative from a short user description.
-    
-    This is the first stage output - a rich, detailed story that will be used
-    to extract entities, relationships, and events.
-    """
     
     original_description: str = Field(
         description="The original short description provided by the user"

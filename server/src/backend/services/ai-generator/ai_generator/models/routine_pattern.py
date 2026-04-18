@@ -1,4 +1,3 @@
-"""Data models for routine pattern generation."""
 
 from enum import StrEnum
 
@@ -8,7 +7,6 @@ from model.stories import StoryType
 
 
 class ActivityCategory(StrEnum):
-    """High-level categories for routine activities."""
 
     SOCIAL_MEDIA = "social_media"
     COMMUNICATION = "communication"
@@ -20,7 +18,6 @@ class ActivityCategory(StrEnum):
 
 
 class ActivityPriority(StrEnum):
-    """Priority affects skip probability."""
 
     ESSENTIAL = "essential"  # Never skip (e.g., charging, commute)
     NORMAL = "normal"  # Skip 10-20% based on entity traits
@@ -28,7 +25,6 @@ class ActivityPriority(StrEnum):
 
 
 class RoutineActivity(BaseModel):
-    """A single routine activity in the pattern."""
 
     activity_id: str = Field(description="Unique ID for this activity in the pattern")
     time: str = Field(description="Time in HH:MM format (24h)")
@@ -45,7 +41,6 @@ class RoutineActivity(BaseModel):
 
 
 class DailyRoutinePattern(BaseModel):
-    """Routine pattern for a single day of the week."""
 
     day_of_week: str = Field(
         description="Day name: monday, tuesday, wednesday, thursday, friday, saturday, sunday"
@@ -60,7 +55,6 @@ class DailyRoutinePattern(BaseModel):
 
 
 class WeeklyRoutinePattern(BaseModel):
-    """Complete weekly routine pattern for one phone."""
 
     entity_id: str = Field(description="Entity ID of the phone owner")
     entity_name: str = Field(description="Name of the phone owner")

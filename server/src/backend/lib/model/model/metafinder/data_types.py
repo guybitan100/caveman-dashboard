@@ -1,7 +1,6 @@
 from enum import StrEnum
 
 class DataType(StrEnum):
-    """Enum representing MetaFinder supported data types"""
 
     Image = "image"
     Video = "video"
@@ -28,7 +27,6 @@ data_type_count_limit = {
 
 
 class KeywordTerms(StrEnum):
-    """Enum representing MetaFinder supported terms for aggregations"""
 
     Categories = "categories"
     Format = "format"
@@ -41,7 +39,6 @@ class KeywordTerms(StrEnum):
 
 
 class RangeTerms(StrEnum):
-    """Enum representing MetaFinder supported terms for range aggregations"""
 
     Size = "size"
     Duration = "duration"

@@ -66,7 +66,6 @@ def generation_task_schema_extra(schema: dict[str, Any], task_class: type['Gener
 
 
 def _ignore_and_use_db_value(value, info: ValidationInfo):
-    """Ignore the value and use the DB value if loading from DB"""
     ctx = info.context
     if ctx and ctx.get('source') == 'db':
         return value    # ID from DB
@@ -81,16 +80,6 @@ RefID = Annotated[
 
 
 class GenerationTask(ABC, BaseModel):
-    """
-    Raw request representation of draft event generation task.
-
-    Attributes:
-        task_id:            Unique identifier of the task.
-        parent_task_id:     Identifier of the parent task, if this is a sub-task.
-        root_task_id:       Identifier of the root task in the hierarchy.
-        event_type:         Event type of the task.
-        quantity:           Desired quantity for the event type.
-    """
 
     task_id: AutoUID
     parent_task_id: RefID
@@ -107,7 +96,6 @@ class GenerationTask(ABC, BaseModel):
         return self.parent_task_id is not None
 
     def get_sub_tasks(self) -> Iterator['GenerationTask']:
-        """Return an iterator over all immediate sub-tasks (GenerationTask)."""
         for field_name, field_info in self.model_fields.items():
             field_value = getattr(self, field_name)
             if isinstance(field_value, GenerationTask):
@@ -118,7 +106,6 @@ class GenerationTask(ABC, BaseModel):
                         yield item
 
     def flatten_tasks(self) -> Iterator['GenerationTask']:
-        """Return an iterator over self task and all its sub-tasks (GenerationTask), recursively."""
         yield self
         for sub_task in self.get_sub_tasks():
             yield from sub_task.flatten_tasks()
@@ -133,57 +120,26 @@ class GenerationTask(ABC, BaseModel):
 
 
 class CryptoEnrichmentParams(AbstractData):
-    """
-    Parameters for crypto enrichment.
-    This is a parent class for all params classes that can be used for crypto enrichment.
-
-    Attributes:
-        add_crypto_artifacts: Boolean value that indicates whether to add crypto artifacts to the data.
-    """
     add_crypto_artifacts: bool = Field(default=False, title='Add crypto artifacts')
     crypto_prob: float = Field(default=0.02, json_schema_extra={"ui": {"widget": "hidden"}})
 
 
 class EventTask(GenerationTask, ABC):
-    """
-    Abstract class for all task classes for event generation.
-
-    Attributes:
-        app_id:     Source app identifier to assign all task events
-    """
 
     app_id: str | None = Field(default=None, json_schema_extra={"nullable": True, "ui": {"widget": "appId"}})
 
 
 class FileTask(GenerationTask, ABC):
-    """
-    Abstract class for all task classes for file generation (events in FILE_EVENT_TYPES)
-
-    Attributes:
-        is_upload:   Indicates task referring to uploaded file.
-    """
 
     is_upload: bool
 
 
 class GeneratedFileTask(FileTask, ABC):
-    """
-    Abstract class for all task classes for generated file tasks (not upload).
-
-    Attributes:
-        is_upload:   Indicates task referring to generated file.
-    """
 
     is_upload: Literal[False] = False
 
 
 class UploadedFileTask(FileTask, ABC):
-    """
-    Abstract class for all task classes for uploaded file tasks.
-
-    Attributes:
-        is_upload:   Indicates task referring to uploaded file.
-    """
 
     is_upload: Literal[True] = True
     quantity: Literal[1] = 1
@@ -204,17 +160,6 @@ def _validate_max_ge_min(min_field_name: str, max_field_name: str) -> Callable:
 
 
 class AudioTask(GeneratedFileTask):
-    """
-    DraftTask class for EventType.AUDIO
-
-    Attributes:
-        min_duration:     Minimum value for the duration range of the audio file to be passed to MetaFinder audio query.
-        max_duration:     Maximum value for the duration range of the audio file to be passed to MetaFinder audio query.
-        formats:          Audio file format of the audio files.
-        categories:       List of analytic categories to be passed to MetaFinder audio query.
-        is_categories_and_op: Boolean value that indicates which operator to apply to the categories query. True means
-                              operator is AND False means OR.
-    """
 
     event_type: Literal[EventType.AUDIO] = EventType.AUDIO
     min_duration: NonNegativeInt | None = Field(title='Minimum duration (in seconds)', default=None)
@@ -229,19 +174,6 @@ class AudioTask(GeneratedFileTask):
 
 
 class ImageTask(GeneratedFileTask):
-    """
-    DraftTask class for EventType.IMAGE
-
-    Attributes:
-        min_width:     Minimum value for the width range of the image file to be passed to MetaFinder image query.
-        max_width:     Maximum value for the width range of the image file to be passed to MetaFinder image query.
-        min_height:    Minimum value for the height range of the image file to be passed to MetaFinder image query.
-        max_height:    Maximum value for the height range of the image file to be passed to MetaFinder image query.
-        formats:       Image file format of the image files.
-        categories:    List of analytic categories to be passed to MetaFinder image query.
-        is_categories_and_op: Boolean value that indicates which operator to apply to the categories query. True means
-                              operator  is AND False means OR.
-    """
 
     event_type: Literal[EventType.IMAGE] = EventType.IMAGE
     min_width: NonNegativeInt | None = Field(title='Minimum width', default=None)
@@ -271,14 +203,6 @@ class DocumentFormat(StrEnum):
 
 
 class DocumentTask(GeneratedFileTask):
-    """
-    DraftTask class for EventType.DOCUMENT
-
-    Attributes:
-        min_size:     Minimum value for the size range of the audio file to be passed to MetaFinder document query.
-        max_size:     Maximum value for the size range of the audio file to be passed to MetaFinder document query.
-        formats:       File format of the documents to be passed to MetaFinder document query.
-    """
 
     event_type: Literal[EventType.DOCUMENT] = EventType.DOCUMENT
     min_size: NonNegativeInt | None = Field(title='Minimum size (KB)', default=None)
@@ -290,17 +214,6 @@ class DocumentTask(GeneratedFileTask):
 
 
 class VideoTask(GeneratedFileTask):
-    """
-    DraftTask class for EventType.VIDEO
-
-    Attributes:
-        min_duration:     Minimum value for the duration range of the video file to be passed to MetaFinder video query.
-        max_duration:     Maximum value for the duration range of the video file to be passed to MetaFinder video query.
-        formats:          Video file format of the video files.
-        categories:       List of analytic categories to be passed to MetaFinder video query.
-        is_categories_and_op: Boolean value that indicates which operator to apply to the categories query. True means
-                              operator is AND False means OR.
-    """
 
     event_type: Literal[EventType.VIDEO] = EventType.VIDEO
     min_duration: NonNegativeInt | None = Field(title='Minimum duration (in seconds)', default=None)
@@ -315,11 +228,6 @@ class VideoTask(GeneratedFileTask):
 
 
 class ArchiveTask(GeneratedFileTask):
-    """
-    DraftTask class for EventType.ARCHIVE
-
-    Not yet implemented
-    """
     event_type: Literal[EventType.ARCHIVE] = EventType.ARCHIVE
 
 
@@ -329,15 +237,6 @@ class InstalledAppTask(EventTask):
 
 
 class LocationTask(EventTask):
-    """
-    DraftTask class for EventType.LOCATION
-
-    Attributes:
-        latitude:           Float indicating the latitude of the center location for the location events.
-        longitude:          Float indicating the longitude of the center location for the location events.
-        radius:             Radius from center in which locations will be randomly distributed.
-        category:           Custom or pre-defined location category (will appear in PF facet)
-    """
 
     event_type: Literal[EventType.LOCATION] = EventType.LOCATION
     latitude: float | None = Field(ge=-90, le=90, title="Central latitude", default=None)
@@ -347,15 +246,6 @@ class LocationTask(EventTask):
 
 
 class ContactTask(EventTask):
-    """
-    DraftTask class for EventType.CONTACT
-
-    Attributes:
-        min_phone_numbers:      Minimum phone numbers per contact
-        max_phone_numbers:      Maximum phone numbers per contact
-        min_email_addresses:    Minimum email addresses per contact
-        max_email_addresses:    Maximum email addresses per contact
-    """
     
     event_type: Literal[EventType.CONTACT] = EventType.CONTACT
     min_phone_numbers: NonNegativeInt = Field(default=1, title="Minimum phone numbers per contact")
@@ -369,13 +259,6 @@ class ContactTask(EventTask):
 
 
 class CallTask(EventTask):
-    """
-    DraftTask class for EventType.CALL
-
-    Attributes:
-        min_duration_sec:   Minimum value for the duration range of the call events. Must be less than 86400 (24 hours).
-        max_duration_sec:   Maximum value for the duration range of the call events. Must be less than 86400 (24 hours).
-    """
 
     event_type: Literal[EventType.CALL] = EventType.CALL
     min_duration_sec: int | None = Field(title="Minimum duration (in seconds) per call", ge=0, lt=86400, default=None)
@@ -385,21 +268,6 @@ class CallTask(EventTask):
 
 
 class ChatTask(EventTask, CryptoEnrichmentParams):
-    """
-    DraftTask class for EventType.CHAT
-
-    Attributes:
-        voice_messages_quantity:        Number of voice messages.
-        voice_messages_task:            Task for voice messages.
-        num_chats:                      Number of chat threads.
-        min_num_other_participants:     Minimum value for the num_participants range of the chat events.
-        max_num_other_participants:     Maximum value for the num_participants range of the chat events.
-        languages:                      Language codes to be passed to MetaFinder sentences query.
-        categories:                     List of analytic categories to be passed to MetaFinder sentences query.
-        is_categories_and_op: Boolean value that indicates which operator to apply to the categories query. True means
-                              operator is AND False means OR.
-        attachments:                    List of GenerationTask representing the event attachments.
-    """
 
     event_type: Literal[EventType.CHAT] = EventType.CHAT
     quantity: NonNegativeInt  # Added to allow the user to specify 0 for messages quantity
@@ -441,13 +309,6 @@ class ChatTask(EventTask, CryptoEnrichmentParams):
 
 
 class CarvedStringTask(EventTask, CryptoEnrichmentParams):
-    """
-    DraftTask class for EventType.CARVED_STRING
-
-    Attributes:
-        min_words:      Minimum value for the words length range of the carved strings events.
-        max_words:      Maximum value for the words length range of the carved strings events.
-    """
 
     event_type: Literal[EventType.CARVED_STRING] = EventType.CARVED_STRING
     min_words: PositiveInt = Field(default=10, title="Minimum string length in words")
@@ -457,15 +318,6 @@ class CarvedStringTask(EventTask, CryptoEnrichmentParams):
 
 
 class CookieTask(EventTask):
-    """
-    DraftTask class for EventType.COOKIE
-
-    Attributes:
-        min_name_len:           Minimum value for the name characters length range of the cookie events.
-        max_name_len:           Maximum value for the name characters length range of the cookie events.
-        min_value_len:      Minimum value for the value characters length range of the cookie events.
-        max_value_len:      Maximum value for the value characters length range of the cookie events.
-    """
 
     event_type: Literal[EventType.COOKIE] = EventType.COOKIE
     min_name_len: NonNegativeInt = Field(default=3, title="Minimum name length in characters")
@@ -478,14 +330,6 @@ class CookieTask(EventTask):
 
 
 class JourneyTask(EventTask):
-    """
-    DraftTask class for EventType.JOURNEY
-
-    Attributes:
-        start_time:     Timestamp of the start of the journey.
-        end_time:       Timestamp of the end of the journey.
-        radius:         Radius of the journey, in which locations will be randomly distributed.
-    """
 
     event_type: Literal[EventType.JOURNEY] = EventType.JOURNEY
     start_time: datetime | None = Field(title="Start time", default=None)
@@ -496,16 +340,6 @@ class JourneyTask(EventTask):
 
 
 class NoteTask(EventTask, CryptoEnrichmentParams):
-    """
-    DraftTask class for EventType.NOTE
-
-    Attributes:
-        max_words:            Maximum value for the note length range of the note events.
-        languages:            Language code to be passed to MetaFinder sentences query.
-        categories:           List of analytic categories to be passed to MetaFinder sentences query.
-        is_categories_and_op: Boolean value that indicates which operator to apply to the categories query. True means
-                              operator is AND False means OR.
-    """
 
     event_type: Literal[EventType.NOTE] = EventType.NOTE
     max_words: PositiveInt = Field(default=20, title="Maximum note length in words")
@@ -515,13 +349,6 @@ class NoteTask(EventTask, CryptoEnrichmentParams):
 
 
 class NotificationTask(EventTask):
-    """
-    DraftTask class for EventType.NOTIFICATION
-
-    Attributes:
-        min_words:      Minimum value for the notification length range of the notification events.
-        max_words:      Maximum value for the notification length range of the notification events.
-    """
 
     event_type: Literal[EventType.NOTIFICATION] = EventType.NOTIFICATION
     min_words: PositiveInt = Field(default=10, title="Minimum notification length in words")
@@ -531,18 +358,6 @@ class NotificationTask(EventTask):
 
 
 class WebBookmarkTask(EventTask):
-    """
-    DraftTask class for EventType.WEB_BOOKMARK
-
-    Attributes:
-        min_visit_counts:     Minimum value for the visit_counts value range of the web bookmark events.
-        max_visit_counts:     Maximum value for the visit_counts value range of the web bookmark events.
-        min_folder_dirs:      Minimum value for the folder length range of the web bookmark events.
-        max_folder_dirs:      Maximum value for the folder length range of the web bookmark events.
-        categories:           List of categories to be passed to MetaFinder url query.
-        is_categories_and_op: Boolean value that indicates which operator to apply to the categories query. True means
-                              operator  is AND False means OR.
-    """
 
     event_type: Literal[EventType.WEB_BOOKMARK] = EventType.WEB_BOOKMARK
     min_visit_counts: NonNegativeInt = Field(default=1, title="Minimum visit counts")
@@ -557,16 +372,6 @@ class WebBookmarkTask(EventTask):
 
 
 class VisitedPageTask(EventTask):
-    """
-    DraftTask class for EventType.WEB_HISTORY
-
-    Attributes:
-        min_visit_counts:     Minimum value for the visit_counts value range of the web history events.
-        max_visit_counts:     Maximum value for the visit_counts value range of the web history events.
-        categories:           List of categories to be passed to MetaFinder url query.
-        is_categories_and_op: Boolean value that indicates which operator to apply to the categories query. True means
-                              operator  is AND False means OR.
-    """
 
     event_type: Literal[EventType.WEB_HISTORY] = EventType.WEB_HISTORY
     min_visit_counts: NonNegativeInt = Field(default=1, title="Minimum visit counts")
@@ -578,17 +383,6 @@ class VisitedPageTask(EventTask):
 
 
 class EmailTask(EventTask, CryptoEnrichmentParams):
-    """
-    DraftTask class for EventType.EMAIL
-
-    Attributes:
-        min_recipients:         Minimum recipients of each email.
-        max_recipients:         Maximum recipients of each email.
-        min_characters:         Minimum length of each email body in characters.
-        max_characters:         Maximum length of each email body in characters.
-        max_folder_amount:      Number of email folders.
-        attachments             List of GenerationTask representing the event attachments.
-    """
 
     event_type: Literal[EventType.EMAIL] = EventType.EMAIL
     min_recipients: PositiveInt = Field(default=1, title="Minimum recipients per email")
@@ -604,13 +398,6 @@ class EmailTask(EventTask, CryptoEnrichmentParams):
 
 
 class InstantMessageTask(ChatTask):
-    """
-    DraftTask class for EventType.INSTANT_MESSAGE
-
-    Attributes:
-        min_num_other_participants:     Minimum value for the num_participants range of the message events.
-        max_num_other_participants:     Maximum value for the num_participants range of the message events.
-    """
 
     event_type: Literal[EventType.INSTANT_MESSAGE] = EventType.INSTANT_MESSAGE
     min_num_other_participants: Literal[1] = Field(default=1, json_schema_extra={"readOnly": True},
@@ -620,21 +407,6 @@ class InstantMessageTask(ChatTask):
 
 
 class CalendarEntryTask(EventTask):
-    """
-    DraftTask class for EventType.CALENDAR_ENTRY
-
-    Attributes:
-        events_categories:         List of strings that will be randomly selected as the calendar entry category.
-        max_subject_words:         Maximum value for the subject words range of the calendar entry.
-        max_details_sentences:     Maximum value for the details sentences range of the calendar entry.
-        max_reminders:             Maximum value of calendar entry reminders per event.
-        max_attendees:             Maximum value of calendar entry attendees per event.
-        attachments:               List of GenerationTask representing the event attachments.
-        languages:                 Language code to be passed to MetaFinder sentences query.
-        categories:                List of analytic categories to be passed to MetaFinder sentences query.
-        is_categories_and_op:      Boolean value that indicates which operator to apply to the categories query.
-                                    True means operator is AND False means OR.
-    """
 
     event_type: Literal[EventType.CALENDAR_ENTRY] = EventType.CALENDAR_ENTRY
     events_categories: list[str] = Field(default=['Holidays', 'Work', 'Family'],
@@ -651,13 +423,6 @@ class CalendarEntryTask(EventTask):
 
 
 class CellTowerTask(EventTask):
-    """
-    DraftTask class for EventType.CELL_TOWER
-
-    Attributes:
-        latitude:           Float indicating the latitude of the center location for the cell tower events.
-        longitude:          Float indicating the longitude of the center location for the cell tower events.
-    """
 
     event_type: Literal[EventType.CELL_TOWER] = EventType.CELL_TOWER
     latitude: float | None = Field(default=None, ge=-90, le=90, title="Central latitude")
@@ -665,48 +430,26 @@ class CellTowerTask(EventTask):
 
 
 class CreditCardTask(EventTask):
-    """
-    DraftTask class for EventType.CREDIT_CARD
-    """
     event_type: Literal[EventType.CREDIT_CARD] = EventType.CREDIT_CARD
 
 
 class PasswordTask(EventTask, CryptoEnrichmentParams):
-    """
-    DraftTask class for EventType.PASSWORD
-    """
     event_type: Literal[EventType.PASSWORD] = EventType.PASSWORD
 
 
 class PoweringEventTask(EventTask):
-    """
-    DraftTask class for EventType.POWERING_EVENT
-    """
     event_type: Literal[EventType.POWERING_EVENT] = EventType.POWERING_EVENT
 
 
 class RecognizedDeviceTask(EventTask):
-    """
-    DraftTask class for EventType.RECOGNIZED_DEVICE
-    """
     event_type: Literal[EventType.RECOGNIZED_DEVICE] = EventType.RECOGNIZED_DEVICE
 
 
 class UserAccountTask(EventTask):
-    """
-    DraftTask class for EventType.USER_ACCOUNT
-    """
     event_type: Literal[EventType.USER_ACCOUNT] = EventType.USER_ACCOUNT
 
 
 class FinancialAccountTask(EventTask):
-    """
-    DraftTask class for EventType.FINANCIAL_ACCOUNT
-
-    Attributes:
-        min_account_assets: Minimum number of account assets.
-        max_account_assets: Maximum number of account assets.
-    """
 
     event_type: Literal[EventType.FINANCIAL_ACCOUNT] = EventType.FINANCIAL_ACCOUNT
     min_account_assets: NonNegativeInt = Field(default=0, title='Minimum account assets')

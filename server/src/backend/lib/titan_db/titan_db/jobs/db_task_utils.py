@@ -13,7 +13,6 @@ from titan_db.jobs.models import DBGenerationTaskModel
 
 
 def insert_task(job_id: str, task: GenerationTask) -> None:
-    """Insert a new generation task record(s)"""
     db_job = get_job_model(job_id=job_id)
     db_tasks = list(_flatten_db_tasks_from_root_task(job_id=job_id, task=task))
     db_job.tasks.extend(db_tasks)
@@ -21,7 +20,6 @@ def insert_task(job_id: str, task: GenerationTask) -> None:
 
 
 def insert_tasks(job_id: str, tasks: Iterable[GenerationTask]) -> None:
-    """Insert multiple generation tasks"""
     db_job = get_job_model(job_id=job_id)
     db_tasks = list(itertools.chain.from_iterable(
         _flatten_db_tasks_from_root_task(job_id=job_id, task=task)
@@ -32,13 +30,11 @@ def insert_tasks(job_id: str, tasks: Iterable[GenerationTask]) -> None:
 
 
 def update_task(job_id: str, task_id: str, task: GenerationTask) -> None:
-    """Update an existing generation task"""
     delete_task(job_id=job_id, task_id=task_id)
     insert_task(job_id=job_id, task=task)
 
 
 def delete_task(job_id: str, task_id: str) -> None:
-    """Delete a generation task and its recursive sub-tasks. Only root tasks (not sub-tasks) can be deleted."""
     deleted_task_ids = {task_id}
     db_job = get_job_model(job_id=job_id)
     with DBGenerationTaskModel.batch_write() as batch:
@@ -88,7 +84,6 @@ def _update_task_model(task_id: str, actions: list[Action]) -> None:
 
 
 def _flatten_db_tasks_from_root_task(job_id: str, task: GenerationTask) -> Iterator[DBGenerationTaskModel]:
-    """Get DBGenerationTaskModel(s) from a GenerationTask and its sub-tasks"""
     root_db_task = DBGenerationTaskModel(
         job_id=job_id,
         task_id=task.task_id,
@@ -110,7 +105,6 @@ def _get_sub_db_tasks_from_task(
         task: GenerationTask,
         root_task_id: str
 ) -> Iterator[DBGenerationTaskModel]:
-    """Recursively get DBGenerationTaskModel(s) from a GenerationTask and its sub-tasks"""
     for sub_task in task.get_sub_tasks():
         sub_task.parent_task_id = task.task_id
         sub_task.root_task_id = root_task_id

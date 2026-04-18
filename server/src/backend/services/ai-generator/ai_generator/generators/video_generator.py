@@ -1,4 +1,3 @@
-"""Video generator using Amazon Nova Reel."""
 
 import logging
 from typing import Optional
@@ -18,12 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 class VideoGenerator(BaseMediaGenerator):
-    """
-    Video generator using Amazon Nova Reel.
-    
-    Generates short videos based on text descriptions using async polling.
-    Nova Reel writes output directly to S3, then we copy to final location.
-    """
     
     # Default video settings
     DEFAULT_DURATION = 6  # seconds (Nova Reel max)
@@ -40,29 +33,6 @@ class VideoGenerator(BaseMediaGenerator):
         seed: Optional[int] = None,
         **kwargs,
     ) -> GenerationResult:
-        """
-        Generate a video using Nova Reel.
-        
-        This is an async operation:
-        1. Start video generation job
-        2. Poll for completion
-        3. Copy output from Nova Reel temp location to uploads
-        4. Clean up temp location
-        
-        Args:
-            story_id: Unique identifier for the story
-            prompt: Text description of the video to generate
-            duration_seconds: Video duration (max 6 seconds)
-            fps: Frames per second
-            dimension: Video dimensions ("1280x720")
-            seed: Random seed for reproducibility
-            
-        Returns:
-            GenerationResult with video file info
-            
-        Raises:
-            MediaGenerationError: On generation failure
-        """
         self.logger.info(f"Generating video for story {story_id}: {prompt[:50]}...")
         
         bedrock_client = get_bedrock_client()
@@ -144,17 +114,6 @@ class VideoGenerator(BaseMediaGenerator):
                 pass  # Ignore cleanup errors
     
     def _build_prompt(self, story_context: dict) -> str:
-        """
-        Build a video generation prompt from story context.
-        
-        Enhances the base description with video-specific context.
-        
-        Args:
-            story_context: Dictionary containing story metadata
-            
-        Returns:
-            Formatted video generation prompt
-        """
         description = story_context.get("user_description", "")
         
         # Add context for dynamic scenes

@@ -24,10 +24,6 @@ from model.types import GeneratedData, EventType, FILE_EVENT_TYPES, EventData, L
 client  = AppsyncClient()
 
 class TaskGenerationHub:
-    """
-        Generates events for a job's tasks including handling any sub-tasks. All Contractors must communicate task
-        execution and event retrieval through the job's hub.
-    """
     def __init__(self, job: GenerationJob, context: SocialContext):
         self.job = job
         self.context = context
@@ -95,10 +91,6 @@ class TaskGenerationHub:
             yield from repeat(None, times=task.quantity - location_allocation.num_locations)
 
     def save_events(self, events: Iterable[GeneratedData]) -> None:
-        """
-            Special method to allow persisting of events at DB.
-            These events will be set with `is_sub_event` attribute set to `True`.
-        """
         def set_is_sub_event(event: GeneratedData) -> GeneratedData:
             event.is_sub_event = True
             return event
@@ -290,7 +282,6 @@ class TaskGenerationHub:
             _emit_task_status(job_id=self.job_id, task_id=task.task_id, final_count=count, status=GenerationTaskStatus.Generating)
 
     class _ChatMessageCountIterator:
-        """Helper iterator to adjust the count of Chat (messages) for updating task's "Done" status"""
         def __init__(self, chats: Iterator[Chat]):
             self._it = chats
             self.count = 0

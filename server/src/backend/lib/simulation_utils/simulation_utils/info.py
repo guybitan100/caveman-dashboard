@@ -15,16 +15,13 @@ from simulation_utils.generator import DataGenerator
 # Ignore the specific UserWarning about fr_QC locale
 warnings.filterwarnings("ignore", message="fr_QC locale is deprecated. Please use fr_CA.")
 
-
 @dataclass
 class GeneratedPersonalInfo:
-    """Represents personal information for an entity"""
     first_name: str
     last_name: str
     phone: str
     email: str
     male_prob: float
-
 
 class PersonalInfoGenerator(DataGenerator):
     def __init__(self, country_info: CountryInfo | None = None):

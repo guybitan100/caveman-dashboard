@@ -94,9 +94,6 @@ def event_serializer(
         event_type: EventType,
         model_type: str
 ) -> Callable[[type[ReportModelSerializer]], type[ReportModelSerializer]]:
-    """
-    Decorator method that globally registers a ReportModelSerializer class to an event type
-    """
 
     def _register(serializer_class: type[ReportModelSerializer]) -> type[ReportModelSerializer]:
         if event_type in _event_serializer_registry:
@@ -114,9 +111,6 @@ def event_serializer(
 def attachment_serializer(
         event_types: set[type[GeneratedData]]
 ) -> Callable[[type[ReportAttachmentSerializer]], type[ReportAttachmentSerializer]]:
-    """
-    Decorator method that globally registers a ReportAttachmentSerializer class to GeneratedData types
-    """
 
     def _register(serializer_class: type[ReportAttachmentSerializer]) -> type[ReportAttachmentSerializer]:
         for event_type in event_types:
@@ -477,11 +471,6 @@ class ChatMessageSerializer(ReportModelSerializer[ChatMessage]):
             **kwargs,
     ) -> Event:
         multi_model_fields = []
-        """ NOTE: commenting out to reduce size of report.xml
-        to_parties = EventMultiModelField(name='To', type='Party',
-                                          events=list(participants.values()))
-        multi_model_fields.append(to_parties)
-        """
         from_entity = context.social_context[message.sender]
         from_party_name = StrField(name="Name", value=formulate_entity_name(from_entity))
         from_party_identifier = StrField(name="Identifier", value=from_entity.phone)

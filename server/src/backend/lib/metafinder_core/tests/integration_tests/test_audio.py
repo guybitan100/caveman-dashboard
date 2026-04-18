@@ -3,9 +3,6 @@ from model.metafinder.queries import QueryOperator, ArrayQuery
 
 
 def test_audio_single_categories_query():
-	"""
-	Test that a single audio categories query returns the correct items
-	"""
 	query = AudioQueryParams(
 		categories=ArrayQuery(values=['Speech']),
 	)
@@ -17,9 +14,6 @@ def test_audio_single_categories_query():
 		
 
 def test_audio_multiple_categories_or_query():
-	"""
-	Test that multiple audio categories query returns the correct items
-	"""
 	query = AudioQueryParams(
 		categories=ArrayQuery(operator=QueryOperator.OR, values=['Speech', 'Music']),
 	)
@@ -32,9 +26,6 @@ def test_audio_multiple_categories_or_query():
 
 
 def test_audio_multiple_categories_and_query():
-	"""
-	Test that multiple audio categories AND query returns the correct items
-	"""
 	query = AudioQueryParams(
 		categories=ArrayQuery(operator=QueryOperator.AND, values=['Speech', 'Music']),
 	)
@@ -47,9 +38,6 @@ def test_audio_multiple_categories_and_query():
 		
 
 def test_audio_single_format_query():
-	"""
-	Test that audio single format query returns the correct items
-	"""
 	query = AudioQueryParams(
 		formats=['wav'],
 	)
@@ -61,9 +49,6 @@ def test_audio_single_format_query():
 		
 		
 def test_audio_multiple_format_query():
-	"""
-	Test that audio multiple format query returns the correct items
-	"""
 	query = AudioQueryParams(
 		formats=['wav', 'mp3'],
 	)
@@ -76,9 +61,6 @@ def test_audio_multiple_format_query():
 		
 
 def test_audio_min_duration_query():
-	"""
-	Test that audio min duration query returns the correct items
-	"""
 	query = AudioQueryParams(
 		min_duration=60,
 	)
@@ -90,9 +72,6 @@ def test_audio_min_duration_query():
 
 
 def test_audio_max_duration_query():
-	"""
-	Test that audio max duration query returns the correct items
-	"""
 	query = AudioQueryParams(
 		max_duration=60,
 	)
@@ -104,9 +83,6 @@ def test_audio_max_duration_query():
 		
 
 def test_audio_min_max_duration_query():
-	"""
-	Test that audio min and max duration query returns the correct items
-	"""
 	query = AudioQueryParams(
 		min_duration=60,
 		max_duration=120,
@@ -119,9 +95,6 @@ def test_audio_min_max_duration_query():
 		
 
 def test_audio_min_size_query():
-	"""
-	Test that audio min size query returns the correct items
-	"""
 	query = AudioQueryParams(
 		min_size=1000,
 	)
@@ -133,9 +106,6 @@ def test_audio_min_size_query():
 		
 		
 def test_audio_max_size_query():
-	"""
-	Test that audio max size query returns the correct items
-	"""
 	query = AudioQueryParams(
 		max_size=1000,
 	)
@@ -147,9 +117,6 @@ def test_audio_max_size_query():
 		
 
 def test_audio_min_max_size_query():
-	"""
-	Test that audio min and max size query returns the correct items
-	"""
 	query = AudioQueryParams(
 		min_size=1000,
 		max_size=2000,
@@ -162,9 +129,6 @@ def test_audio_min_max_size_query():
 		
 
 def test_audio_multiple_queries():
-	"""
-	Test that multiple audio queries return the correct items
-	"""
 	query = AudioQueryParams(
 		categories=ArrayQuery(operator=QueryOperator.OR, values=['Speech', 'Music']),
 		formats=['wav', 'mp3'],

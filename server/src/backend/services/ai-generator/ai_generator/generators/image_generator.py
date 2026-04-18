@@ -1,4 +1,3 @@
-"""Image generator using Amazon Nova Canvas."""
 
 import logging
 from typing import Optional
@@ -15,11 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class ImageGenerator(BaseMediaGenerator):
-    """
-    Image generator using Amazon Nova Canvas.
-    
-    Generates images based on text descriptions and uploads to S3.
-    """
     
     # Default image dimensions
     DEFAULT_WIDTH = 1024
@@ -35,23 +29,6 @@ class ImageGenerator(BaseMediaGenerator):
         seed: Optional[int] = None,
         **kwargs,
     ) -> GenerationResult:
-        """
-        Generate an image using Nova Canvas.
-        
-        Args:
-            story_id: Unique identifier for the story
-            prompt: Text description of the image to generate
-            negative_prompt: What to avoid in the image
-            width: Image width (512-2048, divisible by 64)
-            height: Image height (512-2048, divisible by 64)
-            seed: Random seed for reproducibility
-            
-        Returns:
-            GenerationResult with image file info
-            
-        Raises:
-            MediaGenerationError: On generation failure
-        """
         self.logger.info(f"Generating image for story {story_id}: {prompt[:50]}...")
         
         try:
@@ -93,17 +70,6 @@ class ImageGenerator(BaseMediaGenerator):
             raise MediaGenerationError(error_msg, story_id=story_id)
     
     def _build_prompt(self, story_context: dict) -> str:
-        """
-        Build an image generation prompt from story context.
-        
-        Enhances the base description with image-specific context.
-        
-        Args:
-            story_context: Dictionary containing story metadata
-            
-        Returns:
-            Formatted image generation prompt
-        """
         description = story_context.get("user_description", "")
         
         # Add context about the scene if available

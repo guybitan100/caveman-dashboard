@@ -6,14 +6,8 @@ from structlog.stdlib import BoundLogger
 from core.titan_logger.processors import LevelRenamer, Tagger
 from core.titan_logger.types import Context
 
-
 class BaseLogger:
     def __init__(self, **kwargs):
-        """Configures and returns a structured JSON logger
-
-        For more configurations, see:
-        https://www.structlog.org/en/stable/index.html#
-        """
         processors = [
             structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S"),
             structlog.processors.dict_tracebacks,
@@ -43,7 +37,6 @@ class BaseLogger:
         self.logger.exception(event, *args, **kwargs)
 
     def bind_event(self) -> Callable:
-        """Decorator that binds the logger with the given event attributes from lambda handler event."""
 
         def decorator(func: Callable):
             def wrapper(event: dict[str, Any], context: Context | None = None):
@@ -55,19 +48,15 @@ class BaseLogger:
 
         return decorator
 
-
     def _bind_event(self, event: dict[str, Any]):
         for key, value in event.items():
             self.logger = self.logger.bind(**{key: value})
-
 
     def _bind_context(self, context: Context | None):
         if context:
             self.logger = self.logger.bind(
                 aws_request_id=context.aws_request_id,
             )
-
-
 
 class Logger(BaseLogger):
     _instance = None

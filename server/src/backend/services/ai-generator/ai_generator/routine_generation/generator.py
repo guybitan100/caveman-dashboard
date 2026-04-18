@@ -1,13 +1,3 @@
-"""Main orchestrator for routine story generation.
-
-This module coordinates the entire routine generation process:
-1. Generate weekly routine pattern via LLM (once per phone)
-2. Iterate through date range, applying the pattern to each day
-3. Apply randomization (timing, duration, skip probability)
-4. Check for timeline event conflicts
-5. Generate concrete StoryData objects
-6. Return stories to be merged with storyline stories
-"""
 
 import logging
 from collections.abc import Sequence
@@ -37,27 +27,6 @@ async def generate_routine_stories(
     config: RoutineGenerationConfig | None = None,
     existing_stories: list[StoryData] | None = None,
 ) -> list[StoryData]:
-    """
-    Generate routine/ambient stories for a phone.
-
-    This is the main entry point for routine generation. It:
-    1. Generates a personalized weekly routine pattern via LLM
-    2. Iterates through the phone's date range
-    3. Applies the appropriate daily pattern for each day
-    4. Randomizes timing and duration
-    5. Skips activities based on entity traits and timeline conflicts
-    6. Generates concrete StoryData objects
-
-    Args:
-        phone: The selected phone to generate routines for
-        entity: The entity who owns the phone
-        timeline_events: Timeline events from the storyline
-        config: Routine generation configuration (optional, uses defaults)
-        existing_stories: Existing stories to avoid duplicating times
-
-    Returns:
-        List of StoryData objects representing routine activities
-    """
     config = config or RoutineGenerationConfig()
 
     if not config.enabled:
@@ -141,18 +110,6 @@ def _generate_day_stories(
     conflict_resolver: ConflictResolver,
     story_generator: RoutineStoryGenerator,
 ) -> list[StoryData]:
-    """Generate routine stories for a single day.
-
-    Args:
-        current_date: The date to generate stories for
-        pattern: The weekly routine pattern
-        randomizer: Randomizer for timing/duration/skip
-        conflict_resolver: For checking timeline conflicts
-        story_generator: For creating StoryData objects
-
-    Returns:
-        List of stories for this day
-    """
     # Get the day of week (0=Monday, 6=Sunday)
     day_of_week = current_date.weekday()
     day_name = DAY_NAMES[day_of_week]
@@ -214,18 +171,6 @@ async def generate_routine_stories_for_phones(
     timeline_events: list[TimelineEvent],
     config: RoutineGenerationConfig | None = None,
 ) -> dict[str, list[StoryData]]:
-    """
-    Generate routine stories for multiple phones.
-
-    Args:
-        phones: List of selected phones
-        entities: List of all entities
-        timeline_events: Timeline events from the storyline
-        config: Routine generation configuration
-
-    Returns:
-        Dict mapping entity_id to list of routine stories
-    """
     config = config or RoutineGenerationConfig()
 
     if not config.enabled:

@@ -3,9 +3,6 @@ from model.metafinder.queries import QueryOperator, ArrayQuery
 
 
 def test_image_single_categories_query():
-	"""
-	Test that a single image categories query returns the correct items
-	"""
 	query = ImageQueryParams(
 		categories=ArrayQuery(values=['Beach']),
 	)
@@ -17,9 +14,6 @@ def test_image_single_categories_query():
 
 
 def test_image_multiple_categories_or_query():
-	"""
-	Test that multiple image categories OR query returns the correct items
-	"""
 	query = ImageQueryParams(
 		categories=ArrayQuery(operator=QueryOperator.OR, values=['BarcodesQRCodes', 'Beach']),
 	)
@@ -32,9 +26,6 @@ def test_image_multiple_categories_or_query():
 
 
 def test_image_multiple_categories_and_query():
-	"""
-	Test that multiple image categories AND query returns the correct items
-	"""
 	query = ImageQueryParams(
 		categories=ArrayQuery(operator=QueryOperator.AND, values=['BarcodesQRCodes', 'Beach']),
 	)
@@ -47,9 +38,6 @@ def test_image_multiple_categories_and_query():
 	
 	
 def test_image_single_format_query():
-	"""
-	Test that image single format query returns the correct items
-	"""
 	query = ImageQueryParams(
 		formats=['jpeg'],
 	)
@@ -61,9 +49,6 @@ def test_image_single_format_query():
 		
 
 def test_image_multiple_format_query():
-	"""
-	Test that image multiple format query returns the correct items
-	"""
 	query = ImageQueryParams(
 		formats=['jpeg', 'png'],
 	)
@@ -76,9 +61,6 @@ def test_image_multiple_format_query():
 		
 
 def test_image_min_size_query():
-	"""
-	Test that image min size query returns the correct items
-	"""
 	query = ImageQueryParams(
 		min_size=1000,
 	)
@@ -90,9 +72,6 @@ def test_image_min_size_query():
 		
 
 def test_image_max_size_query():
-	"""
-	Test that image max size query returns the correct items
-	"""
 	query = ImageQueryParams(
 		max_size=1000,
 	)
@@ -104,9 +83,6 @@ def test_image_max_size_query():
 		
 
 def test_image_min_max_size_query():
-	"""
-	Test that image min max size query returns the correct items
-	"""
 	query = ImageQueryParams(
 		min_size=1000,
 		max_size=2000,
@@ -119,9 +95,6 @@ def test_image_min_max_size_query():
 		
 
 def test_image_min_width_query():
-	"""
-	Test that image min width query returns the correct items
-	"""
 	query = ImageQueryParams(
 		min_width=1000,
 	)
@@ -133,9 +106,6 @@ def test_image_min_width_query():
 		
 
 def test_image_max_width_query():
-	"""
-	Test that image max width query returns the correct items
-	"""
 	query = ImageQueryParams(
 		max_width=1000,
 	)
@@ -147,9 +117,6 @@ def test_image_max_width_query():
 
 
 def test_image_min_max_width_query():
-	"""
-	Test that image min max width query returns the correct items
-	"""
 	query = ImageQueryParams(
 		min_width=1000,
 		max_width=2000,
@@ -162,9 +129,6 @@ def test_image_min_max_width_query():
 		
 
 def test_image_min_height_query():
-	"""
-	Test that image min height query returns the correct items
-	"""
 	query = ImageQueryParams(
 		min_height=1000,
 	)
@@ -176,9 +140,6 @@ def test_image_min_height_query():
 		
 
 def test_image_max_height_query():
-	"""
-	Test that image max height query returns the correct items
-	"""
 	query = ImageQueryParams(
 		max_height=1000,
 	)
@@ -190,9 +151,6 @@ def test_image_max_height_query():
 		
 
 def test_image_min_max_height_query():
-	"""
-	Test that image min max height query returns the correct items
-	"""
 	query = ImageQueryParams(
 		min_height=1000,
 		max_height=2000,
@@ -205,9 +163,6 @@ def test_image_min_max_height_query():
 
 
 def test_image_multiple_queries():
-	"""
-	Test that image multiple queries return the correct items
-	"""
 	query = ImageQueryParams(
 		categories=ArrayQuery(operator=QueryOperator.OR, values=['BarcodesQRCodes', 'Beach']),
 		formats=['jpeg', 'png'],

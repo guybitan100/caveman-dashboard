@@ -11,23 +11,9 @@ from generation.simulation.events.blueprints import PhoneCallBlueprint
 from generation.simulation.utils import random_times
 
 
-"""
-class PhoneCallStatus(Enum):
-    Unknown = 'Unknown'
-    Missed = 'Missed'
-    Rejected = 'Rejected'
-    Established = 'Established'
-    BusyLine = 'BusyLine'
-    Canceled = 'Canceled'
-    Voicemail = 'Voicemail'
-    NotEstablishedUnknownReason = 'NotEstablishedUnknownReason'
-    AnsweredOnExternalDevice = 'AnsweredOnExternalDevice'
-}
-"""
 
 
 class CallDirection:
-    """Direction of the call"""
 
     INCOMING = "Incoming"
     OUTGOING = "Outgoing"

@@ -1,9 +1,3 @@
-"""
-UFDR Job Submission Client.
-
-This module handles HTTP communication with the UFDR (Universal Forensic Data Repository)
-endpoint for submitting GenerationJobs.
-"""
 import json
 import os
 import uuid
@@ -16,7 +10,6 @@ from pydantic import BaseModel
 
 
 class UFDRSubmissionResponse(BaseModel):
-    """Response from UFDR job submission."""
     
     job_id: str
     status: str
@@ -25,7 +18,6 @@ class UFDRSubmissionResponse(BaseModel):
 
 
 class UFDRSubmissionError(BaseModel):
-    """Error response from UFDR job submission."""
     
     job_id: str
     error: str
@@ -33,25 +25,12 @@ class UFDRSubmissionError(BaseModel):
 
 
 class UFDRClient:
-    """
-    HTTP client for submitting GenerationJobs to UFDR endpoint.
-    
-    The UFDR endpoint accepts GenerationJob payloads and returns
-    submission confirmation.
-    """
     
     def __init__(
         self,
         base_url: Optional[str] = None,
         timeout: float = 30.0,
     ):
-        """
-        Initialize UFDR client.
-        
-        Args:
-            base_url: UFDR API base URL. If None, reads from UFDR_API_URL env var
-            timeout: Request timeout in seconds
-        """
         self.base_url = base_url or os.getenv(
             "UFDR_API_URL",
             "https://rx28yav780-vpce-07a1401965d8a8c77.execute-api.eu-central-1.amazonaws.com/prod"
@@ -63,18 +42,6 @@ class UFDRClient:
         self,
         job_data: GenerationJob,
     ) -> UFDRSubmissionResponse | UFDRSubmissionError:
-        """
-        Submit a GenerationJob to UFDR endpoint.
-        
-        Args:
-            job_data: Serialized GenerationJob dict (from job.model_dump())
-            
-        Returns:
-            UFDRSubmissionResponse on success, UFDRSubmissionError on failure
-            
-        Raises:
-            httpx.HTTPError: On network/connection errors
-        """
         job_id = str(uuid.uuid4())
         job_data.job_id = job_id
         async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -119,15 +86,6 @@ class UFDRClient:
         self,
         jobs: list[dict],
     ) -> list[UFDRSubmissionResponse | UFDRSubmissionError]:
-        """
-        Submit multiple GenerationJobs in parallel.
-        
-        Args:
-            jobs: List of serialized GenerationJob dicts
-            
-        Returns:
-            List of submission responses (one per job)
-        """
         import asyncio
         
         tasks = [self.submit_job(job) for job in jobs]

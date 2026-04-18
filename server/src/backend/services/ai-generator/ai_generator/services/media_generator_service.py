@@ -1,4 +1,3 @@
-"""Orchestrates media generation for all story types using specialized generators."""
 
 import asyncio
 import logging
@@ -25,17 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 class MediaGeneratorService:
-    """
-    Orchestrates media generation for file-based stories (Image, Video, Audio, Document).
-    
-    Responsibilities:
-    - Determines which stories need media generation
-    - Routes to appropriate generator (Image/Video/Audio/Document)
-    - Manages batching and concurrency
-    - Handles retries and failures
-    - Updates story file info with S3 paths
-    - Removes stories that fail after retries
-    """
 
     def __init__(
         self,
@@ -43,14 +31,6 @@ class MediaGeneratorService:
         batch_size: Optional[int] = None,
         retry_attempts: Optional[int] = None,
     ):
-        """
-        Initialize the media generator service.
-        
-        Args:
-            job_id: Job identifier for organizing S3 uploads
-            batch_size: Number of concurrent generations (default from settings)
-            retry_attempts: Retry attempts before removing story (default from settings)
-        """
         self.job_id = job_id
         self.batch_size = batch_size or SETTINGS.MEDIA_GENERATION_BATCH_SIZE
         self.retry_attempts = retry_attempts or SETTINGS.MEDIA_GENERATION_RETRY_ATTEMPTS
@@ -66,16 +46,6 @@ class MediaGeneratorService:
         stories: List[StoryData],
         entities: Dict[str, Entity],
     ) -> List[StoryData]:
-        """
-        Generate media for all file-based stories in the list.
-        
-        Args:
-            stories: List of story outputs (mixed types)
-            entities: Entity lookup by ID (for voice characteristics, etc.)
-            
-        Returns:
-            Updated list of stories with S3 paths set, failed stories removed
-        """
         if not SETTINGS.MEDIA_GENERATION_ENABLED:
             logger.info("Media generation disabled - returning stories unchanged")
             return stories
@@ -101,7 +71,6 @@ class MediaGeneratorService:
     def _get_media_stories(
         self, stories: List[StoryData]
     ) -> List[ImageStoryData | VideoStoryData | AudioStoryData | DocumentStoryData]:
-        """Extract only file-based stories that need media generation."""
         media_stories: List[ImageStoryData | VideoStoryData | AudioStoryData | DocumentStoryData] = []
         for story in stories:
             if isinstance(story, (ImageStoryData, VideoStoryData, AudioStoryData, DocumentStoryData)):
@@ -113,17 +82,10 @@ class MediaGeneratorService:
         stories: Sequence[ImageStoryData | VideoStoryData | AudioStoryData | DocumentStoryData],
         entities: Dict[str, Entity],
     ) -> Dict[str, GenerationResult]:
-        """
-        Generate media for all stories with batching and retry logic.
-        
-        Returns:
-            Dict mapping story UID -> GenerationResult
-        """
         results: Dict[str, GenerationResult] = {}
         semaphore = asyncio.Semaphore(self.batch_size)
 
         async def generate_with_retry(story: Any) -> tuple[str, GenerationResult]:
-            """Generate media for a single story with retries."""
             story_uid = story.uid or "unknown"
             
             async with semaphore:
@@ -172,7 +134,6 @@ class MediaGeneratorService:
         story: ImageStoryData | VideoStoryData | AudioStoryData | DocumentStoryData,
         entities: Dict[str, Entity],
     ) -> GenerationResult:
-        """Route to appropriate generator based on story type."""
         prompt = story.user_description or "Generated content"
         
         if isinstance(story, ImageStoryData):
@@ -223,16 +184,6 @@ class MediaGeneratorService:
         stories: List[StoryData],
         results: Dict[str, GenerationResult],
     ) -> List[StoryData]:
-        """
-        Update file stories with S3 paths and remove failed ones.
-        
-        Args:
-            stories: Original story list
-            results: Generation results by story UID
-            
-        Returns:
-            Updated stories with successful generations, failures removed
-        """
         updated_stories: List[StoryData] = []
         
         for story in stories:

@@ -15,15 +15,6 @@ def hire_contractor(
         job: GenerationJob = None,
         task: GenerationTask = None
 ) -> Contractor:
-    """
-    Retrieve a contractor instance by event type and initialize it with the given job info.
-
-    Attributes:
-        event_type: EventType associated to the requested
-        hub:        Job hub
-        job:        Generation job the contractor will process.
-        task:       Generation task the contractor will process.
-    """
     contractor_class = contractor_registry.get(event_type)
     if contractor_class is None:
         raise Exception(f"No registered contractor for event type {event_type}")
@@ -32,13 +23,6 @@ def hire_contractor(
 
 
 def hire_architect(event_type: EventType, context: SocialContext) -> Architect | None:
-    """
-    Retrieve an architect instance by event type and initialize it with the given job info.
-
-    Attributes:
-        event_type:     EventType associated to the requested architect.
-        context:        Social context of the job.
-    """
     architect_class = architect_registry.get(event_type)
     if architect_class is None:
         return None

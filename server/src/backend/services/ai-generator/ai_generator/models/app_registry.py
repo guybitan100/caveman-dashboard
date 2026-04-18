@@ -1,4 +1,3 @@
-"""App ID registry for realistic app identifiers per device type and story type."""
 
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -7,7 +6,6 @@ from .phone_selection import DeviceType
 
 
 class AppCategory(StrEnum):
-    """Categories of apps for story generation."""
     MESSAGING = "messaging"
     SOCIAL = "social"
     EMAIL = "email"
@@ -22,7 +20,6 @@ class AppCategory(StrEnum):
 
 @dataclass
 class AppInfo:
-    """Information about an app."""
     app_id: str
     display_name: str
     category: AppCategory
@@ -328,7 +325,6 @@ ALL_APPS: list[AppInfo] = (
 
 
 class AppRegistry:
-    """Registry for looking up app IDs by category and device type."""
     
     def __init__(self) -> None:
         self._apps_by_category: dict[AppCategory, list[AppInfo]] = {}
@@ -344,7 +340,6 @@ class AppRegistry:
             self._apps_by_id[app.app_id] = app
     
     def get_app_by_id(self, app_id: str) -> AppInfo | None:
-        """Look up an app by its ID."""
         return self._apps_by_id.get(app_id)
     
     def get_apps_for_category(
@@ -352,7 +347,6 @@ class AppRegistry:
         category: AppCategory,
         device_type: DeviceType = DeviceType.GENERIC,
     ) -> list[AppInfo]:
-        """Get all apps matching a category and device type."""
         apps = self._apps_by_category.get(category, [])
         return [
             app for app in apps
@@ -364,7 +358,6 @@ class AppRegistry:
         category: AppCategory,
         device_type: DeviceType = DeviceType.GENERIC,
     ) -> AppInfo | None:
-        """Get the default app for a category on a specific device type."""
         apps = self.get_apps_for_category(category, device_type)
         
         # First try to find a platform-specific default
@@ -386,14 +379,6 @@ class AppRegistry:
         prefer_third_party: bool = False,
         app_name_hint: str | None = None,
     ) -> AppInfo | None:
-        """
-        Get a messaging app with optional preferences.
-        
-        Args:
-            device_type: Target device platform
-            prefer_third_party: If True, prefer apps like WhatsApp over native SMS
-            app_name_hint: Optional hint to select a specific app (e.g., "whatsapp", "telegram")
-        """
         apps = self.get_apps_for_category(AppCategory.MESSAGING, device_type)
         
         if app_name_hint:
@@ -415,7 +400,6 @@ class AppRegistry:
         device_type: DeviceType = DeviceType.GENERIC,
         exclude_native: bool = False,
     ) -> AppInfo | None:
-        """Get a random messaging app for variety in stories."""
         import random
         
         apps = self.get_apps_for_category(AppCategory.MESSAGING, device_type)
@@ -434,7 +418,6 @@ _registry: AppRegistry | None = None
 
 
 def get_app_registry() -> AppRegistry:
-    """Get the singleton app registry instance."""
     global _registry
     if _registry is None:
         _registry = AppRegistry()

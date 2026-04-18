@@ -4,9 +4,6 @@ from metafinder_core.queries import ApplicationQueryParams
 
 
 def test_app_ids_query():
-    """
-    Test that app ids query returns the correct items
-    """
     query = ApplicationQueryParams(
         app_ids=['androidesko.android.electronicthermometer', 'com.banglalink.toffee'],
     )
@@ -19,9 +16,6 @@ def test_app_ids_query():
 
 @pytest.mark.skip(reason="No app data with category")
 def test_app_category_query():
-    """
-    Test that app category query returns the correct items
-    """
     query = ApplicationQueryParams(
         category='games',
     )
@@ -33,9 +27,6 @@ def test_app_category_query():
 
 
 def test_app_os_query():
-    """
-    Test that app os query returns the correct items
-    """
     query = ApplicationQueryParams(
         os='android',
     )

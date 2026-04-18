@@ -17,7 +17,6 @@ MAX_RETRIES = 2
 
 @dataclass
 class GeneratedLocationThumbnail:
-    """Represents a generated location thumbnail"""
     path: str
     md5: str
     size: int

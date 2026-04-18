@@ -3,9 +3,6 @@ from model.metafinder.queries import QueryOperator, ArrayQuery
 
 
 def test_text_empty_query():
-	"""
-	Test that text empty query returns the correct items
-	"""
 	query = TextQueryParams()
 	results = query.query(10)
 	
@@ -13,9 +10,6 @@ def test_text_empty_query():
 	
 
 def test_text_min_size_query():
-	"""
-	Test that text min size query returns the correct items
-	"""
 	query = TextQueryParams(
 		min_size=10,
 	)
@@ -27,9 +21,6 @@ def test_text_min_size_query():
 		
 		
 def test_text_max_size_query():
-	"""
-	Test that text max size query returns the correct items
-	"""
 	query = TextQueryParams(
 		max_size=1000,
 	)
@@ -41,9 +32,6 @@ def test_text_max_size_query():
 		
 
 def test_text_min_max_size_query():
-	"""
-	Test that text min and max size query returns the correct items
-	"""
 	query = TextQueryParams(
 		min_size=10,
 		max_size=2000,

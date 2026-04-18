@@ -130,7 +130,6 @@ class FileDataDownloader:
         ]
 
     def get_files(self) -> Iterator[tuple[FileData, Iterator[bytes]]]:
-        """Generates each file_data objects and its bytes content iterator"""
         while True:
             try:
                 # Retrieve file data and temp path from outbox queue
@@ -208,7 +207,6 @@ class FileDataDownloaderWorker(threading.Thread):
         super().__init__()
 
     def run(self):
-        """Downloads file from S3 when total size max quota has not been reached."""
         while True:
             try:
                 file_data = self._inbox.get(timeout=1)  # Retrieve file from inbox queue

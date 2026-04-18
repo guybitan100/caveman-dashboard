@@ -2,9 +2,6 @@ from metafinder_core.queries import EntityQueryParams
 
 
 def test_entity_single_ids_query():
-	"""
-	Test that entity singleids query returns the correct items
-	"""
 	query = EntityQueryParams(
 		id=['220b3aac-0725-432e-b584-265dabd6db31'],
 	)
@@ -17,9 +14,6 @@ def test_entity_single_ids_query():
 
 
 def test_entity_multiple_ids_query():
-	"""
-	Test that entity multiple ids query returns the correct items
-	"""
 	query = EntityQueryParams(
 		id=['220b3aac-0725-432e-b584-265dabd6db31', '3de25202-3f8b-4a6d-94ea-984495fb332a'],
 	)
@@ -31,9 +25,6 @@ def test_entity_multiple_ids_query():
 
 
 def test_entity_empty_query():
-	"""
-	Test that entity empty query returns the correct items
-	"""
 	query = EntityQueryParams()
 	results = query.query(10)
 	

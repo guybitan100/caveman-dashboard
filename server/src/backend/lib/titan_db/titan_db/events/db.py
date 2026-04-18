@@ -156,7 +156,6 @@ def get_random_apps_by_event_type(
 
 @job_db_session
 def read_referenced_apps(job_id: str, job_collection: Collection = None) -> Iterator[InstalledApplication]:
-    """Returns all apps referenced by at least one event in the 'app_uid' field"""
     referenced_app_uids = list(job_collection.distinct("app_uid", filter={"app_uid": {"$ne": None}}))
     if not referenced_app_uids:
         return iter(())
@@ -169,7 +168,6 @@ def read_referenced_apps(job_id: str, job_collection: Collection = None) -> Iter
 
 @job_db_session
 def read_event_ids(job_id: str, event_type: EventType, job_collection: Collection = None) -> Iterator[str]:
-    """Returns an iterator over GeneratedData UID strings for a given EventType; used by converter for extra infos"""
     data_class = get_generated_data_class(event_type)
     query = {FIELD_CLASS_NAME: data_class.__name__, "is_sub_event": False}
     filters = {"_id": 1}
@@ -180,13 +178,6 @@ def read_event_ids(job_id: str, event_type: EventType, job_collection: Collectio
 
 @job_db_session
 def write_task_events(job_id: str, events: Iterator[GeneratedTaskData], job_collection: Collection = None) -> None:
-    """
-    Nested GeneratedData objects will be serialized as their IDs as placeholders instead of in full.
-    Any nested GeneratedData objects must be saved explicitly to the DB.
-
-    Returns the total number of documents written to the DB. In the case of Chat events, this result will be
-        total Chat events (threads) + total messages (ChatMessage objects)
-    """
     data = itertools.chain.from_iterable(
         map(lambda event: _serialize_event(event=event.data, task_id=event.task_id), events)
     )
@@ -249,13 +240,6 @@ def _get_oversized_doc_chunks(doc: dict) -> tuple[dict, list[dict]]:
 def write_events(
     job_id: str, events: Iterator[GeneratedData], task_id: str | None = None, job_collection: Collection = None
 ) -> int:
-    """
-    Nested GeneratedData objects will be serialized as their IDs as placeholders instead of in full.
-    Any nested GeneratedData objects must be saved explicitly to the DB.
-
-    Returns the total number of documents written to the DB. In the case of Chat events, this result will be
-        total Chat events (threads) + total messages (ChatMessage objects)
-    """
     data = itertools.chain.from_iterable(map(lambda event: _serialize_event(event=event, task_id=task_id), events))
     try:
         result = job_collection.insert_many(data, ordered=False)
@@ -293,14 +277,6 @@ def read_events(
     include_nested_models: bool = True,
     job_collection: Collection = None,
 ) -> Iterator[GeneratedData]:
-    """
-    :param job_id: Id of the job.
-    :param event_type: EventType to filter events by.
-    :param task_id: Task_id to filter events by.
-    :param include_attachments: Flag to filter EventData that is_attachment is set to True.
-    :param include_nested_models: Flag to filter EventData that should not be serialized as a standalone report.xml Model.
-    :return: Iterator[GeneratedData]: Iterator of GeneratedData.
-    """
     if event_type is EventType.CHAT:
         events = _read_chat_events(job_collection=job_collection, task_id=task_id)
     else:

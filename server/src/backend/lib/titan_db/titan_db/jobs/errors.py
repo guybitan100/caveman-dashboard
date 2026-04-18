@@ -1,14 +1,8 @@
 class DBAttributeSerializationError(Exception):
-    """
-    Custom exception for attribute serialization errors
-    """
     pass
 
 
 class DBAttributeDeserializationError(Exception):
-    """
-    Custom exception for attribute deserialization errors
-    """
     pass
 
 

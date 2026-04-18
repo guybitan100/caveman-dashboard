@@ -1,7 +1,6 @@
 import abc
 from typing import TypedDict
 
-
 class Client(TypedDict):
     installation_id: str
     app_title: str
@@ -9,17 +8,14 @@ class Client(TypedDict):
     app_version_code: str
     app_package_name: str
 
-
 class Identity(TypedDict):
     cognito_identity_id: str
     cognito_identity_pool_id: str
-
 
 class ClientContext(TypedDict):
     client: Client
     custom: dict
     env: dict
-
 
 class Context(metaclass=abc.ABCMeta):
     function_name: str
@@ -34,6 +30,4 @@ class Context(metaclass=abc.ABCMeta):
 
     @staticmethod
     def get_remaining_time_in_millis() -> int:
-        """Returns the number of milliseconds left before the execution times
-        out"""
         pass

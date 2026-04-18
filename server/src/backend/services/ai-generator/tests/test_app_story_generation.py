@@ -1,12 +1,4 @@
 #!/usr/bin/env python3
-"""
-Test script to verify app story generation.
-
-This tests that the job assembly agent properly:
-1. Collects all app_id references from stories
-2. Generates AppStoryData for each unique app_id
-3. Includes app stories in the final job
-"""
 
 import sys
 from pathlib import Path
@@ -21,7 +13,6 @@ from ai_generator.models.phone_stories import PhoneStoryMapping, PhoneStoryMappi
 
 
 def test_app_story_generation():
-    """Test that app stories are generated for app_id references."""
     
     print("🧪 Testing App Story Generation")
     print("=" * 60)

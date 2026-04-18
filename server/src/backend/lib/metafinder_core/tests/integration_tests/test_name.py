@@ -2,9 +2,6 @@ from metafinder_core.queries import NameQueryParams
 
 
 def test_name_is_surname_query():
-    """
-    Test that name query with is_surname returns the correct items
-    """
     query = NameQueryParams(
         is_surname=True,
     )
@@ -16,9 +13,6 @@ def test_name_is_surname_query():
 
 
 def test_name_country_code_query():
-    """
-    Test that name query with country_code returns the correct items
-    """
     query = NameQueryParams(
         country_code='US',
     )
@@ -30,9 +24,6 @@ def test_name_country_code_query():
 
 
 def test_name_alphabet_query():
-    """
-    Test that name query with alphabet returns the correct items
-    """
     query = NameQueryParams(
         alphabet='latin',
     )
@@ -44,9 +35,6 @@ def test_name_alphabet_query():
 
 
 def test_name_is_surname_and_is_male_query():
-    """
-    Test that name query with is_surname and is_male returns the correct items
-    """
     query = NameQueryParams(
         is_surname=True,
         is_male=True,
@@ -60,9 +48,6 @@ def test_name_is_surname_and_is_male_query():
 
 
 def test_name_combined_query():
-    """
-    Test that name query with multiple parameters returns the correct items
-    """
     query = NameQueryParams(
         is_surname=True,
         country_code='US',

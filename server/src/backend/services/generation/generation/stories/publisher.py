@@ -8,7 +8,6 @@ from model.types import EventData
 
 
 def publish(job_id: str, stories_graph: DiGraph) -> None:
-    """Converts StoryData objects to EventData objects and saves them to the DB"""
     stories = [
         deserialize(story_data, StoryDataAdapter)
         for story_id, story_data in stories_graph.nodes.data('data')
@@ -50,7 +49,6 @@ def _resolve_story_refs_and_translate(
         id_to_event: dict[str, EventData],
         app_id_to_app_story_uid: dict[str, str]
 ) -> EventData:
-    """Recursively set stories in place of their refs and translate them to events"""
     if story.story_id in id_to_event:    # Story has already been resolved
         return id_to_event[story.story_id]
 

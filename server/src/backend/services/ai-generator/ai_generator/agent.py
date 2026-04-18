@@ -1,9 +1,3 @@
-"""
-Main entry point for AI story generation system.
-
-This module provides the orchestrator and agents for generating
-UFDR simulation data from story descriptions.
-"""
 
 from ai_generator.orchestrator import PipelineOrchestrator
 from ai_generator.storage import PipelineStorage
@@ -36,14 +30,5 @@ __all__ = [
 
 # Create default orchestrator instance
 def create_orchestrator(storage_path: str = "./pipeline_sessions") -> PipelineOrchestrator:
-    """
-    Create a pipeline orchestrator with default configuration.
-    
-    Args:
-        storage_path: Path to store pipeline sessions
-        
-    Returns:
-        Configured PipelineOrchestrator
-    """
     storage = PipelineStorage(storage_path)
     return PipelineOrchestrator(storage=storage)

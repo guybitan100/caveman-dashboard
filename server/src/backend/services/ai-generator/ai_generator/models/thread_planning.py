@@ -1,4 +1,3 @@
-"""Models for thread planning - organizing stories into conversation threads."""
 
 from datetime import datetime
 from typing import Literal
@@ -11,7 +10,6 @@ from model.types import EntityID
 # ==================== Email Thread Models ====================
 
 class EmailTimelineEntry(BaseModel):
-    """A single email in a thread timeline."""
     
     sequence_number: int = Field(
         description="Order in thread (1-based)"
@@ -40,7 +38,6 @@ class EmailTimelineEntry(BaseModel):
 
 
 class EmailThreadPlan(BaseModel):
-    """Plan for a single email conversation thread."""
     
     thread_id: str = Field(
         description="Unique identifier for this thread"
@@ -57,7 +54,6 @@ class EmailThreadPlan(BaseModel):
 
 
 class EmailThreadPlans(BaseModel):
-    """Output type for email thread planning agent."""
     
     threads: list[EmailThreadPlan] = Field(
         description="All email threads to generate"
@@ -67,7 +63,6 @@ class EmailThreadPlans(BaseModel):
 # ==================== Chat Thread Models ====================
 
 class ChatTimelineEntry(BaseModel):
-    """A single message in a chat thread timeline."""
     
     sequence_number: int = Field(
         description="Order in chat (1-based)"
@@ -94,7 +89,6 @@ class ChatTimelineEntry(BaseModel):
 
 
 class ChatThreadPlan(BaseModel):
-    """Plan for a single chat conversation."""
     
     thread_id: str = Field(
         description="Unique identifier for this thread"
@@ -117,7 +111,6 @@ class ChatThreadPlan(BaseModel):
 
 
 class ChatThreadPlans(BaseModel):
-    """Output type for chat thread planning agent."""
     
     threads: list[ChatThreadPlan] = Field(
         description="All chat threads to generate"
@@ -127,7 +120,6 @@ class ChatThreadPlans(BaseModel):
 # ==================== SMS Thread Models ====================
 
 class SMSTimelineEntry(BaseModel):
-    """A single SMS/MMS message in a thread timeline."""
     
     sequence_number: int = Field(
         description="Order in conversation (1-based)"
@@ -153,7 +145,6 @@ class SMSTimelineEntry(BaseModel):
 
 
 class SMSThreadPlan(BaseModel):
-    """Plan for a single SMS/MMS conversation."""
     
     thread_id: str = Field(
         description="Unique identifier for this thread"
@@ -173,7 +164,6 @@ class SMSThreadPlan(BaseModel):
 
 
 class SMSThreadPlans(BaseModel):
-    """Output type for SMS thread planning agent."""
     
     threads: list[SMSThreadPlan] = Field(
         description="All SMS threads to generate"

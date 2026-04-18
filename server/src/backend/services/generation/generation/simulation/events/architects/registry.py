@@ -10,18 +10,6 @@ architect_registry: dict[EventType, type[Architect]] = {}  # Registry of archite
 def register_architect(
     event_type: EventType,
 ) -> Callable[[type[Architect]], type[Architect]]:
-    """
-    Decorator method that globally registers a Architect class to an EventType.
-
-    Arguments:
-        event_type: EventType to associate the Architect with.
-
-    Examples:
-        >>> @register_architect(event_type=EventType.CHAT)
-            class ChatArchitect(Architect):
-                def __init__(self, **kwargs):
-                    super().__init__(**kwargs)
-    """
 
     def _register(architect_class: type[Architect]) -> type[Architect]:
         if event_type in architect_registry:

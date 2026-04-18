@@ -21,7 +21,6 @@ def str_uuid() -> str:
 
 
 def ignore_and_generate_uid(value, info: ValidationInfo):
-    """Generate a new UUID string unless the value is being loaded from the database"""
     ctx = info.context
     if ctx and ctx.get('source') == 'db':
         return value    # ID from DB
@@ -37,7 +36,6 @@ AutoUID = Annotated[
 
 
 def deserialize[T: BaseModel, U: Any](data: dict[str, Any], model: type[T] | TypeAdapter[U]) -> T | U:
-    """Deserialize a dictionary into a Pydantic model using either a model class or TypeAdapter"""
     context = {'source': 'db'}
     if isinstance(model, TypeAdapter):
         return model.validate_python(data, context=context)
@@ -48,5 +46,4 @@ def deserialize[T: BaseModel, U: Any](data: dict[str, Any], model: type[T] | Typ
 
 
 def now() -> datetime:
-    """Get the current UTC datetime"""
     return datetime.now(tz=timezone.utc)    #TODO why UTC?

@@ -28,15 +28,6 @@ class SerializerContext:
             child_event: GeneratedData | str,
             child_type: type[GeneratedData] | None = None
     ) -> None:
-        """
-        Method to register jump targets in the report.xml
-
-        :param parent_event: The parent event. Must be the GeneratedData event.
-        :param child_event: The child event. Can be GeneratedData event or just the event uid.
-        :param child_type: Optional child type. Must be passed when child_event is only the event uid, ignored when
-        the child event is GeneratedData
-        :return:
-        """
         if isinstance(child_event, GeneratedData):
             child_id = child_event.uid
             if child_type:

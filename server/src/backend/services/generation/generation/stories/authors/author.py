@@ -13,7 +13,6 @@ class Author[SD: StoryData, ED: EventData](ABC):
 
     @abstractmethod
     def translate(self, story_data: SD, event_context: dict[str, EventData]) -> ED:
-        """Convert StoryData object to EventData object"""
         raise NotImplementedError
 
     def _translate_file[FD: FileData](self, story_data: FileStoryData, data_class: type[FD]) -> FD:
@@ -54,18 +53,6 @@ _author_registry: dict[StoryType, Author] = {}    # Registry of authors by story
 
 
 def register_author(story_type: StoryType, event_type: EventType) -> Callable[[type[Author]], type[Author]]:
-    """
-    Decorator method that globally registers an Author class to a StoryType.
-
-    Arguments:
-        story_type: StoryType to associate the Author input with.
-        event_type: EventType to associate the Author output with.
-
-    Examples:
-        >>> @register_author(story_type=StoryType.LOCATION, event_type=EventType.LOCATION)
-            class LocationAuthor(Author):
-                ...
-    """
 
     def _register(author_class: type[Author]) -> type[Author]:
         if story_type in _author_registry:
@@ -83,15 +70,6 @@ class AuthorClassNotFoundError(Exception):
 
 
 def get_author(story_type: StoryType) -> Author:
-    """
-    Get the Author registered to the given StoryType.
-
-    Arguments:
-        story_type: StoryType for the requested Author.
-
-    Returns:
-        Author inherited instance for the StoryType.
-    """
     author = _author_registry.get(story_type)
     if author is None:
         raise AuthorClassNotFoundError(story_type=story_type)

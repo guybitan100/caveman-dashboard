@@ -1,4 +1,3 @@
-"""Media generators for AI-generated story content."""
 
 from ai_generator.generators.image_generator import ImageGenerator
 from ai_generator.generators.video_generator import VideoGenerator

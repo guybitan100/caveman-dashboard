@@ -9,14 +9,6 @@ class AttachmentBlueprint:
 
 @dataclass
 class ChatBlueprint:
-    """
-    Attributes:
-        participants:
-        num_messages:
-        num_voice_messages:
-        participant_probs:
-        msg_attachments:    Mapping message index to attachments.
-    """
 
     participants: list[Entity]
     num_messages: int
@@ -27,31 +19,18 @@ class ChatBlueprint:
 
 @dataclass
 class PhoneCallBlueprint:
-    """
-    Attributes:
-        participant:
-    """
 
     participant: Entity
 
 
 @dataclass
 class ImageBlueprint(AttachmentBlueprint):
-    """
-    Attributes:
-        categories:
-    """
 
     categories: list[str]
 
 
 @dataclass
 class EmailBlueprint:
-    """
-    Attributes:
-        from_entity:
-        to_entities:
-    """
 
     from_entity: Entity
     to_entities: list[Entity]

@@ -1,11 +1,9 @@
-"""Social graph models - output of the social graph agent."""
 
 from enum import StrEnum
 from pydantic import BaseModel, Field
 
 
 class RelationshipType(StrEnum):
-    """Type of relationship between entities."""
     FAMILY = "family"
     ROMANTIC = "romantic"
     FRIEND = "friend"
@@ -21,9 +19,6 @@ class RelationshipType(StrEnum):
 
 
 class Relationship(BaseModel):
-    """
-    Represents a relationship between two entities in the social graph.
-    """
     
     entity_id_1: str = Field(
         description="ID of the first entity in the relationship"
@@ -76,12 +71,6 @@ class Relationship(BaseModel):
 
 
 class SocialGraph(BaseModel):
-    """
-    Represents the complete social graph of all entities in the story.
-    
-    This graph defines how entities relate to each other and will influence
-    the communication patterns in the generated timeline.
-    """
     
     relationships: list[Relationship] = Field(
         default_factory=list,
@@ -89,14 +78,12 @@ class SocialGraph(BaseModel):
     )
     
     def get_relationships_for_entity(self, entity_id: str) -> list[Relationship]:
-        """Get all relationships involving a specific entity."""
         return [
             rel for rel in self.relationships
             if rel.entity_id_1 == entity_id or rel.entity_id_2 == entity_id
         ]
     
     def get_connected_entities(self, entity_id: str) -> set[str]:
-        """Get all entity IDs connected to a given entity."""
         connected = set()
         for rel in self.relationships:
             if rel.entity_id_1 == entity_id:

@@ -1,4 +1,3 @@
-"""Audio generator using Amazon Nova Sonic."""
 
 import logging
 from typing import Optional
@@ -15,11 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class AudioGenerator(BaseMediaGenerator):
-    """
-    Audio generator using Amazon Nova Sonic.
-    
-    Generates speech audio from text using text-to-speech.
-    """
     
     # Default voice settings
     DEFAULT_VOICE_ID = "matthew"
@@ -34,22 +28,6 @@ class AudioGenerator(BaseMediaGenerator):
         speaking_style: Optional[str] = None,
         **kwargs,
     ) -> GenerationResult:
-        """
-        Generate speech audio using Nova Sonic.
-        
-        Args:
-            story_id: Unique identifier for the story
-            prompt: Text to convert to speech
-            voice_id: Voice identifier for TTS
-            language_code: Language code (e.g., "en-US")
-            speaking_style: Optional speaking style modifier
-            
-        Returns:
-            GenerationResult with audio file info
-            
-        Raises:
-            MediaGenerationError: On generation failure
-        """
         self.logger.info(f"Generating audio for story {story_id}: {prompt[:50]}...")
         
         try:
@@ -90,17 +68,6 @@ class AudioGenerator(BaseMediaGenerator):
             raise MediaGenerationError(error_msg, story_id=story_id)
     
     def _build_prompt(self, story_context: dict) -> str:
-        """
-        Build speech text from story context.
-        
-        For audio generation, the "prompt" is typically the text to speak.
-        
-        Args:
-            story_context: Dictionary containing story metadata
-            
-        Returns:
-            Text to be converted to speech
-        """
         # For audio, we might want to extract dialogue or description
         text = story_context.get("text", "")
         if not text:
@@ -109,18 +76,6 @@ class AudioGenerator(BaseMediaGenerator):
         return text
     
     def get_voice_for_entity(self, entity_id: str, entity_data: dict) -> tuple[str, str]:
-        """
-        Get voice settings for an entity.
-        
-        Uses entity voice characteristics if available, otherwise defaults.
-        
-        Args:
-            entity_id: Entity identifier
-            entity_data: Entity data dictionary with characteristics
-            
-        Returns:
-            Tuple of (voice_id, language_code)
-        """
         characteristics = entity_data.get("characteristics", {})
         voice = characteristics.get("voice", {})
         

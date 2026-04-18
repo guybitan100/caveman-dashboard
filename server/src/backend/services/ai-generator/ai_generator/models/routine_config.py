@@ -1,4 +1,3 @@
-"""Configuration for routine story generation."""
 
 from typing import Literal
 
@@ -6,7 +5,6 @@ from pydantic import BaseModel, Field
 
 
 class RoutineGenerationConfig(BaseModel):
-    """Configuration for routine generation."""
 
     enabled: bool = Field(
         default=True,

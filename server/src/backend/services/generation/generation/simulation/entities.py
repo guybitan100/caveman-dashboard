@@ -29,12 +29,6 @@ def get_entity_total(tasks: list[GenerationTask]) -> int:
 
 
 def _get_events_totals(tasks: list[GenerationTask]) -> tuple[Counter, int]:
-    """
-        Sums the total quantity of the given tasks by event type and get the max total entities that may override
-            the total number of entities with which to construct the SocialContext.
-        :param tasks: List of the job tasks
-        :return: Tuple of the total events and the max total entities required by the tasks' params
-    """
 
     # Sum all task quantities for each event type
     event_totals = Counter()

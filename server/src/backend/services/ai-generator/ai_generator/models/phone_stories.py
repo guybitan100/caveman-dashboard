@@ -1,4 +1,3 @@
-"""Models for mapped stories per phone."""
 
 from __future__ import annotations
 
@@ -15,14 +14,12 @@ if TYPE_CHECKING:
 
 
 class DeviceTypeEnum(StrEnum):
-    """Device platform type (duplicated to avoid circular imports)."""
     IPHONE = "iphone"
     ANDROID = "android"
     GENERIC = "generic"
 
 
 class PhoneStoryMappingPhone(BaseModel):
-    """Phone info embedded in story mapping."""
     entity_id: str
     entity_name: str
     device_type: DeviceTypeEnum = DeviceTypeEnum.GENERIC
@@ -33,7 +30,6 @@ class PhoneStoryMappingPhone(BaseModel):
 
 
 class PhoneStoryMapping(BaseModel):
-    """All stories mapped for a single phone extraction."""
     
     phone: PhoneStoryMappingPhone
     stories: list["Stories"] = Field(
@@ -63,7 +59,6 @@ class PhoneStoryMapping(BaseModel):
 
 
 class UFDRJobSubmission(BaseModel):
-    """Status of a single job submission to UFDR."""
     
     job_id: str
     phone_entity_name: str
@@ -73,7 +68,6 @@ class UFDRJobSubmission(BaseModel):
 
 
 class JobGenerationResult(BaseModel):
-    """Result of the complete pipeline for all selected phones."""
     
     session_id: str
     phone_mappings: list[PhoneStoryMapping] = Field(default_factory=list)
@@ -100,36 +94,30 @@ class JobGenerationResult(BaseModel):
 
 # Pipeline summary models
 class StorySummary(BaseModel):
-    """Summary of story expansion output."""
     setting: str
     themes: list[str]
     narrative_length: int
 
 
 class EntitySummary(BaseModel):
-    """Summary of extracted entities."""
     count: int
     names: list[str] = Field(description="First 5 entity names")
 
 
 class GraphSummary(BaseModel):
-    """Summary of social graph."""
     relationships: int
 
 
 class TimelineSummary(BaseModel):
-    """Summary of timeline events."""
     events: int
 
 
 class JobsSummary(BaseModel):
-    """Summary of generated jobs."""
     count: int
     stories: int
 
 
 class PipelineOutputs(BaseModel):
-    """Available outputs from pipeline."""
     story: StorySummary | None = None
     entities: EntitySummary | None = None
     graph: GraphSummary | None = None
@@ -138,7 +126,6 @@ class PipelineOutputs(BaseModel):
 
 
 class PipelineSummary(BaseModel):
-    """Summary of a pipeline session."""
     session_id: str
     metadata: "SessionMetadata"
     outputs: PipelineOutputs
@@ -146,7 +133,6 @@ class PipelineSummary(BaseModel):
 
 # Rebuild models with forward references after all models are defined
 def _rebuild_forward_refs():
-    """Rebuild models that use forward references."""
     try:
         from model.stories import Stories  # noqa: F401
         PhoneStoryMapping.model_rebuild()

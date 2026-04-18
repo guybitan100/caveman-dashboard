@@ -10,7 +10,6 @@ BASE_URL = os.environ["BASE_URL"] + "/UFDR"
 
 @pytest.fixture
 def api_url() -> str:
-    """Fixture to provide the base URL for the API."""
     return BASE_URL
 
 

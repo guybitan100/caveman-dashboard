@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""
-Test script for UFDR job submission.
-
-This script tests the UFDR client by creating a mock GenerationJob
-and attempting to submit it.
-"""
 
 import asyncio
 import sys
@@ -18,7 +12,6 @@ from ai_generator.services.ufdr_client import UFDRClient
 
 
 async def test_ufdr_submission():
-    """Test UFDR job submission with a mock job."""
     
     print("🧪 Testing UFDR Job Submission")
     print("=" * 50)
@@ -95,7 +88,6 @@ async def test_ufdr_submission():
 
 
 async def test_batch_submission():
-    """Test batch submission with multiple jobs."""
     
     print("\n\n🧪 Testing Batch UFDR Job Submission")
     print("=" * 50)
@@ -158,7 +150,6 @@ async def test_batch_submission():
 
 
 async def main():
-    """Run all tests."""
     
     # Test single submission
     result1 = await test_ufdr_submission()

@@ -78,7 +78,6 @@ import glob
     DES... webvtt               WebVTT subtitle
     DES... xsub                 XSUB
 
-
     Codecs for each extension
     Audio:
     Mp3 = 'mp3'
@@ -92,7 +91,6 @@ import glob
     Aiff = 'aiff'
     Wma = 'wma'
     Caf = 'caf'
-
 
     Video:
     Mp4 = 'mp4'
@@ -109,7 +107,6 @@ import glob
     Mts = 'mts'
     Asf = 'asf'
 
-
     Image:
     Jpg = 'jpg'
     Jpeg = 'jpeg'
@@ -119,7 +116,6 @@ import glob
     Webp = 'webp'
 
 """
-
 
 def lambda_handler(event, context):
     # event_body = json.loads(event['body'])
@@ -136,13 +132,11 @@ def lambda_handler(event, context):
         cleanup_temp()
     return {"statusCode": 200, "body": s3_key}
 
-
 def convert_file(output_format: str, filename: Path) -> Path:
     output = Path("/tmp/", f"{filename.stem}.{output_format}")
     os.system(f"/opt/python/ffmpeg -i {str(filename)} {str(output)}")
     print(f"Converted {filename} to {output}")
     return output
-
 
 def upload_file(output_format: str, filename: Path):
     s3_client = boto3.client("s3")
@@ -150,14 +144,12 @@ def upload_file(output_format: str, filename: Path):
     s3_client.upload_file(str(filename), "ufdr-generator", s3_key)
     return s3_key
 
-
 def download_file(s3_key: Path) -> Path:
     s3_client = boto3.client("s3")
     filename = Path("/tmp/", s3_key.name)
     with open(str(filename), "wb") as f:
         s3_client.download_fileobj("ufdr-generator", str(s3_key), f)
     return filename
-
 
 def cleanup_temp():
     files = glob.glob("/tmp/*")

@@ -1,9 +1,3 @@
-"""
-Async AWS Bedrock Client for media generation.
-
-This module provides an async wrapper around AWS Bedrock runtime for generating
-images, videos, and audio using Amazon Nova models.
-"""
 import asyncio
 import base64
 import json
@@ -21,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class MediaGenerationStatus(str, Enum):
-    """Status of async media generation job."""
     
     IN_PROGRESS = "InProgress"
     COMPLETED = "Completed"
@@ -30,7 +23,6 @@ class MediaGenerationStatus(str, Enum):
 
 @dataclass
 class ImageGenerationResult:
-    """Result of image generation."""
     
     image_bytes: bytes
     format: str = "png"
@@ -40,7 +32,6 @@ class ImageGenerationResult:
 
 @dataclass
 class VideoGenerationResult:
-    """Result of video generation."""
     
     s3_uri: str
     duration_seconds: float = 6.0
@@ -49,7 +40,6 @@ class VideoGenerationResult:
 
 @dataclass
 class AudioGenerationResult:
-    """Result of audio/speech generation."""
     
     audio_bytes: bytes
     format: str = "mp3"
@@ -58,7 +48,6 @@ class AudioGenerationResult:
 
 @dataclass
 class AsyncJobStatus:
-    """Status of an async generation job (e.g., Nova Reel)."""
     
     job_arn: str
     status: MediaGenerationStatus
@@ -67,25 +56,11 @@ class AsyncJobStatus:
 
 
 class BedrockClient:
-    """
-    Async client for AWS Bedrock media generation.
-    
-    Supports:
-    - Image generation via Nova Canvas (sync)
-    - Video generation via Nova Reel (async with polling)
-    - Audio generation via Nova Sonic (sync)
-    """
     
     def __init__(
         self,
         region: Optional[str] = None,
     ):
-        """
-        Initialize Bedrock client.
-        
-        Args:
-            region: AWS region. Defaults to settings.BEDROCK_REGION
-        """
         self.region = region or SETTINGS.BEDROCK_REGION
         self._session = aioboto3.Session()
         self._config = Config(
@@ -103,23 +78,6 @@ class BedrockClient:
         seed: Optional[int] = None,
         quality: str = "standard",
     ) -> ImageGenerationResult:
-        """
-        Generate an image using Nova Canvas.
-        
-        Args:
-            prompt: Text description of the image to generate
-            negative_prompt: What to avoid in the image
-            width: Image width (512-2048, must be divisible by 64)
-            height: Image height (512-2048, must be divisible by 64)
-            seed: Random seed for reproducibility
-            quality: "standard" or "premium"
-            
-        Returns:
-            ImageGenerationResult with image bytes
-            
-        Raises:
-            Exception: On generation failure
-        """
         # Build request body for Nova Canvas
         request_body: dict[str, Any] = {
             "taskType": "TEXT_IMAGE",
@@ -181,26 +139,6 @@ class BedrockClient:
         dimension: str = "1280x720",
         seed: Optional[int] = None,
     ) -> str:
-        """
-        Start async video generation using Nova Reel.
-        
-        Nova Reel is an async API - it starts the job and returns a job ARN.
-        Use poll_video_generation() to check status and get results.
-        
-        Args:
-            prompt: Text description of the video to generate
-            s3_output_uri: S3 URI where video will be written (s3://bucket/prefix/)
-            duration_seconds: Video duration (max 6 seconds)
-            fps: Frames per second (24)
-            dimension: Video dimensions ("1280x720")
-            seed: Random seed for reproducibility
-            
-        Returns:
-            Job ARN for polling status
-            
-        Raises:
-            Exception: On job start failure
-        """
         # Build request body for Nova Reel
         request_body: dict[str, Any] = {
             "taskType": "TEXT_VIDEO",
@@ -243,15 +181,6 @@ class BedrockClient:
         self,
         job_arn: str,
     ) -> AsyncJobStatus:
-        """
-        Check status of async video generation job.
-        
-        Args:
-            job_arn: Job ARN from start_video_generation()
-            
-        Returns:
-            AsyncJobStatus with current status and output URI if completed
-        """
         async with self._session.client(
             "bedrock-runtime",
             region_name=self.region,
@@ -289,20 +218,6 @@ class BedrockClient:
         poll_interval: Optional[int] = None,
         timeout: Optional[int] = None,
     ) -> AsyncJobStatus:
-        """
-        Wait for video generation to complete with polling.
-        
-        Args:
-            job_arn: Job ARN from start_video_generation()
-            poll_interval: Seconds between polls. Defaults to settings
-            timeout: Max seconds to wait. Defaults to settings
-            
-        Returns:
-            Final AsyncJobStatus
-            
-        Raises:
-            TimeoutError: If generation doesn't complete within timeout
-        """
         poll_interval = poll_interval or SETTINGS.VIDEO_GENERATION_POLL_INTERVAL
         timeout = timeout or SETTINGS.VIDEO_GENERATION_TIMEOUT
         
@@ -328,21 +243,6 @@ class BedrockClient:
         language_code: str = "en-US",
         speaking_style: Optional[str] = None,
     ) -> AudioGenerationResult:
-        """
-        Generate speech audio using Nova Sonic.
-        
-        Args:
-            text: Text to convert to speech
-            voice_id: Voice identifier
-            language_code: Language code (e.g., "en-US")
-            speaking_style: Optional speaking style modifier
-            
-        Returns:
-            AudioGenerationResult with audio bytes
-            
-        Raises:
-            Exception: On generation failure
-        """
         # Build request body for Nova Sonic
         # Note: Nova Sonic API structure may need adjustment based on actual API
         request_body: dict[str, Any] = {
@@ -384,7 +284,6 @@ _bedrock_client: Optional[BedrockClient] = None
 
 
 def get_bedrock_client() -> BedrockClient:
-    """Get or create the Bedrock client singleton."""
     global _bedrock_client
     if _bedrock_client is None:
         _bedrock_client = BedrockClient()

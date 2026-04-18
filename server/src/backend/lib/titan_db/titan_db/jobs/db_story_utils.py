@@ -6,26 +6,20 @@ from titan_db.jobs import db_job_utils
 from titan_db.jobs.errors import StoryNotFoundError
 from titan_db.jobs.models import DBJobModel
 
-
 def insert_story(job_id: str, story: StoryData) -> None:
-    """Insert a new story record"""
     db_job = db_job_utils.get_job_model(job_id=job_id, attributes=[DBJobModel.stories.attr_name])
     stories_graph: DiGraph = db_job.stories
     _add_story(stories_graph=stories_graph, story=story)
     db_job_utils.update_job_model(job_id=job_id, actions=[DBJobModel.stories.set(stories_graph)])
 
-
 def insert_stories(job_id: str, stories: list[StoryData]) -> None:
-    """Insert multiple new story records"""
     db_job = db_job_utils.get_job_model(job_id=job_id, attributes=[DBJobModel.stories.attr_name])
     stories_graph: DiGraph = db_job.stories
     for story in stories:
         _add_story(stories_graph=stories_graph, story=story)
     db_job_utils.update_job_model(job_id=job_id, actions=[DBJobModel.stories.set(stories_graph)])
 
-
 def _add_story(stories_graph: DiGraph, story: StoryData) -> None:
-    """Helper to add a story and its references to the stories graph"""
     _add_story_node(graph=stories_graph, story=story)  # Attaches new story_id to story object
     for field_name, field_value in story.get_story_ref_fields().items():
         if field_value is None:
@@ -41,9 +35,7 @@ def _add_story(stories_graph: DiGraph, story: StoryData) -> None:
             field_value = app_story.story_id
         _add_ref_edge(graph=stories_graph, u_story_id=story.story_id, v_story_id=field_value, ref_field=field_name)
 
-
 def update_story(job_id: str, story_id: str, story: StoryData) -> None:
-    """Update a story record"""
     db_job = db_job_utils.get_job_model(job_id=job_id, attributes=[DBJobModel.stories.attr_name])
     stories: DiGraph = db_job.stories
     if story_id not in stories:
@@ -83,9 +75,7 @@ def update_story(job_id: str, story_id: str, story: StoryData) -> None:
     _update_story_node(graph=stories, story=story)
     db_job_utils.update_job_model(job_id=job_id, actions=[DBJobModel.stories.set(stories)])
 
-
 def delete_story(job_id: str, story_id: str) -> None:
-    """Delete a story record"""
     db_job = db_job_utils.get_job_model(job_id=job_id, attributes=[DBJobModel.stories.attr_name])
     stories: DiGraph = db_job.stories
     if story_id not in stories:
@@ -108,25 +98,18 @@ def delete_story(job_id: str, story_id: str) -> None:
     stories.remove_node(story_id)
     db_job_utils.update_job_model(job_id=job_id, actions=[DBJobModel.stories.set(stories)])
 
-
 def _add_story_node(graph: DiGraph, story: StoryData) -> None:
-    """Add a story node to the graph with its story_id as the node identifier and its data as an attribute"""
     graph.add_node(story.story_id, data=story.model_dump(mode='json'))
 
-
 def _update_story_node(graph: DiGraph, story: StoryData) -> None:
-    """Update a story node's data in the graph by its story_id"""
     graph.nodes[story.story_id]['data'] = story.model_dump(mode='json')
 
-
 def _get_story_node(graph: DiGraph, story_id: str) -> StoryData:
-    """Retrieve a story node's data from the graph by its story_id"""
     if story_id not in graph.nodes:
         raise StoryNotFoundError(story_id=story_id)
     story_data = graph.nodes[story_id]['data']
     story = deserialize(story_data, StoryDataAdapter)
     return story
-
 
 def _add_ref_edge(
         graph: DiGraph,
@@ -135,7 +118,6 @@ def _add_ref_edge(
         *,
         ref_field: str
 ) -> None:
-    """Add a reference edge from u_of_edge to v_of_edge(s) with ref_field attribute"""
     if u_story_id not in graph.nodes:
         raise StoryNotFoundError(story_id=u_story_id)
     if isinstance(v_story_id, list):
@@ -148,9 +130,7 @@ def _add_ref_edge(
             raise StoryNotFoundError(story_id=v_story_id)
         graph.add_edge(u_story_id, v_story_id, ref_field=ref_field)
 
-
 def _remove_edge(graph: DiGraph, u_story_id: str, v_story_id: str | list[str]) -> None:
-    """Remove an edge from u_story_id to v_story_id(s)"""
     if u_story_id not in graph.nodes:
         raise StoryNotFoundError(story_id=u_story_id)
     if isinstance(v_story_id, list):

@@ -4,7 +4,6 @@ from pydantic import BaseModel
 
 
 class DeviceModel(BaseModel):
-    """Represents a device model with manufacturer, name, and operating system."""
     manufacturer: str
     name: str
     os: Literal['ios', 'android']

@@ -13,7 +13,6 @@ class MetaFinderError(Exception):
 
 
 def handle_errors(func):
-    """Method decorator to handle exceptions"""
 
     @wraps(func)
     def wrapper(*args, **kwargs):

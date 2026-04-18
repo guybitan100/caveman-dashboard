@@ -13,14 +13,6 @@ from model.types import GeneratedData, EventData, FileData, EventType, Location,
 
 
 class Contractor[GT: GenerationTask, GD: GeneratedData](ABC):
-    """
-    Abstract class for all Titan contractors.
-
-    Attributes:
-        hub:        Job hub, if not passed then the job arg is required
-        job:        Generation job the contractor will process.
-        task:       Generation task the contractor will process
-    """
     event_type_dependencies: ClassVar[set[EventType]]   # Dependent event types, set on registration
 
     def __init__(self, *, hub: TaskGenerationHub = None, job: GenerationJob = None, task: GT = None):
@@ -84,7 +76,6 @@ class Contractor[GT: GenerationTask, GD: GeneratedData](ABC):
 
     @staticmethod
     def _random_range_choices(n: int, low: int, high: int, none_weight: float = None) -> Iterator[int | None]:
-        """Random integer (or None) generator from low to high (inclusive)"""
         if high == 0:
             return repeat(None, times=n)
         elif none_weight is None:
@@ -97,7 +88,6 @@ class Contractor[GT: GenerationTask, GD: GeneratedData](ABC):
 
 
 class EventContractor[ET: EventTask, ED: EventData](Contractor[ET, ED], ABC):
-    """Event contractor abstract class."""
 
     def _get_attachments(
             self,
@@ -126,7 +116,6 @@ class EventContractor[ET: EventTask, ED: EventData](Contractor[ET, ED], ABC):
 
 
 class FileContractor[FT: FileTask, FD: FileData](Contractor[FT, FD], ABC):
-    """File contractor abstract class."""
 
     @staticmethod
     def _random_deleted_states(n: int) -> Iterator[FileDeletedState]:

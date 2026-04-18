@@ -1,4 +1,3 @@
-"""Storage layer for persisting pipeline intermediate results."""
 
 import json
 from datetime import datetime
@@ -21,7 +20,6 @@ from ai_generator.models.story_planning import StoryGenerationPlan
 
 
 class SessionMetadata(BaseModel):
-    """Metadata for a pipeline session."""
     
     session_id: str = Field(..., description="Unique session identifier")
     created_at: str = Field(..., description="ISO format timestamp when session was created")
@@ -30,35 +28,12 @@ class SessionMetadata(BaseModel):
 
 
 class PipelineStorage:
-    """
-    Handles storage and retrieval of pipeline intermediate results.
-    
-    Stores each stage's output as JSON files in a session directory for:
-    - Debugging
-    - Human review
-    - Pipeline resumption
-    """
     
     def __init__(self, base_path: Path | str = "./pipeline_sessions"):
-        """
-        Initialize storage with a base directory.
-        
-        Args:
-            base_path: Base directory for all pipeline sessions
-        """
         self.base_path = Path(base_path)
         self.base_path.mkdir(parents=True, exist_ok=True)
     
     def create_session(self, session_id: str | None = None) -> str:
-        """
-        Create a new pipeline session directory.
-        
-        Args:
-            session_id: Optional session ID. If None, generates timestamp-based ID
-            
-        Returns:
-            Session ID
-        """
         if session_id is None:
             session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         
@@ -76,11 +51,9 @@ class PipelineStorage:
         return session_id
     
     def get_session_path(self, session_id: str) -> Path:
-        """Get path to session directory."""
         return self.base_path / session_id
     
     def save_story(self, session_id: str, story: StoryExpansion) -> None:
-        """Save story expansion to session."""
         session_path = self.get_session_path(session_id)
         self._save_json(
             session_path / "1_story_expansion.json",
@@ -89,13 +62,11 @@ class PipelineStorage:
         self._update_metadata(session_id, "story_expansion")
     
     def load_story(self, session_id: str) -> StoryExpansion:
-        """Load story expansion from session."""
         session_path = self.get_session_path(session_id)
         data = self._load_json(session_path / "1_story_expansion.json")
         return StoryExpansion(**data)
     
     def save_entities(self, session_id: str, entities: list[Entity]) -> None:
-        """Save extracted entities to session."""
         session_path = self.get_session_path(session_id)
         self._save_json(
             session_path / "2_entities.json",
@@ -104,13 +75,11 @@ class PipelineStorage:
         self._update_metadata(session_id, "entity_extraction")
     
     def load_entities(self, session_id: str) -> list[Entity]:
-        """Load entities from session."""
         session_path = self.get_session_path(session_id)
         data = self._load_json(session_path / "2_entities.json")
         return [Entity(**e) for e in data]
     
     def save_social_graph(self, session_id: str, graph: SocialGraph) -> None:
-        """Save social graph to session."""
         session_path = self.get_session_path(session_id)
         self._save_json(
             session_path / "3_social_graph.json",
@@ -119,13 +88,11 @@ class PipelineStorage:
         self._update_metadata(session_id, "social_graph")
     
     def load_social_graph(self, session_id: str) -> SocialGraph:
-        """Load social graph from session."""
         session_path = self.get_session_path(session_id)
         data = self._load_json(session_path / "3_social_graph.json")
         return SocialGraph(**data)
     
     def save_timeline(self, session_id: str, events: list[TimelineEvent]) -> None:
-        """Save timeline events to session."""
         session_path = self.get_session_path(session_id)
         self._save_json(
             session_path / "4_timeline.json",
@@ -134,7 +101,6 @@ class PipelineStorage:
         self._update_metadata(session_id, "timeline_generation")
     
     def load_timeline(self, session_id: str) -> list[TimelineEvent]:
-        """Load timeline from session."""
         session_path = self.get_session_path(session_id)
         data = self._load_json(session_path / "4_timeline.json")
         return [TimelineEvent(**e) for e in data]
@@ -146,7 +112,6 @@ class PipelineStorage:
         session_id: str,
         request: PhoneSelectionRequest,
     ) -> None:
-        """Save phone selection request to session."""
         session_path = self.get_session_path(session_id)
         self._save_json(
             session_path / "5a_phone_selection_request.json",
@@ -155,7 +120,6 @@ class PipelineStorage:
         self._update_metadata(session_id, "phone_selection_request")
     
     def load_phone_selection_request(self, session_id: str) -> PhoneSelectionRequest:
-        """Load phone selection request from session."""
         session_path = self.get_session_path(session_id)
         data = self._load_json(session_path / "5a_phone_selection_request.json")
         return PhoneSelectionRequest(**data)
@@ -165,7 +129,6 @@ class PipelineStorage:
         session_id: str,
         response: PhoneSelectionResponse,
     ) -> None:
-        """Save phone selection response (candidates) to session."""
         session_path = self.get_session_path(session_id)
         self._save_json(
             session_path / "5b_phone_selection_response.json",
@@ -174,7 +137,6 @@ class PipelineStorage:
         self._update_metadata(session_id, "phone_selection_response")
     
     def load_phone_selection_response(self, session_id: str) -> PhoneSelectionResponse:
-        """Load phone selection response from session."""
         session_path = self.get_session_path(session_id)
         data = self._load_json(session_path / "5b_phone_selection_response.json")
         return PhoneSelectionResponse(**data)
@@ -184,7 +146,6 @@ class PipelineStorage:
         session_id: str,
         confirmation: PhoneSelectionConfirmation,
     ) -> None:
-        """Save user-confirmed phone selections to session."""
         session_path = self.get_session_path(session_id)
         self._save_json(
             session_path / "5c_selected_phones.json",
@@ -193,7 +154,6 @@ class PipelineStorage:
         self._update_metadata(session_id, "phone_selection_confirmed")
     
     def load_selected_phones(self, session_id: str) -> PhoneSelectionConfirmation:
-        """Load confirmed phone selections from session."""
         session_path = self.get_session_path(session_id)
         data = self._load_json(session_path / "5c_selected_phones.json")
         return PhoneSelectionConfirmation(**data)
@@ -203,7 +163,6 @@ class PipelineStorage:
         session_id: str,
         plan: StoryGenerationPlan,
     ) -> None:
-        """Save story generation plan to session."""
         session_path = self.get_session_path(session_id)
         self._save_json(
             session_path / "6_story_plan.json",
@@ -212,7 +171,6 @@ class PipelineStorage:
         self._update_metadata(session_id, "story_planning")
     
     def load_story_plan(self, session_id: str) -> StoryGenerationPlan:
-        """Load story generation plan from session."""
         session_path = self.get_session_path(session_id)
         data = self._load_json(session_path / "6_story_plan.json")
         return StoryGenerationPlan(**data)
@@ -222,7 +180,6 @@ class PipelineStorage:
         session_id: str,
         mappings: list[PhoneStoryMapping],
     ) -> None:
-        """Save story mappings to session."""
         session_path = self.get_session_path(session_id)
         # self._save_json(
         #     session_path / "7_story_mappings.json",
@@ -231,7 +188,6 @@ class PipelineStorage:
         # self._update_metadata(session_id, "story_mapping")
     
     def load_story_mappings(self, session_id: str) -> list[PhoneStoryMapping]:
-        """Load story mappings from session."""
         session_path = self.get_session_path(session_id)
         data = self._load_json(session_path / "7_story_mappings.json")
         return [PhoneStoryMapping(**m) for m in data]
@@ -241,7 +197,6 @@ class PipelineStorage:
         session_id: str,
         result: JobGenerationResult,
     ) -> None:
-        """Save final generation jobs to session."""
         session_path = self.get_session_path(session_id)
         self._save_json(
             session_path / "8_generation_jobs.json",
@@ -250,18 +205,11 @@ class PipelineStorage:
         self._update_metadata(session_id, "job_generation")
     
     def load_generation_jobs(self, session_id: str) -> JobGenerationResult:
-        """Load generation jobs from session."""
         session_path = self.get_session_path(session_id)
         data = self._load_json(session_path / "8_generation_jobs.json")
         return JobGenerationResult(**data)
     
     def list_sessions(self) -> list[SessionMetadata]:
-        """
-        List all available sessions.
-        
-        Returns:
-            List of SessionMetadata objects
-        """
         sessions: list[SessionMetadata] = []
         for session_dir in self.base_path.iterdir():
             if session_dir.is_dir():
@@ -274,33 +222,27 @@ class PipelineStorage:
         return sessions
     
     def get_session_metadata(self, session_id: str) -> SessionMetadata:
-        """Get metadata for a specific session."""
         session_path = self.get_session_path(session_id)
         return self._load_metadata(session_path / "metadata.json")
     
     def _save_json(self, path: Path, data: dict[str, object] | list[dict[str, object]]) -> None:
-        """Save data as JSON file."""
         with path.open('w') as f:
             json.dump(data, f, indent=2, default=str)
     
     def _load_json(self, path: Path) -> dict[str, object] | list[dict[str, object]]:
-        """Load data from JSON file."""
         with path.open('r') as f:
             return json.load(f)  # type: ignore[return-value]
     
     def _save_metadata(self, path: Path, metadata: SessionMetadata) -> None:
-        """Save SessionMetadata as JSON file."""
         with path.open('w') as f:
             json.dump(metadata.model_dump(mode='json'), f, indent=2, default=str)
     
     def _load_metadata(self, path: Path) -> SessionMetadata:
-        """Load SessionMetadata from JSON file."""
         with path.open('r') as f:
             data = json.load(f)
             return SessionMetadata(**data)
     
     def _update_metadata(self, session_id: str, stage: str) -> None:
-        """Update session metadata with completed stage."""
         session_path = self.get_session_path(session_id)
         metadata_path = session_path / "metadata.json"
         

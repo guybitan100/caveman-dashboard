@@ -5,9 +5,6 @@ from model.metafinder.queries import ArrayQuery, QueryOperator
 
 
 def test_chat_single_languages_query():
-    """
-    Test that chat single languages query returns the correct items
-    """
     query = ChatQueryParams(
         languages=['en'],
     )
@@ -19,9 +16,6 @@ def test_chat_single_languages_query():
 
 
 def test_chat_multiple_languages_query():
-    """
-    Test that chat multiple languages query returns the correct items
-    """
     query = ChatQueryParams(
         languages=['en', 'es'],
     )
@@ -33,9 +27,6 @@ def test_chat_multiple_languages_query():
 	    
 
 def test_chat_single_categories_query():
-    """
-    Test that chat single categories query returns the correct items
-    """
     query = ChatQueryParams(
         categories=ArrayQuery(values=['FAMILY']),
     )
@@ -48,9 +39,6 @@ def test_chat_single_categories_query():
 	    
 
 def test_chat_multiple_categories_or_query():
-    """
-    Test that chat multiple categories OR query returns the correct items
-    """
     query = ChatQueryParams(
         categories=ArrayQuery(values=['FAMILY', 'DRUGS']),
     )
@@ -63,9 +51,6 @@ def test_chat_multiple_categories_or_query():
         
 
 def test_chat_multiple_categories_and_query():
-    """
-    Test that chat multiple categories AND query returns the correct items
-    """
     query = ChatQueryParams(
         categories=ArrayQuery(values=['FAMILY', 'DRUGS'], operator=QueryOperator.AND),
     )
@@ -78,9 +63,6 @@ def test_chat_multiple_categories_and_query():
 	    
 
 def test_chat_languages_and_categories_query():
-    """
-    Test that chat languages and categories query returns the correct items
-    """
     query = ChatQueryParams(
         languages=['en'],
         categories=ArrayQuery(values=['FAMILY']),

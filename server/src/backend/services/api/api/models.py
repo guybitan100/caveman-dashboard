@@ -7,13 +7,11 @@ from model.status import GenerationTaskStatus
 
 
 class JobsListResponse(BaseModel):
-    """Response model for paginated jobs list."""
     jobs: list[JobSummary]
     total: int
 
 
 class TaskProgressResponse(BaseModel):
-    """Response model for task progress."""
     task_id: str
     status: GenerationTaskStatus
     progress: float = Field(ge=0.0, le=1.0)

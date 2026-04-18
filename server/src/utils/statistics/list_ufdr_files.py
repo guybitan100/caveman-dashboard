@@ -1,10 +1,8 @@
 from pathlib import Path
 
-
 """
 This script is used to recursively list all UFDR files in the "External Dumps" directory on the secured VM.
 """
-
 
 def run_gen(gen):
     while True:
@@ -16,7 +14,6 @@ def run_gen(gen):
             break
         except OSError:
             continue
-
 
 ufdrs = list(run_gen(Path("//?/Z:/").rglob("*.ufdr")))
 

@@ -16,16 +16,7 @@ _detector = AlphabetDetector()
 NAMES_INDEX = 'name_index'
 es = Elasticsearch(hosts="http://10.11.204.186:9210", http_compress=True, timeout=30, retry_on_timeout=True)
 
-
 class LocalizedName(MetafinderMetadata):
-    """
-    Representing MetaFinder LocalizedName response.
-    Attributes:
-        name:           Name (first or last)
-        is_surname:     Indicates if name is a surname, else first name
-        male_prob:      Probability that name is commonly a male name, otherwise female
-        country_code:   Country code
-    """
     name: str
     is_surname: bool
     male_prob: confloat(ge=0.0, le=1.0)
@@ -34,7 +25,6 @@ class LocalizedName(MetafinderMetadata):
 
     def get_elastic_id(self) -> str:
         return f'{self.name}|{self.is_surname}|{self.country_code}'
-
 
 def class_to_action(data: LocalizedName) -> dict:
     return {
@@ -45,12 +35,10 @@ def class_to_action(data: LocalizedName) -> dict:
         '_op_type': 'index'
     }
 
-
 def insert_to_es(docs_generator):
     logger.info('Adding records to ElasticSearch')
     response = bulk(es, docs_generator)
     logger.info(json.dumps(response, indent=2))
-
 
 def process_file(file_path: Path) -> Iterator[LocalizedName]:
     logger.info(f'Processing file {file_path}')
@@ -101,7 +89,6 @@ def process_file(file_path: Path) -> Iterator[LocalizedName]:
     logger.info(f'Total undetected first names: {num_undetected_firstnames}')
     logger.info(f'Total undetected surnames: {num_undetected_surnames}')
 
-
 def create_index():
     es.indices.delete(index=NAMES_INDEX)
     mapping = {
@@ -115,7 +102,6 @@ def create_index():
         }
     }
     es.indices.create(index=NAMES_INDEX, ignore=400, mappings=mapping)
-
 
 def main(files_dir: Path):
     # create_index()    # NOTE produces error
@@ -159,7 +145,6 @@ def main(files_dir: Path):
 
     flag = False    # flag used for skipping previously processed files
     for p in sorted(Path(files_dir).glob('*.csv')):
-        """This code is for skipping previously processed files; this script can produce non-deterministic errors"""
         if p.stem == 'PE':  # name of file (without extension) that failed last
             flag = True
         if not flag:
@@ -167,7 +152,6 @@ def main(files_dir: Path):
         """End of skipping code"""
         data = process_file(file_path=p)
         insert_to_es(data)
-
 
 if __name__ == '__main__':
     main(Path('Path-To-Directory-of-CSV-Files/'))

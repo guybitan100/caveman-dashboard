@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""
-Test script for submit_existing_session functionality.
-
-This script demonstrates:
-1. Creating jobs without submission (submit_to_ufdr=False)
-2. Loading and submitting those jobs later using submit_existing_session()
-"""
 
 import asyncio
 import sys
@@ -20,7 +13,6 @@ from ai_generator.workflows import TimelineToJobsWorkflow
 
 
 async def test_submit_existing_session():
-    """Test the submit_existing_session workflow."""
     
     print("🧪 Testing submit_existing_session functionality")
     print("=" * 60)
@@ -175,7 +167,6 @@ async def test_submit_existing_session():
 
 
 async def demonstrate_workflow():
-    """Demonstrate the complete workflow with submit_existing_session."""
     
     print("\n\n" + "=" * 60)
     print("📚 WORKFLOW DEMONSTRATION")
@@ -196,11 +187,6 @@ async def demonstrate_workflow():
     # Review the generated jobs
     print(f"Created {result.total_jobs_created} jobs")
     print(f"Total stories: {result.total_stories_generated}")
-    """)
-    
-    print("\nStep 2: Submit the jobs later (after review)")
-    print("─" * 60)
-    print("""
     # Submit when ready using workflow
     workflow = TimelineToJobsWorkflow()
     result = await workflow.submit_existing_session(session_id)
@@ -208,19 +194,6 @@ async def demonstrate_workflow():
     # Check results
     if result.all_jobs_submitted:
         print("All jobs submitted successfully!")
-    """)
-    
-    print("\nUse Cases:")
-    print("─" * 60)
-    print("• Manual review before submission")
-    print("• Re-submit failed jobs after fixing issues")
-    print("• Batch processing: generate many, submit later")
-    print("• Testing: generate jobs without hitting UFDR API")
-    print()
-
-
-async def main():
-    """Run the test."""
     
     # Show demonstration
     await demonstrate_workflow()

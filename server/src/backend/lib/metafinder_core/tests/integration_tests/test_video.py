@@ -3,9 +3,6 @@ from model.metafinder.queries import QueryOperator, ArrayQuery
 
 
 def test_video_single_categories_query():
-	"""
-	Test that a single video categories query returns the correct items
-	"""
 	query = VideoQueryParams(
 		categories=ArrayQuery(operator=QueryOperator.OR, values=['Documents']),
 	)
@@ -17,9 +14,6 @@ def test_video_single_categories_query():
 		
 
 def test_video_multiple_categories_or_query():
-	"""
-	Test that multiple video categories OR query returns the correct items
-	"""
 	query = VideoQueryParams(
 		categories=ArrayQuery(operator=QueryOperator.OR, values=['Documents', 'BarcodesQRCodes']),
 	)
@@ -32,9 +26,6 @@ def test_video_multiple_categories_or_query():
 
 
 def test_video_multiple_categories_and_query():
-	"""
-	Test that multiple video categories AND query returns the correct items
-	"""
 	query = VideoQueryParams(
 		categories=ArrayQuery(operator=QueryOperator.AND, values=['Documents', 'BarcodesQRCodes']),
 	)
@@ -47,9 +38,6 @@ def test_video_multiple_categories_and_query():
 		
 
 def test_video_single_format_query():
-	"""
-	Test that video single format query returns the correct items
-	"""
 	query = VideoQueryParams(
 		formats=['m4v'],
 	)
@@ -61,9 +49,6 @@ def test_video_single_format_query():
 		
 		
 def test_video_multiple_format_query():
-	"""
-	Test that video multiple format query returns the correct items
-	"""
 	query = VideoQueryParams(
 		formats=['m4v', 'mp4'],
 	)
@@ -76,9 +61,6 @@ def test_video_multiple_format_query():
 		
 
 def test_video_min_duration_query():
-	"""
-	Test that video min duration query returns the correct items
-	"""
 	query = VideoQueryParams(
 		min_duration=60,
 	)
@@ -90,9 +72,6 @@ def test_video_min_duration_query():
 
 
 def test_video_max_duration_query():
-	"""
-	Test that video max duration query returns the correct items
-	"""
 	query = VideoQueryParams(
 		max_duration=60,
 	)
@@ -104,9 +83,6 @@ def test_video_max_duration_query():
 		
 
 def test_video_min_max_duration_query():
-	"""
-	Test that video min and max duration query returns the correct items
-	"""
 	query = VideoQueryParams(
 		min_duration=60,
 		max_duration=120,
@@ -119,9 +95,6 @@ def test_video_min_max_duration_query():
 		
 
 def test_video_min_size_query():
-	"""
-	Test that video min size query returns the correct items
-	"""
 	query = VideoQueryParams(
 		min_size=1000,
 	)
@@ -133,9 +106,6 @@ def test_video_min_size_query():
 		
 		
 def test_video_max_size_query():
-	"""
-	Test that video max size query returns the correct items
-	"""
 	query = VideoQueryParams(
 		max_size=100000,
 	)
@@ -147,9 +117,6 @@ def test_video_max_size_query():
 		
 
 def test_video_min_max_size_query():
-	"""
-	Test that video min and max size query returns the correct items
-	"""
 	query = VideoQueryParams(
 		min_size=1000,
 		max_size=20000,
@@ -162,9 +129,6 @@ def test_video_min_max_size_query():
 		
 
 def test_video_multiple_queries():
-	"""
-	Test that multiple video queries return the correct items
-	"""
 	query = VideoQueryParams(
 		categories=ArrayQuery(operator=QueryOperator.OR, values=['Documents', 'BarcodesQRCodes']),
 		formats=['m4v', 'mp4'],

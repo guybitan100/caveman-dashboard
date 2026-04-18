@@ -16,7 +16,6 @@ class FileDeletedState(Enum):
 
 
 def random_times(n: int, job: GenerationJob) -> Iterator[datetime]:
-    """Generate random timestamps (datetime objects) in device's life range"""
     start_dt = datetime(job.context.start_date.year, job.context.start_date.month,
                         job.context.start_date.day, tzinfo=job.context.timezone)
     end_dt = datetime(job.context.end_date.year, job.context.end_date.month,

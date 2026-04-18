@@ -47,32 +47,18 @@ ReviewCallback = Callable[[str, str], bool]
 
 
 class Pipeline:
-    """
-    Unified pipeline for AI story generation.
-
-    Transforms a story description into GenerationJobs through
-    sequential stages with optional human review checkpoints.
-    """
 
     def __init__(
         self,
         storage: PipelineStorage | None = None,
         model_name: str = "claude-sonnet-4-5",
     ):
-        """
-        Initialize the pipeline.
-
-        Args:
-            storage: PipelineStorage instance. If None, creates default
-            model_name: LLM model name (for future use)
-        """
         self.storage = storage or PipelineStorage()
         self.model_name = model_name
         self._job_assembly_agent: JobAssemblyAgent | None = None
 
     @property
     def job_assembly_agent(self) -> JobAssemblyAgent:
-        """Get or create job assembly agent."""
         if self._job_assembly_agent is None:
             self._job_assembly_agent = JobAssemblyAgent()
         return self._job_assembly_agent
@@ -89,21 +75,6 @@ class Pipeline:
         review_callback: ReviewCallback | None = None,
         submit_to_ufdr: bool = True,
     ) -> tuple[str, JobGenerationResult]:
-        """
-        Run the complete pipeline from description to GenerationJobs.
-
-        Args:
-            description: Short story description from user
-            session_id: Optional session ID. If None, creates new session
-            phone_selections: Optional pre-selected phones. If None, auto-selects
-            review_callback: Optional callback for human review between stages.
-                Signature: (stage_name: str, session_id: str) -> bool
-                Return True to continue, False to pause
-            submit_to_ufdr: Whether to submit jobs to UFDR (default: False)
-
-        Returns:
-            Tuple of (session_id, JobGenerationResult)
-        """
         # Create session
         if session_id is None:
             session_id = self.storage.create_session()
@@ -186,19 +157,6 @@ class Pipeline:
         session_id: str | None = None,
         review_callback: ReviewCallback | None = None,
     ) -> tuple[str, list[TimelineEvent]]:
-        """
-        Run pipeline stages 1-4 only (up to timeline generation).
-
-        Useful when you only need the timeline without job generation.
-
-        Args:
-            description: Short story description from user
-            session_id: Optional session ID
-            review_callback: Optional callback for human review
-
-        Returns:
-            Tuple of (session_id, list of TimelineEvent)
-        """
         if session_id is None:
             session_id = self.storage.create_session()
 
@@ -235,7 +193,6 @@ class Pipeline:
         session_id: str,
         description: str,
     ) -> StoryExpansion:
-        """Stage 1: Expand user prompt into detailed narrative."""
         logger.info("Stage 1: Story Expansion")
 
         story = await expand_story(description)
@@ -250,7 +207,6 @@ class Pipeline:
         session_id: str,
         story: StoryExpansion,
     ) -> list[Entity]:
-        """Stage 2: Extract entities from story."""
         logger.info("Stage 2: Entity Extraction")
 
         entities = await extract_entities(story)
@@ -266,7 +222,6 @@ class Pipeline:
         story: StoryExpansion,
         entities: list[Entity],
     ) -> SocialGraph:
-        """Stage 3: Build social graph from entities."""
         logger.info("Stage 3: Social Graph")
 
         graph = await build_social_graph(story, entities)
@@ -283,7 +238,6 @@ class Pipeline:
         entities: list[Entity],
         graph: SocialGraph,
     ) -> list[TimelineEvent]:
-        """Stage 4: Generate timeline of events."""
         logger.info("Stage 4: Timeline Generation")
 
         timeline = await generate_timeline(story, entities, graph)
@@ -301,7 +255,6 @@ class Pipeline:
         graph: SocialGraph,
         pre_selected: list[SelectedPhone] | None = None,
     ) -> list[SelectedPhone]:
-        """Stage 5: Select phones for generation."""
         logger.info("Stage 5: Phone Selection")
 
         if pre_selected:
@@ -341,15 +294,6 @@ class Pipeline:
         entities: list[Entity],
         max_iterations: int = 2,
     ) -> StoryGenerationPlan:
-        """
-        Stage 6: Plan which stories to generate with validation.
-        
-        This implements an iterative loop:
-        1. Generate initial plan
-        2. Validate plan
-        3. If validation finds missing stories, add them
-        4. Repeat until validation passes or max iterations reached
-        """
         logger.info("Stage 6: Story Planning with Validation")
 
         # Import here to avoid circular dependency
@@ -448,7 +392,6 @@ class Pipeline:
         timeline: list[TimelineEvent],
         entities: list[Entity],
     ) -> list[PhoneStoryMapping]:
-        """Stage 7: Generate actual story data using specialized agents."""
         logger.info("Stage 7: Story Generation")
 
         # Use new orchestration to generate all stories
@@ -567,7 +510,6 @@ class Pipeline:
         story_mappings: list[PhoneStoryMapping],
         entities: list[Entity],
     ) -> JobGenerationResult:
-        """Stage 8: Assemble GenerationJobs."""
         logger.info("Stage 8: Job Assembly")
 
         result = self.job_assembly_agent.assemble_jobs(
@@ -592,7 +534,6 @@ class Pipeline:
         session_id: str,
         result: JobGenerationResult,
     ) -> JobGenerationResult:
-        """Submit jobs to UFDR endpoint."""
         logger.info("Submitting jobs to UFDR")
 
         client = UFDRClient()
@@ -636,7 +577,6 @@ class Pipeline:
     # ========================================
 
     def _empty_result(self, session_id: str) -> JobGenerationResult:
-        """Create empty result for paused pipeline."""
         return JobGenerationResult(
             session_id=session_id,
             phone_mappings=[],
@@ -650,7 +590,6 @@ class Pipeline:
         entities: list[Entity],
         timeline: list[TimelineEvent],
     ) -> list[SelectedPhone]:
-        """Auto-select top 2 recommended phones."""
         entity_map = {e.entity_id: e for e in entities}
 
         # Get date range from timeline
@@ -702,7 +641,6 @@ class Pipeline:
         session_id: str,
         phones: list[SelectedPhone],
     ) -> None:
-        """Save phone selection confirmation."""
         confirmation = PhoneSelectionConfirmation(
             session_id=session_id,
             selected_phones=phones,
@@ -714,7 +652,6 @@ class Pipeline:
         planned: PlannedStory,
         plan: StoryGenerationPlan,
     ) -> str | None:
-        """Find timeline event ID for a planned story."""
         for event_plan in plan.event_plans:
             if planned in event_plan.planned_stories:
                 return event_plan.timeline_event_id
@@ -725,7 +662,6 @@ class Pipeline:
         phone: SelectedPhone,
         stories: List[StoryData],
     ) -> PhoneStoryMapping:
-        """Build PhoneStoryMapping from generated stories."""
         # Calculate story type counts
         story_type_counts: Dict[str, int] = defaultdict(int)
         for story in stories:
@@ -786,17 +722,6 @@ class Pipeline:
         from_stage: str,
         phone_selections: list[SelectedPhone] | None = None,
     ) -> JobGenerationResult:
-        """
-        Resume pipeline from a specific stage.
-
-        Args:
-            session_id: Session ID to resume
-            from_stage: Stage to resume from (e.g., 'timeline_generation', 'story_planning')
-            phone_selections: Optional phone selections for later stages
-
-        Returns:
-            JobGenerationResult
-        """
         logger.info("Resuming session %s from stage %s", session_id, from_stage)
 
         # Load required data based on stage
@@ -847,7 +772,6 @@ class Pipeline:
             raise ValueError(f"Unknown stage: {from_stage}")
 
     def get_summary(self, session_id: str) -> PipelineSummary:
-        """Get summary of a pipeline session."""
         metadata = self.storage.get_session_metadata(session_id)
 
         outputs = PipelineOutputs()

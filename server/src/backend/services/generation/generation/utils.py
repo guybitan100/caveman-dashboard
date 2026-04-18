@@ -17,9 +17,6 @@ class EngineCallable(Protocol):
 
 
 def titan_phase(phase: TitanPhase) -> Callable[[EngineCallable], EngineCallable]:
-    """
-    Decorator for phase functions. All function must have job (GenerationJob) as the first argument.
-    """
     def decorator(phase_func: EngineCallable) -> EngineCallable:
         @wraps(phase_func)
         def wrapper(job: GenerationJob, *args, **kwargs) -> int | None:
@@ -48,15 +45,6 @@ class LambdaException(Exception):
 
     
 async def invoke_function(lambda_client: LambdaClient, function_name: str, function_params: dict) -> bytes:
-        """
-        Invokes a Lambda function.
-
-        :param lambda_client: The aioboto3 client for Lambda.
-        :param function_name: The name of the function to invoke.
-        :param function_params: The parameters of the function as a dict. This dict
-                                is serialized to JSON before it is sent to Lambda.
-        :return: The response from the function invocation.
-        """
         try:
             response = await lambda_client.invoke(
                 FunctionName=function_name,
