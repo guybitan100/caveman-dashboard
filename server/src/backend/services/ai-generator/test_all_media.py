@@ -1,6 +1,3 @@
-"""
-Comprehensive test for all media types (image, video, audio, document)
-"""
 import asyncio
 from ai_generator.models.story_output import Story
 from ai_generator.models.entity import Entity, VoiceCharacteristics

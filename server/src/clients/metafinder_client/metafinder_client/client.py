@@ -20,13 +20,10 @@ from model.metafinder.data_types import DataType, KeywordTerms, RangeTerms, data
 from metafinder_core.models import AppModel, AudioModel, ChatModel, DocumentModel, ImageModel, ReportModelField, \
     TextModel, VideoModel, CellTowerModel, UrlModel, LocalizedNameModel, CryptoModel, MetafinderModel
 
-
 class MetaFinderError(Exception):
 	pass
 
-
 def _handle_metafinder_errors(func: Callable) -> Callable:
-	"""Decorator method for auto-handling MetaFinder connection and response errors"""
 
 	@wraps(func)
 	def wrapper(*args, **kwargs):
@@ -41,13 +38,11 @@ def _handle_metafinder_errors(func: Callable) -> Callable:
 
 	return wrapper
 
-
 class Container(containers.DeclarativeContainer):
 
 	config = providers.Configuration()
 
 	s3_client = providers.Factory(TitanS3Client)
-
 
 class MetaFinderClient:
 	def __init__(self, host: str = SETTINGS.METAFINDER_HOST):
@@ -88,19 +83,6 @@ class MetaFinderClient:
 		formats: Optional[List[str]] = None,
 		**kwargs,
 	) -> Iterator[ImageModel]:
-		"""
-		Attributes:
-			count (int):
-			categories (Optional[List[str]):    List of analytical categories to query MetaFinder by.
-			min_width (Optional[int]):
-			max_width (Optional[int]):
-			min_height (Optional[int]):
-			max_height (Optional[int]):
-			is_categories_and_op (bool):        When set to True, queries categories with AND operator.
-
-		Returns:
-			Iterator of image Model.
-		"""
 		images = self._get_data(data_type=DataType.Image, count=count, data_class=ImageModel,
 								min_width=min_width, max_width=max_width, min_height=min_height, max_height=max_height,
 								categories=_get_array_query(values=categories, is_and_operator=is_categories_and_op),
@@ -117,18 +99,6 @@ class MetaFinderClient:
 			formats: List[str] = None,
 			**kwargs
 	) -> Iterator[AudioModel]:
-		"""
-		Attributes:
-			count (int):
-			categories (Optional[List[str]]):   List of analytical categories to query MetaFinder by.
-			min_duration (Optional[int]):
-			max_duration (Optional[int]):
-			is_categories_and_op (bool):        When set to True, queries categories with AND operator.
-			formats(List[str]):                 File extensions by which to filter audios
-
-		Returns:
-			Iterator of audio Model.
-		"""
 		audios = self._get_data(data_type=DataType.Audio, count=count, data_class=AudioModel,
 								categories=_get_array_query(values=categories, is_and_operator=is_categories_and_op),
 								min_duration=min_duration, max_duration=max_duration, formats=formats, **kwargs)
@@ -144,18 +114,6 @@ class MetaFinderClient:
 			is_categories_and_op: bool = False,
 			**kwargs
 	) -> Iterator[VideoModel]:
-		"""
-		Attributes:
-			count (int):
-			categories (Optional[List[str]]):   List of analytical categories to query MetaFinder by.
-			min_duration (Optional[int]):       Minimum video duration
-			max_duration (Optional[int]):       Maximum video duration
-			formats(List[str]):                 File extensions by which to filter videos
-			is_categories_and_op (bool):        When set to True, queries categories with AND operator.
-
-		Returns:
-			Iterator of video Model.
-		"""
 		videos = self._get_data(data_type=DataType.Video, count=count, data_class=VideoModel,
 								categories=_get_array_query(values=categories, is_and_operator=is_categories_and_op),
 								min_duration=min_duration, max_duration=max_duration, formats=formats, **kwargs)
@@ -169,16 +127,6 @@ class MetaFinderClient:
 			is_categories_and_op: bool = False,
 			**kwargs
 	) -> Iterator[ChatModel]:
-		"""
-		Attributes:
-			count (int):
-			language (Optional[str]):           Language code to query MetaFinder by.
-			categories (Optional[List[str]]):   List of analytical categories to query MetaFinder by.
-			is_categories_and_op (bool):        When set to True, queries categories with AND operator.
-
-		Returns:
-			Iterator of chat Model.
-		"""
 		messages = self._get_data(data_type=DataType.Chat, count=count,
 								  data_class=ChatModel, languages=languages,
 								  categories=_get_array_query(values=categories, is_and_operator=is_categories_and_op),
@@ -193,16 +141,6 @@ class MetaFinderClient:
 			is_categories_and_op: bool = False,
 			**kwargs
 	) -> Iterator[UrlModel]:
-		"""
-		Attributes:
-			count (int):
-			cctld (Optional[str]):              Country code Tld to query MetaFinder by.
-			categories (Optional[List[str]]):   List of analytical categories to query MetaFinder by.
-			is_categories_and_op (bool):        When set to True, queries categories with AND operator.
-
-		Returns:
-			Iterator of URL Model.
-		"""
 		urls = self._get_data(data_type=DataType.URL, count=count,
 							  data_class=UrlModel, cctld=cctld,
 							  categories=_get_array_query(values=categories, is_and_operator=is_categories_and_op),
@@ -216,15 +154,6 @@ class MetaFinderClient:
 		category: Optional[str] = None,
 		**kwargs,
 	) -> Iterator[AppModel]:
-		"""
-		Attributes:
-			count (int):
-			os (Optional[str]):         Application Operating System.
-			category (Optional[str]):   Application app store category.
-
-		Returns:
-			Iterator of application Model.
-		"""
 		apps = self._get_data(
 			data_type=DataType.Application,
 			count=count,
@@ -236,14 +165,6 @@ class MetaFinderClient:
 		return apps
 
 	def get_text(self, count: int, category: Optional[str] = None, **kwargs) -> Iterator[TextModel]:
-		"""
-		Attributes:
-			count(int):
-			category(Optional[str]): analytical category to query MetaFinder by.
-
-		Returns:
-			Iterator of text Model.
-		"""
 		texts = self._get_data(
 			data_type=DataType.Text,
 			count=count,
@@ -261,15 +182,6 @@ class MetaFinderClient:
 			mcc: int = None,
 			**kwargs
 	) -> Iterator[CellTowerModel]:
-		"""
-		Attributes:
-			count(int):
-			latitude(float):    Latitude of coordinate that cell towers will be sorted by distance to.
-			latitude(float):    Latitude of coordinate that cell towers will be sorted by distance to.
-			mcc(int):           MCC of the cell towers.
-		Returns:
-			Iterator of CellTowerModel.
-		"""
 		cell_towers = self._get_data(
 			data_type=DataType.CellTower,
 			count=count,
@@ -289,16 +201,6 @@ class MetaFinderClient:
 		format: Optional[str] = None,
 		**kwargs,
 	) -> Iterator[DocumentModel]:
-		"""
-		Attributes:
-			count (int):
-			min_size (Optional[int]):   Minimum size of file in bytes.
-			max_size (Optional[int]):   Maximum size of file in bytes.
-			format (Optional[str]):     File extension.
-
-		Returns:
-			Iterator of documents Model.
-		"""
 		texts = self._get_data(
 			data_class=DocumentModel,
 			data_type=DataType.Document,
@@ -319,16 +221,6 @@ class MetaFinderClient:
 			alphabet: Optional[str] = None,
 			**kwargs
 	) -> Iterator[LocalizedNameModel]:
-		"""
-		Attributes:
-			count (int):
-			is_surname (bool):              Retrieve surnames, else first names
-			is_male (bool): If True, retrieve names that are more commonly male, else if False female, otherwise either
-			country_code (Optional[str]):   Country code
-
-		Returns:
-			List of names
-		"""
 		names = self._get_data(
 			data_type=DataType.Name,
 			count=count,
@@ -349,16 +241,6 @@ class MetaFinderClient:
 			coins: Optional[List[str]] = None,
 			**kwargs
 	) -> Iterator[CryptoModel]:
-		"""
-		Attributes:
-			count (int):
-			types (Optional[List[str]]):        Type of crypto artifact (wallet, transaction, nmemonic, etc.)
-			languages (Optional[List[str]]):    Language of crypto artifact (if applicable)
-			coins (Optional[List[str]]):        Coin type (BTC, ETH, etc.)
-
-		Returns:
-			Iterator of crypto artifacts
-		"""
 		crypto = self._get_data(
 			data_type=DataType.Crypto,
 			count=count,
@@ -428,7 +310,6 @@ class MetaFinderClient:
 	@staticmethod
 	@_handle_metafinder_errors
 	def _get_response(url: str, data: Optional[Dict] = None):
-		"""Returns JSON content of POST response"""
 		session = requests.Session()
 		retries = Retry(total=5, backoff_factor=2)
 		adapter = HTTPAdapter(max_retries=retries)
@@ -441,15 +322,6 @@ class MetaFinderClient:
 
 	@_handle_metafinder_errors
 	def get_apps_by_app_ids(self, app_ids: List[str]) -> List[AppModel]:
-		"""
-		Get Applications objects by their app_ids.
-
-		Attributes:
-			app_ids (List[str]): List of app ids
-
-		Returns:
-			List of application Model.
-		"""
 		if not app_ids:
 			return []
 
@@ -476,67 +348,35 @@ class MetaFinderClient:
 		return apps
 
 	def get_chat_message_languages(self) -> Dict[str, Dict[str, int]]:
-		"""
-		Returns:
-			Dict[str, Dict[str, int]]: {lang: {lang: count}}
-		"""
 		return self.get_field_counts_by_data_key(data_type=DataType.Chat, data_key="language")
 
 	def get_categories(self, data_type: DataType) -> Dict[str, Dict[str, int]]:
-		"""
-		Returns:
-			Dict[str, Dict[str, int]]: {category: {category: count}}
-		"""
 		return self.get_field_counts_by_data_key(data_type=data_type, data_key="categories")
 
 	def get_formats(self, data_type: DataType) -> Dict[str, Dict[str, int]]:
-		"""
-		Returns:
-			 Dict[str, Dict[str, int]]: {format: {format: count}}
-		"""
 		return self.get_field_counts_by_data_key(data_type=data_type, data_key="format")
 
 	def get_field_counts_by_data_key(self, data_type: DataType, data_key: str):
-		"""
-		Returns:
-			Dict[str, Dict[str, int]]: {data_key: {data_key: count}}
-		"""
 		return self._get_response(f"{self._url}/count/{data_type.value}/term/{data_key}")
 
 	def get_report_event_fields(self) -> List[ReportModelField]:
-		"""
-		Returns:
-			List of report.xml fields.
-		"""
 		data = self._get_data(data_type=DataType.ReportField, count=1)
 		fields = [ReportModelField.model_validate(field) for field in data]
 		return fields
 
 	def get_term_options(self, data_type: DataType, term: KeywordTerms) -> Dict[str, Dict[str, int]]:
-		"""
-		Returns:
-			Dict[str, Dict[str, int]]: {lang: {lang: count}}
-		"""
 		formats_counts = self._get_response(f"{self._url}/count/{data_type.value}/term/{term.value}")
 		return formats_counts
 
 	def get_term_options_range(
 		self, data_type: DataType, term: KeywordTerms, range: RangeTerms
 	) -> Dict[str, Dict[str, int]]:
-		"""
-		Returns:
-			Dict[str, Dict[str, int]]: {format: {max: count, min: count}}
-		"""
 		formats_max_min_counts = self._get_response(
 			f"{self._url}/count/{data_type.value}/term/{term.value}/range/{range.value}"
 		)
 		return formats_max_min_counts
 
 	def get_term_average(self, data_type: DataType, term: RangeTerms) -> int:
-		"""
-		Returns:
-			int
-		"""
 		return self._get_response(f"{self._url}/avg/{data_type.value}/term/{term.value}")
 
 	@_handle_metafinder_errors
@@ -559,12 +399,10 @@ class MetaFinderClient:
 					  ):
 		s3_client.download_file(bucket_name=SETTINGS.BUCKET_NAME, s3_key=s3_key, file_name=str(filepath))
 
-
 def _parse_query(data: Any) -> str | dict[str, str]:
 	if isinstance(data, BaseModel):
 		return data.dict()
 	return data
-
 
 def _get_array_query(values, is_and_operator) -> ArrayQuery | None:
 	if values:

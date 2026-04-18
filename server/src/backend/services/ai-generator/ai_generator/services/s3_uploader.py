@@ -1,9 +1,3 @@
-"""
-Async S3 Uploader Service for generated media.
-
-This module provides an async service for uploading generated media files
-to S3 and generating presigned URLs or S3 paths for storage references.
-"""
 import logging
 import mimetypes
 import uuid
@@ -18,10 +12,8 @@ from ai_generator.settings import SETTINGS
 
 logger = logging.getLogger(__name__)
 
-
 @dataclass
 class UploadResult:
-    """Result of an S3 upload operation."""
     
     s3_key: str
     s3_uri: str
@@ -29,36 +21,19 @@ class UploadResult:
     content_type: str
     size_bytes: int
 
-
 @dataclass
 class S3Location:
-    """S3 location for async operations like Nova Reel."""
     
     bucket: str
     prefix: str
     s3_uri: str
 
-
 class S3Uploader:
-    """
-    Async S3 uploader for generated media files.
-    
-    Handles:
-    - Uploading generated images, audio, documents to S3
-    - Generating unique S3 keys with proper prefixes
-    - Providing S3 URIs for async operations
-    """
     
     def __init__(
         self,
         bucket_name: Optional[str] = None,
     ):
-        """
-        Initialize S3 uploader.
-        
-        Args:
-            bucket_name: S3 bucket name. Defaults to settings.S3_BUCKET_NAME
-        """
         self.bucket = bucket_name or SETTINGS.S3_TITAN_BUCKET_NAME
         self._session = aioboto3.Session()
         self._config = Config(
@@ -77,24 +52,6 @@ class S3Uploader:
         extension: str,
         story_id: Optional[str] = None,
     ) -> str:
-        """
-        Generate a unique S3 key for a media file.
-        
-        Key format: {job_id}/{file_type}/{timestamp}_{story_id or uuid}.{extension}
-        
-        Note: This returns the key WITHOUT the uploads prefix. The prefix will be
-        added when uploading to S3, but the stored s3_key in StoryFileInfo should
-        NOT include the prefix (the API adds it during verification).
-        
-        Args:
-            job_id: Generation job ID
-            file_type: Type of media (image, video, audio, document)
-            extension: File extension (without dot)
-            story_id: Optional story ID for the key
-            
-        Returns:
-            S3 key string (without uploads prefix)
-        """
         file_id = story_id or str(uuid.uuid4())
         timestamp = datetime.utcnow().strftime("%Y%m%d")
         
@@ -105,18 +62,6 @@ class S3Uploader:
         job_id: str,
         story_id: Optional[str] = None,
     ) -> S3Location:
-        """
-        Get S3 location for Nova Reel async video output.
-        
-        Nova Reel writes directly to S3, so we provide a prefix location.
-        
-        Args:
-            job_id: Generation job ID
-            story_id: Optional story ID for organization
-            
-        Returns:
-            S3Location with bucket, prefix, and s3_uri
-        """
         file_id = story_id or str(uuid.uuid4())
         timestamp = datetime.utcnow().strftime("%Y%m%d")
         
@@ -138,24 +83,6 @@ class S3Uploader:
         content_type: Optional[str] = None,
         metadata: Optional[dict[str, str]] = None,
     ) -> UploadResult:
-        """
-        Upload bytes data to S3.
-        
-        Args:
-            data: File content as bytes
-            job_id: Generation job ID
-            file_type: Type of media (image, video, audio, document)
-            extension: File extension (without dot)
-            story_id: Optional story ID
-            content_type: MIME type. Auto-detected if not provided
-            metadata: Optional S3 object metadata
-            
-        Returns:
-            UploadResult with S3 location details
-            
-        Raises:
-            Exception: On upload failure
-        """
         if not self.bucket:
             raise ValueError("S3_BUCKET_NAME not configured")
         
@@ -205,18 +132,6 @@ class S3Uploader:
         story_id: Optional[str] = None,
         format: str = "png",
     ) -> UploadResult:
-        """
-        Upload a generated image to S3.
-        
-        Args:
-            image_bytes: Image content
-            job_id: Generation job ID
-            story_id: Optional story ID
-            format: Image format (png, jpg, webp)
-            
-        Returns:
-            UploadResult with S3 location
-        """
         content_type = f"image/{format}"
         if format == "jpg":
             content_type = "image/jpeg"
@@ -238,18 +153,6 @@ class S3Uploader:
         story_id: Optional[str] = None,
         format: str = "mp3",
     ) -> UploadResult:
-        """
-        Upload generated audio to S3.
-        
-        Args:
-            audio_bytes: Audio content
-            job_id: Generation job ID
-            story_id: Optional story ID
-            format: Audio format (mp3, wav)
-            
-        Returns:
-            UploadResult with S3 location
-        """
         content_type = f"audio/{format}"
         if format == "mp3":
             content_type = "audio/mpeg"
@@ -271,18 +174,6 @@ class S3Uploader:
         story_id: Optional[str] = None,
         format: str = "pdf",
     ) -> UploadResult:
-        """
-        Upload a generated document to S3.
-        
-        Args:
-            document_bytes: Document content
-            job_id: Generation job ID
-            story_id: Optional story ID
-            format: Document format (pdf, docx, txt)
-            
-        Returns:
-            UploadResult with S3 location
-        """
         content_types = {
             "pdf": "application/pdf",
             "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -306,20 +197,6 @@ class S3Uploader:
         job_id: str,
         story_id: Optional[str] = None,
     ) -> UploadResult:
-        """
-        Copy the generated video from Nova Reel output to uploads prefix.
-        
-        Nova Reel writes to generated-media prefix. This copies the final
-        video to the uploads prefix for consistent access patterns.
-        
-        Args:
-            source_uri: S3 URI of the Nova Reel output (s3://bucket/prefix/output.mp4)
-            job_id: Generation job ID
-            story_id: Optional story ID
-            
-        Returns:
-            UploadResult with final S3 location
-        """
         if not self.bucket:
             raise ValueError("S3_BUCKET_NAME not configured")
         
@@ -384,12 +261,6 @@ class S3Uploader:
         self,
         output_uri: str,
     ) -> None:
-        """
-        Clean up Nova Reel temporary output after copying.
-        
-        Args:
-            output_uri: S3 URI of the Nova Reel output prefix
-        """
         if not output_uri.startswith("s3://"):
             return
         
@@ -421,13 +292,10 @@ class S3Uploader:
                 )
                 logger.info(f"Deleted {len(objects_to_delete)} temporary files")
 
-
 # Singleton instance
 _s3_uploader: Optional[S3Uploader] = None
 
-
 def get_s3_uploader() -> S3Uploader:
-    """Get or create the S3 uploader singleton."""
     global _s3_uploader
     if _s3_uploader is None:
         _s3_uploader = S3Uploader()

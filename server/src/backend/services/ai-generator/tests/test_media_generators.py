@@ -1,4 +1,3 @@
-"""Unit tests for media generators and MediaGeneratorService."""
 
 import asyncio
 from datetime import datetime
@@ -32,13 +31,10 @@ from ai_generator.services.bedrock_client import (
 from ai_generator.services.s3_uploader import S3Location, UploadResult
 from model.stories import StoryType
 
-
 # ==================== Fixtures ====================
-
 
 @pytest.fixture
 def mock_s3_uploader():
-    """Mock S3Uploader with successful uploads."""
     mock_uploader = MagicMock()
     mock_uploader.upload_image = AsyncMock(
         return_value=UploadResult(
@@ -95,10 +91,8 @@ def mock_s3_uploader():
     for p in patches:
         p.stop()
 
-
 @pytest.fixture
 def mock_bedrock_client():
-    """Mock BedrockClient with successful generations."""
     mock_client = MagicMock()
     mock_client.generate_image = AsyncMock(
         return_value=ImageGenerationResult(
@@ -140,10 +134,8 @@ def mock_bedrock_client():
     for p in patches:
         p.stop()
 
-
 @pytest.fixture
 def sample_entity():
-    """Sample entity with voice characteristics."""
     from ai_generator.models.entity import Gender
     
     return Entity(
@@ -160,10 +152,8 @@ def sample_entity():
         ),
     )
 
-
 @pytest.fixture
 def sample_image_story():
-    """Sample ImageStoryOutput."""
     return ImageStoryOutput(
         uid="story-img-1",
         story_type=StoryType.IMAGE,
@@ -177,10 +167,8 @@ def sample_image_story():
         ),
     )
 
-
 @pytest.fixture
 def sample_video_story():
-    """Sample VideoStoryOutput."""
     return VideoStoryOutput(
         uid="story-vid-1",
         story_type=StoryType.VIDEO,
@@ -194,10 +182,8 @@ def sample_video_story():
         ),
     )
 
-
 @pytest.fixture
 def sample_audio_story():
-    """Sample AudioStoryOutput."""
     return AudioStoryOutput(
         uid="story-aud-1",
         story_type=StoryType.AUDIO,
@@ -211,10 +197,8 @@ def sample_audio_story():
         ),
     )
 
-
 @pytest.fixture
 def sample_document_story():
-    """Sample DocumentStoryOutput."""
     return DocumentStoryOutput(
         uid="story-doc-1",
         story_type=StoryType.DOCUMENT,
@@ -228,13 +212,10 @@ def sample_document_story():
         ),
     )
 
-
 # ==================== ImageGenerator Tests ====================
-
 
 @pytest.mark.asyncio
 async def test_image_generator_success(mock_bedrock_client, mock_s3_uploader):
-    """Test successful image generation."""
     generator = ImageGenerator(job_id="test-job")
 
     result = await generator.generate(
@@ -247,10 +228,8 @@ async def test_image_generator_success(mock_bedrock_client, mock_s3_uploader):
     assert result.file_info.size == 1024
     assert result.error_message is None
 
-
 @pytest.mark.asyncio
 async def test_image_generator_bedrock_failure(mock_bedrock_client, mock_s3_uploader):
-    """Test image generation when Bedrock fails."""
     mock_bedrock_client.generate_image = AsyncMock(
         side_effect=Exception("Model unavailable")
     )
@@ -265,10 +244,8 @@ async def test_image_generator_bedrock_failure(mock_bedrock_client, mock_s3_uplo
     assert result.success is False
     assert "Model unavailable" in result.error_message
 
-
 @pytest.mark.asyncio
 async def test_image_generator_s3_failure(mock_bedrock_client, mock_s3_uploader):
-    """Test image generation when S3 upload fails."""
     mock_s3_uploader.upload_image = AsyncMock(
         side_effect=Exception("S3 permission denied")
     )
@@ -283,13 +260,10 @@ async def test_image_generator_s3_failure(mock_bedrock_client, mock_s3_uploader)
     assert result.success is False
     assert "S3 permission denied" in result.error_message
 
-
 # ==================== VideoGenerator Tests ====================
-
 
 @pytest.mark.asyncio
 async def test_video_generator_success(mock_bedrock_client, mock_s3_uploader):
-    """Test successful video generation."""
     generator = VideoGenerator(job_id="test-job")
 
     result = await generator.generate(
@@ -304,10 +278,8 @@ async def test_video_generator_success(mock_bedrock_client, mock_s3_uploader):
     # Verify cleanup was called
     mock_s3_uploader.delete_nova_reel_output.assert_called_once()
 
-
 @pytest.mark.asyncio
 async def test_video_generator_bedrock_failure(mock_bedrock_client, mock_s3_uploader):
-    """Test video generation when Bedrock fails."""
     mock_bedrock_client.wait_for_video_generation = AsyncMock(
         side_effect=Exception("Video generation timeout")
     )
@@ -322,13 +294,10 @@ async def test_video_generator_bedrock_failure(mock_bedrock_client, mock_s3_uplo
     assert result.success is False
     assert "Video generation timeout" in result.error_message
 
-
 # ==================== AudioGenerator Tests ====================
-
 
 @pytest.mark.asyncio
 async def test_audio_generator_success(mock_bedrock_client, mock_s3_uploader):
-    """Test successful audio generation."""
     generator = AudioGenerator(job_id="test-job")
 
     result = await generator.generate(
@@ -340,12 +309,10 @@ async def test_audio_generator_success(mock_bedrock_client, mock_s3_uploader):
     assert result.file_info.s3_key == "uploads/test-job/audio/test.mp3"
     assert result.file_info.size == 2048
 
-
 @pytest.mark.asyncio
 async def test_audio_generator_with_entity_voice(
     mock_bedrock_client, mock_s3_uploader, sample_entity
 ):
-    """Test audio generation with entity voice characteristics."""
     generator = AudioGenerator(job_id="test-job")
 
     result = await generator.generate(
@@ -362,13 +329,10 @@ async def test_audio_generator_with_entity_voice(
     assert call_kwargs["voice_id"] == "Matthew"
     assert call_kwargs["language_code"] == "en-US"
 
-
 # ==================== DocumentGenerator Tests ====================
-
 
 @pytest.mark.asyncio
 async def test_document_generator_pdf_success(mock_s3_uploader):
-    """Test successful PDF document generation."""
     generator = DocumentGenerator(job_id="test-job")
 
     result = await generator.generate(
@@ -381,10 +345,8 @@ async def test_document_generator_pdf_success(mock_s3_uploader):
     assert result.file_info.s3_key == "uploads/test-job/document/test.pdf"
     assert result.file_info.size == 4096
 
-
 @pytest.mark.asyncio
 async def test_document_generator_txt_success(mock_s3_uploader):
-    """Test successful TXT document generation."""
     generator = DocumentGenerator(job_id="test-job")
 
     result = await generator.generate(
@@ -396,10 +358,8 @@ async def test_document_generator_txt_success(mock_s3_uploader):
     assert result.success is True
     assert result.file_info.file_name.endswith(".txt")
 
-
 @pytest.mark.asyncio
 async def test_document_generator_invalid_format(mock_s3_uploader):
-    """Test document generation with invalid format - tests validator."""
     # This test verifies that only valid DocumentFormat enums are accepted
     # Invalid formats would be caught by type checking or enum validation
     generator = DocumentGenerator(job_id="test-job")
@@ -413,9 +373,7 @@ async def test_document_generator_invalid_format(mock_s3_uploader):
     
     assert result.success is True
 
-
 # ==================== MediaGeneratorService Tests ====================
-
 
 @pytest.mark.asyncio
 async def test_media_service_mixed_stories(
@@ -426,7 +384,6 @@ async def test_media_service_mixed_stories(
     sample_audio_story,
     sample_document_story,
 ):
-    """Test MediaGeneratorService with mixed story types."""
     from ai_generator.models.story_output import CallStoryOutput
 
     # Create a non-media story
@@ -467,12 +424,10 @@ async def test_media_service_mixed_stories(
             assert story.file.s3_key != ""
             assert story.file.size > 0
 
-
 @pytest.mark.asyncio
 async def test_media_service_removes_failed_stories(
     mock_bedrock_client, mock_s3_uploader, sample_image_story, sample_video_story
 ):
-    """Test that MediaGeneratorService removes stories that fail generation."""
     # Make image generation fail
     mock_bedrock_client.generate_image = AsyncMock(
         side_effect=Exception("Model error")
@@ -491,12 +446,10 @@ async def test_media_service_removes_failed_stories(
     assert len(updated_stories) == 1
     assert updated_stories[0].uid == "story-vid-1"
 
-
 @pytest.mark.asyncio
 async def test_media_service_retry_logic(
     mock_bedrock_client, mock_s3_uploader, sample_image_story
 ):
-    """Test that MediaGeneratorService retries failed generations."""
     # Fail first attempt, succeed on second
     mock_bedrock_client.generate_image = AsyncMock(
         side_effect=[
@@ -524,10 +477,8 @@ async def test_media_service_retry_logic(
     # Verify generate_image was called twice
     assert mock_bedrock_client.generate_image.call_count == 2
 
-
 @pytest.mark.asyncio
 async def test_media_service_disabled(sample_image_story):
-    """Test MediaGeneratorService when media generation is disabled."""
     with patch("ai_generator.services.media_generator_service.SETTINGS") as mock_settings:
         mock_settings.MEDIA_GENERATION_ENABLED = False
 
@@ -542,12 +493,10 @@ async def test_media_service_disabled(sample_image_story):
         assert len(updated_stories) == 1
         assert updated_stories[0].file.s3_key == ""
 
-
 @pytest.mark.asyncio
 async def test_media_service_batching(
     mock_bedrock_client, mock_s3_uploader
 ):
-    """Test that MediaGeneratorService respects batch size."""
     # Create 10 image stories
     stories = [
         ImageStoryOutput(
@@ -590,28 +539,21 @@ async def test_media_service_batching(
     # Max concurrent should not exceed batch size
     assert max_concurrent <= 3
 
-
 # ==================== Error Handling Tests ====================
-
 
 @pytest.mark.asyncio
 async def test_media_generation_error_retryable():
-    """Test MediaGenerationError with retryable flag."""
     error = MediaGenerationError("Temporary network error", retryable=True)
     assert error.retryable is True
     assert str(error) == "Temporary network error"
 
-
 @pytest.mark.asyncio
 async def test_media_generation_error_non_retryable():
-    """Test MediaGenerationError with non-retryable flag."""
     error = MediaGenerationError("Invalid input format", retryable=False)
     assert error.retryable is False
 
-
 @pytest.mark.asyncio
 async def test_generation_result_from_upload():
-    """Test GenerationResult.from_upload factory method."""
     upload_result = UploadResult(
         s3_key="uploads/job-1/image/test.png",
         s3_uri="s3://test-bucket/uploads/job-1/image/test.png",
@@ -631,10 +573,8 @@ async def test_generation_result_from_upload():
     assert result.file_info.file_name == "test.png"
     assert result.file_info.size == 1024
 
-
 @pytest.mark.asyncio
 async def test_generation_result_failure():
-    """Test GenerationResult.failure factory method."""
     result = GenerationResult.failure(
         story_id="story-1",
         error="Something went wrong"

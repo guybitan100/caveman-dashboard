@@ -1,11 +1,3 @@
-"""Tests for routine generation components.
-
-Tests cover:
-- RoutineRandomizer: time/duration randomization, skip probability
-- ConflictResolver: timeline event conflict detection
-- RoutineStoryGenerator: story data generation from routine activities
-- Integration: end-to-end routine generation flow
-"""
 
 from datetime import date, datetime, timedelta
 
@@ -28,15 +20,12 @@ from ai_generator.routine_generation.randomizer import RoutineRandomizer
 from ai_generator.routine_generation.story_generator import RoutineStoryGenerator
 from model.stories import StoryType
 
-
 # =============================================================================
 # Fixtures
 # =============================================================================
 
-
 @pytest.fixture
 def tech_savvy_entity() -> Entity:
-    """Create a tech-savvy entity for testing."""
     return Entity(
         entity_id="ent_tech",
         name="Alice Tech",
@@ -52,10 +41,8 @@ def tech_savvy_entity() -> Entity:
         emails=["alice@example.com"],
     )
 
-
 @pytest.fixture
 def low_tech_entity() -> Entity:
-    """Create a low-tech entity for testing."""
     return Entity(
         entity_id="ent_lowtech",
         name="Bob Traditional",
@@ -71,10 +58,8 @@ def low_tech_entity() -> Entity:
         emails=["bob@example.com"],
     )
 
-
 @pytest.fixture
 def default_config() -> RoutineGenerationConfig:
-    """Create default routine generation config."""
     return RoutineGenerationConfig(
         enabled=True,
         density="heavy",
@@ -85,10 +70,8 @@ def default_config() -> RoutineGenerationConfig:
         timeline_event_buffer_minutes=60,
     )
 
-
 @pytest.fixture
 def sample_timeline_events(tech_savvy_entity: Entity) -> list[TimelineEvent]:
-    """Create sample timeline events."""
     return [
         TimelineEvent(
             event_id="evt_001",
@@ -119,10 +102,8 @@ def sample_timeline_events(tech_savvy_entity: Entity) -> list[TimelineEvent]:
         ),
     ]
 
-
 @pytest.fixture
 def sample_routine_activity() -> RoutineActivity:
-    """Create a sample routine activity."""
     return RoutineActivity(
         activity_id="act_001",
         time="08:30",
@@ -136,10 +117,8 @@ def sample_routine_activity() -> RoutineActivity:
         description="Morning social media check",
     )
 
-
 @pytest.fixture
 def sample_iphone(tech_savvy_entity: Entity) -> SelectedPhone:
-    """Create a sample iPhone selection."""
     return SelectedPhone(
         entity_id=tech_savvy_entity.entity_id,
         entity_name=tech_savvy_entity.name,
@@ -150,21 +129,17 @@ def sample_iphone(tech_savvy_entity: Entity) -> SelectedPhone:
         end_date=date(2025, 1, 17),
     )
 
-
 # =============================================================================
 # RoutineRandomizer Tests
 # =============================================================================
 
-
 class TestRoutineRandomizer:
-    """Tests for RoutineRandomizer class."""
 
     def test_should_never_skip_essential_activities(
         self,
         tech_savvy_entity: Entity,
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Essential activities should never be skipped."""
         randomizer = RoutineRandomizer(
             config=default_config,
             entity=tech_savvy_entity,
@@ -191,7 +166,6 @@ class TestRoutineRandomizer:
         low_tech_entity: Entity,
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Tech-savvy entities should skip fewer activities than low-tech entities."""
         tech_randomizer = RoutineRandomizer(
             config=default_config,
             entity=tech_savvy_entity,
@@ -235,7 +209,6 @@ class TestRoutineRandomizer:
         low_tech_entity: Entity,
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Low social activity should increase skip rate for communication."""
         # Create entities with same tech but different social activity
         high_social = Entity(
             entity_id="ent_high_social",
@@ -285,7 +258,6 @@ class TestRoutineRandomizer:
         tech_savvy_entity: Entity,
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Randomized time should stay within variation bounds."""
         randomizer = RoutineRandomizer(
             config=default_config,
             entity=tech_savvy_entity,
@@ -310,7 +282,6 @@ class TestRoutineRandomizer:
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """Time should be clamped to stay within the same day."""
         config = RoutineGenerationConfig(
             timing_variation_minutes=120,  # Large variation
         )
@@ -337,7 +308,6 @@ class TestRoutineRandomizer:
         tech_savvy_entity: Entity,
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Randomized duration should stay within variation bounds."""
         randomizer = RoutineRandomizer(
             config=default_config,
             entity=tech_savvy_entity,
@@ -360,7 +330,6 @@ class TestRoutineRandomizer:
         tech_savvy_entity: Entity,
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Minimum duration should be 1 minute."""
         randomizer = RoutineRandomizer(
             config=default_config,
             entity=tech_savvy_entity,
@@ -377,7 +346,6 @@ class TestRoutineRandomizer:
         tech_savvy_entity: Entity,
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Day seed should be consistent for same date and entity."""
         randomizer = RoutineRandomizer(
             config=default_config,
             entity=tech_savvy_entity,
@@ -396,7 +364,6 @@ class TestRoutineRandomizer:
         tech_savvy_entity: Entity,
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Day seed should be different for different dates."""
         randomizer = RoutineRandomizer(
             config=default_config,
             entity=tech_savvy_entity,
@@ -412,7 +379,6 @@ class TestRoutineRandomizer:
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """Skip should always return False when entity_aware_skip is disabled."""
         config = RoutineGenerationConfig(entity_aware_skip=False)
         randomizer = RoutineRandomizer(
             config=config,
@@ -433,21 +399,17 @@ class TestRoutineRandomizer:
         for _ in range(100):
             assert not randomizer.should_skip_activity(optional_activity)
 
-
 # =============================================================================
 # ConflictResolver Tests
 # =============================================================================
 
-
 class TestConflictResolver:
-    """Tests for ConflictResolver class."""
 
     def test_has_conflict_within_buffer(
         self,
         sample_timeline_events: list[TimelineEvent],
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Should detect conflict within buffer window."""
         resolver = ConflictResolver(
             timeline_events=sample_timeline_events,
             entity_id="ent_tech",
@@ -467,7 +429,6 @@ class TestConflictResolver:
         sample_timeline_events: list[TimelineEvent],
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Should not detect conflict outside buffer window."""
         resolver = ConflictResolver(
             timeline_events=sample_timeline_events,
             entity_id="ent_tech",
@@ -482,7 +443,6 @@ class TestConflictResolver:
         self,
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """High significance events should have extended buffer windows."""
         high_sig_event = TimelineEvent(
             event_id="evt_high",
             timestamp=datetime(2025, 1, 15, 12, 0),
@@ -529,7 +489,6 @@ class TestConflictResolver:
         self,
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Should only consider events involving the specified entity."""
         events = [
             TimelineEvent(
                 event_id="evt_alice",
@@ -572,7 +531,6 @@ class TestConflictResolver:
         sample_timeline_events: list[TimelineEvent],
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Should return the conflicting event."""
         resolver = ConflictResolver(
             timeline_events=sample_timeline_events,
             entity_id="ent_tech",
@@ -589,7 +547,6 @@ class TestConflictResolver:
         self,
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Should return safe time slots between conflicts."""
         # Event at 12:00 with 60min buffer
         event = TimelineEvent(
             event_id="evt_noon",
@@ -622,7 +579,6 @@ class TestConflictResolver:
         self,
         sample_timeline_events: list[TimelineEvent],
     ) -> None:
-        """Should not detect conflicts when adjust_for_timeline_events is disabled."""
         config = RoutineGenerationConfig(adjust_for_timeline_events=False)
         resolver = ConflictResolver(
             timeline_events=sample_timeline_events,
@@ -634,20 +590,16 @@ class TestConflictResolver:
         test_time = datetime(2025, 1, 15, 10, 0)
         assert not resolver.has_conflict(test_time)
 
-
 # =============================================================================
 # RoutineStoryGenerator Tests
 # =============================================================================
 
-
 class TestRoutineStoryGenerator:
-    """Tests for RoutineStoryGenerator class."""
 
     def test_generate_app_story(
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """Should generate AppStoryData from app activity."""
         generator = RoutineStoryGenerator(
             entity=tech_savvy_entity,
             device_type=DeviceType.IPHONE,
@@ -681,7 +633,6 @@ class TestRoutineStoryGenerator:
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """Should generate LocationStoryData from location activity."""
         generator = RoutineStoryGenerator(
             entity=tech_savvy_entity,
             device_type=DeviceType.ANDROID,
@@ -715,7 +666,6 @@ class TestRoutineStoryGenerator:
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """Should generate WebHistoryStoryData from web activity."""
         generator = RoutineStoryGenerator(
             entity=tech_savvy_entity,
             device_type=DeviceType.IPHONE,
@@ -748,7 +698,6 @@ class TestRoutineStoryGenerator:
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """Should generate PoweringEventStoryData from powering activity."""
         generator = RoutineStoryGenerator(
             entity=tech_savvy_entity,
             device_type=DeviceType.ANDROID,
@@ -781,7 +730,6 @@ class TestRoutineStoryGenerator:
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """Should generate multiple LocationStoryData from route activity."""
         generator = RoutineStoryGenerator(
             entity=tech_savvy_entity,
             device_type=DeviceType.IPHONE,
@@ -820,7 +768,6 @@ class TestRoutineStoryGenerator:
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """Same location type should return consistent coordinates."""
         generator = RoutineStoryGenerator(
             entity=tech_savvy_entity,
             device_type=DeviceType.IPHONE,
@@ -837,7 +784,6 @@ class TestRoutineStoryGenerator:
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """Different location types should have different coordinates."""
         generator = RoutineStoryGenerator(
             entity=tech_savvy_entity,
             device_type=DeviceType.ANDROID,
@@ -853,7 +799,6 @@ class TestRoutineStoryGenerator:
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """Unsupported story types should return None."""
         generator = RoutineStoryGenerator(
             entity=tech_savvy_entity,
             device_type=DeviceType.IPHONE,
@@ -881,7 +826,6 @@ class TestRoutineStoryGenerator:
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """Should generate CallStoryData from call activity."""
         generator = RoutineStoryGenerator(
             entity=tech_savvy_entity,
             device_type=DeviceType.IPHONE,
@@ -921,7 +865,6 @@ class TestRoutineStoryGenerator:
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """Should generate InstantMessageStoryData from SMS activity."""
         generator = RoutineStoryGenerator(
             entity=tech_savvy_entity,
             device_type=DeviceType.ANDROID,
@@ -958,7 +901,6 @@ class TestRoutineStoryGenerator:
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """Call story should select contacts from the specified category."""
         generator = RoutineStoryGenerator(
             entity=tech_savvy_entity,
             device_type=DeviceType.IPHONE,
@@ -992,7 +934,6 @@ class TestRoutineStoryGenerator:
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """SMS story should use appropriate message templates."""
         generator = RoutineStoryGenerator(
             entity=tech_savvy_entity,
             device_type=DeviceType.ANDROID,
@@ -1027,7 +968,6 @@ class TestRoutineStoryGenerator:
         self,
         tech_savvy_entity: Entity,
     ) -> None:
-        """Device type should affect which apps are selected."""
         iphone_generator = RoutineStoryGenerator(
             entity=tech_savvy_entity,
             device_type=DeviceType.IPHONE,
@@ -1066,17 +1006,13 @@ class TestRoutineStoryGenerator:
         assert "apple" in iphone_result.app_id.lower() or "com.apple" in iphone_result.app_id
         assert "google" in android_result.app_id.lower() or "android" in android_result.app_id
 
-
 # =============================================================================
 # Entity Location Awareness Tests
 # =============================================================================
 
-
 class TestEntityLocationAwareness:
-    """Tests for entity location-aware coordinate generation."""
 
     def test_entity_with_explicit_location_uses_city_coordinates(self) -> None:
-        """Entity with explicit location should use that city's coordinates."""
         # Create entity with explicit London location
         london_entity = Entity(
             entity_id="ent_london",
@@ -1102,7 +1038,6 @@ class TestEntityLocationAwareness:
         assert -0.3 < home_coord.longitude < 0.0
 
     def test_entity_with_nyc_location(self) -> None:
-        """Entity with NYC location should use NYC coordinates."""
         nyc_entity = Entity(
             entity_id="ent_nyc",
             name="NYC Person",
@@ -1127,7 +1062,6 @@ class TestEntityLocationAwareness:
         assert -74.2 < home_coord.longitude < -73.8
 
     def test_entity_without_location_defaults_to_nyc(self) -> None:
-        """Entity without location should default to NYC coordinates."""
         no_location_entity = Entity(
             entity_id="ent_no_loc",
             name="No Location Person",
@@ -1151,7 +1085,6 @@ class TestEntityLocationAwareness:
         assert -74.2 < home_coord.longitude < -73.8
 
     def test_location_extracted_from_background(self) -> None:
-        """Location should be extracted from entity background if not explicit."""
         background_entity = Entity(
             entity_id="ent_bg",
             name="Background Person",
@@ -1176,7 +1109,6 @@ class TestEntityLocationAwareness:
         assert -87.8 < home_coord.longitude < -87.4
 
     def test_different_location_types_have_consistent_offsets(self) -> None:
-        """Different location types should maintain relative positions."""
         tokyo_entity = Entity(
             entity_id="ent_tokyo",
             name="Tokyo Person",
@@ -1205,7 +1137,6 @@ class TestEntityLocationAwareness:
         assert home.latitude != work.latitude or home.longitude != work.longitude
 
     def test_location_coordinates_cached(self) -> None:
-        """Same location type should return cached coordinates."""
         entity = Entity(
             entity_id="ent_cache",
             name="Cache Test",
@@ -1227,7 +1158,6 @@ class TestEntityLocationAwareness:
         assert home1.longitude == home2.longitude
 
     def test_extract_location_from_text_finds_cities(self) -> None:
-        """_extract_location_from_text should find city names."""
         entity = Entity(
             entity_id="ent_test",
             name="Test",
@@ -1247,7 +1177,6 @@ class TestEntityLocationAwareness:
         assert generator._extract_location_from_text("No city mentioned here") is None
 
     def test_partial_city_name_match(self) -> None:
-        """Should handle partial matches in location lookup."""
         entity = Entity(
             entity_id="ent_partial",
             name="Partial Match",
@@ -1270,7 +1199,6 @@ class TestEntityLocationAwareness:
         assert -118.5 < home.longitude < -118.0
 
     def test_city_abbreviations_work(self) -> None:
-        """Should handle common city abbreviations like NYC, LA, SF."""
         sf_entity = Entity(
             entity_id="ent_sf",
             name="SF Person",
@@ -1291,7 +1219,6 @@ class TestEntityLocationAwareness:
         assert -122.6 < home.longitude < -122.2
 
     def test_location_story_uses_entity_location(self) -> None:
-        """Location stories should use entity's city-based coordinates."""
         sydney_entity = Entity(
             entity_id="ent_sydney",
             name="Sydney Person",
@@ -1325,7 +1252,6 @@ class TestEntityLocationAwareness:
         assert 150.9 < result.coordinate.longitude < 151.5
 
     def test_route_story_uses_entity_location(self) -> None:
-        """Route stories should have coordinates in entity's city."""
         berlin_entity = Entity(
             entity_id="ent_berlin",
             name="Berlin Person",
@@ -1363,18 +1289,14 @@ class TestEntityLocationAwareness:
             assert 52.3 < loc.coordinate.latitude < 52.7
             assert 13.2 < loc.coordinate.longitude < 13.6
 
-
 # =============================================================================
 # Integration Tests
 # =============================================================================
 
-
 class TestRoutineGenerationIntegration:
-    """Integration tests for the full routine generation flow."""
 
     @pytest.fixture
     def sample_weekly_pattern(self) -> WeeklyRoutinePattern:
-        """Create a sample weekly pattern for testing."""
         monday_activities = [
             RoutineActivity(
                 activity_id="mon_001",
@@ -1430,7 +1352,6 @@ class TestRoutineGenerationIntegration:
         sample_weekly_pattern: WeeklyRoutinePattern,
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Test generating stories for a full day."""
         from ai_generator.routine_generation.generator import _generate_day_stories
 
         randomizer = RoutineRandomizer(
@@ -1474,7 +1395,6 @@ class TestRoutineGenerationIntegration:
         sample_weekly_pattern: WeeklyRoutinePattern,
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Stories should be skipped when conflicting with timeline events."""
         from ai_generator.routine_generation.generator import _generate_day_stories
 
         # Create a timeline event at commute time
@@ -1529,7 +1449,6 @@ class TestRoutineGenerationIntegration:
         sample_weekly_pattern: WeeklyRoutinePattern,
         default_config: RoutineGenerationConfig,
     ) -> None:
-        """Same seed should produce deterministic results."""
         from ai_generator.routine_generation.generator import _generate_day_stories
 
         def generate_with_seed(seed: int) -> list:

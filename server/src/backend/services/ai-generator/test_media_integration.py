@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Integration test for media generation."""
 
 import asyncio
 from datetime import datetime
@@ -11,9 +10,7 @@ from ai_generator.models.story_output import (
 from ai_generator.services.media_generator_service import MediaGeneratorService
 from model.stories import StoryType
 
-
 async def test_image_generation():
-    """Test real image generation with Bedrock."""
     print("=" * 60)
     print("Testing Media Generation Integration")
     print("=" * 60)
@@ -69,7 +66,6 @@ async def test_image_generation():
         import traceback
         traceback.print_exc()
         return False
-
 
 if __name__ == "__main__":
     print("\n🔧 Checking AWS credentials...")

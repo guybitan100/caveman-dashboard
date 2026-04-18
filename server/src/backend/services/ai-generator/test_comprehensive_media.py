@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Comprehensive test for image, video, and audio generation."""
 
 import asyncio
 from datetime import datetime
@@ -13,9 +12,7 @@ from ai_generator.models.story_output import (
 from ai_generator.services.media_generator_service import MediaGeneratorService
 from model.stories import StoryType
 
-
 async def test_all_media():
-    """Test image, video, and audio generation."""
     print("\n" + "="*70)
     print("COMPREHENSIVE MEDIA GENERATION TEST")
     print("Testing: Image (Nova Canvas), Video (Nova Reel), Audio (Nova Sonic)")
@@ -115,7 +112,6 @@ async def test_all_media():
     else:
         print("💥 SOME TESTS FAILED\n")
         return False
-
 
 if __name__ == "__main__":
     result = asyncio.run(test_all_media())
