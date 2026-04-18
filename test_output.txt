@@ -1,5 +1,0 @@
-
- RUN  v4.1.4 /Users/guy.bitan/Projects/titan-web-core
-
- ❯ src/hooks/__tests__/hooksDeep.test.ts (0 test)
- ❯ src/components/__tests__/deepComponents.test.tsx (0 test)
