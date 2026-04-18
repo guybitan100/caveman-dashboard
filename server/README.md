@@ -8,6 +8,7 @@ This directory now contains the backend logic imported from the SiX snapshot tha
 - `src/backend/services/` deployable services and server-side handlers
 - `src/backend/services/ufdr-runtime/` placeholder contract for the missing runtime service
 - `src/clients/` local Python client packages referenced by backend services
+- `src/utils/` standalone backend-adjacent utilities recovered from the SiX snapshot
 - `docker/` Dockerfiles for backend deployments
 - `scripts/validate-connectivity/` backend connectivity validation tooling
 - `example.env` example backend environment configuration

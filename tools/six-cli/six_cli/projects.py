@@ -5,6 +5,9 @@ from pathlib import Path
 from typing import List
 
 
+REPO_ROOT = Path(__file__).parents[3]
+
+
 class NoSuchLibraryError(Exception):
     pass
 
@@ -24,12 +27,16 @@ class Project:
 
     def path(self) -> Path:
         if self.name == "main":
-            return Path(__file__).parents[3]
+            return REPO_ROOT
 
-        if self.type in [ProjectType.SERVICE, ProjectType.LIBRARY]:
-            project_root = Path(Path(__file__).parents[3], "src", "backend", self.type.value, self.name)
+        if self.type is ProjectType.LIBRARY:
+            project_root = Path(REPO_ROOT, "server", "src", "backend", "lib", self.name)
+        elif self.type is ProjectType.SERVICE:
+            project_root = Path(
+                REPO_ROOT, "server", "src", "backend", "services", self.name
+            )
         elif self.type is ProjectType.CLIENT:
-            project_root = Path(Path(__file__).parents[3], "src", self.type.value, self.name)
+            project_root = Path(REPO_ROOT, "server", "src", self.type.value, self.name)
         else:
             raise Exception(f"Could not find project root for type: {self.type.value}")
 
@@ -39,7 +46,10 @@ class Project:
 
 libraries = [
     Project("core", ProjectType.LIBRARY),
+    Project("metafinder_core", ProjectType.LIBRARY),
     Project("model", ProjectType.LIBRARY),
+    Project("simulation_utils", ProjectType.LIBRARY),
+    Project("six_db", ProjectType.LIBRARY),
 ]
 
 clients = [
@@ -50,8 +60,10 @@ clients = [
 _libraries_mapping = {lib.name: lib for lib in libraries}
 
 services = [
+    Project("api", ProjectType.SERVICE),
+    Project("ai-generator", ProjectType.SERVICE),
     Project("generation", ProjectType.SERVICE),
-    Project("manager", ProjectType.SERVICE),
+    Project("llm-gateway", ProjectType.SERVICE),
     Project("metafinder", ProjectType.SERVICE),
 ]
 
@@ -73,6 +85,10 @@ def get_project_deps(project_type: ProjectType) -> List[ProjectType]:
         ProjectType.LIBRARY: [],
         ProjectType.CLIENT: [ProjectType.LIBRARY],
         ProjectType.SERVICE: [ProjectType.LIBRARY, ProjectType.CLIENT],
-        ProjectType.MAIN: [ProjectType.LIBRARY, ProjectType.CLIENT, ProjectType.SERVICE]
+        ProjectType.MAIN: [
+            ProjectType.LIBRARY,
+            ProjectType.CLIENT,
+            ProjectType.SERVICE,
+        ],
     }
     return deps_hierarchy[project_type]

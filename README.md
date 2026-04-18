@@ -48,6 +48,7 @@ The current repository now contains the web client plus the available SiX backen
 
 ```
 titan/
+├── cdk-apps/                     # AWS CDK applications recovered from the SiX snapshot
 ├── web/
 │   ├── src/
 │   │   ├── api/                  # API client modules
@@ -73,10 +74,13 @@ titan/
 ├── server/
 │   ├── src/backend/              # Imported SiX backend libs + services
 │   ├── src/clients/              # Local Python client packages used by backend services
+│   ├── src/utils/                # Utility scripts and UFDR helpers recovered from tmp/SiX
 │   ├── docker/                   # Backend Dockerfiles
 │   ├── scripts/                  # Backend utility scripts
 │   ├── example.env               # Example backend environment variables
 │   └── README.md                 # Backend layout and run instructions
+├── tools/
+│   └── six-cli/                  # Legacy SiX project-management CLI adapted to this repo layout
 ├── package.json
 └── build.sh
 ```
@@ -184,8 +188,13 @@ The `server/` directory contains the imported SiX backend snapshot with:
 - shared libraries under `server/src/backend/lib`
 - services under `server/src/backend/services`
 - local Python client packages under `server/src/clients`
+- standalone helpers under `server/src/utils`
 
 This backend tree covers the SiX generation/API side. The UFDR runtime server consumed by `ufdrRuntimeApi` was not present in the source snapshot; the missing contract is documented in `server/src/backend/services/ufdr-runtime/README.md`.
+
+Additional snapshot logic recovered from `tmp/SiX` now lives at the repo root:
+- `cdk-apps/` for AWS CDK infrastructure/application stacks
+- `tools/six-cli/` for the legacy repo-management CLI
 
 ### Testing Strategy
 - **Unit tests** with Vitest + Testing Library (440+ tests)
