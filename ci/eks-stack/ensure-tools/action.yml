@@ -1,0 +1,10 @@
+name: Ensure EKS Tools
+
+description: Ensure required EKS host tools are available (aws, kubectl, helm)
+
+runs:
+  using: composite
+  steps:
+    - name: Ensure tools
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/ensure-tools.sh"

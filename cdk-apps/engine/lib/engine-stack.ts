@@ -42,6 +42,9 @@ export class EngineStack extends Stack {
       metafinderMetadataBucketName,
       domainName,
       certificateArn,
+      eksClusterName,
+      eksOidcProviderArn,
+      eksOidcIssuerHostPath,
     } = props;
     const titanEnvironment = props.environment;
 
@@ -146,6 +149,9 @@ export class EngineStack extends Stack {
       dockerFilePath: dockerfile,
       domainName,
       certificateArn,
+      eksClusterName,
+      eksOidcProviderArn,
+      eksOidcIssuerHostPath,
     });
 
     const generationStack = new GenerationStack(this, "GenerationStack", {
@@ -161,6 +167,9 @@ export class EngineStack extends Stack {
       locationThumbnailPrefix,
       websocketApiKey: webSocketStack.apiKey.attrApiKey,
       websocketEndpoint: webSocketStack.endpoint,
+      eksClusterName,
+      eksOidcProviderArn,
+      eksOidcIssuerHostPath,
     });
 
     const apiStack = new ApiStack(this, "ApiStack", {
@@ -175,7 +184,13 @@ export class EngineStack extends Stack {
 
     generationStack.generateEntitiesFn.grantInvoke(apiStack.function);
     generationStack.createRandomJobFn.grantInvoke(apiStack.function);
-    generationStack.taskDefinition.grantRun(apiStack.function);
+    // Grant API Lambda permission to manage EKS jobs via kubernetes API
+    apiStack.function.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["eks:DescribeCluster"],
+        resources: ["*"],
+      }),
+    );
     metafinderStack.dataBucket.grantRead(apiStack.function);
     jobsBucket.grantReadWrite(apiStack.function);
 
@@ -260,6 +275,9 @@ export interface EnvContext {
   metafinderMetadataBucketName: string;
   domainName: string;
   certificateArn: string;
+  eksClusterName: string;
+  eksOidcProviderArn: string;
+  eksOidcIssuerHostPath: string;
 }
 
 interface EngineEnvProps extends StackProps {

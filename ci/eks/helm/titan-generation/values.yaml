@@ -1,0 +1,30 @@
+image:
+  repository: "" # set at deploy time, e.g. <account>.dkr.ecr.<region>.amazonaws.com/titan-repo
+  tag: latest
+  pullPolicy: IfNotPresent
+
+namespace: titan
+
+serviceAccount:
+  name: titan-generation
+  irsaRoleArn: "" # set at deploy time
+
+resources:
+  requests:
+    cpu: "16"
+    memory: "64Gi"
+    ephemeral-storage: "50Gi"
+  limits:
+    cpu: "16"
+    memory: "64Gi"
+    ephemeral-storage: "50Gi"
+
+env: {}
+# Populated at deploy time from TitanEnvironmentVariables:
+#   TITAN_S3_TITAN_BUCKET_NAME: ...
+#   TITAN_DEPLOYMENT: aws
+#   TITAN_ENVIRONMENT: ...
+#   etc.
+
+nodeSelector: {}
+tolerations: []

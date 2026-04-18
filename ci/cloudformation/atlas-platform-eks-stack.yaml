@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Shared resources for EKS load-test platform (ECR repo, log group)
+
+Parameters:
+  CreateEcrRepository:
+    Type: String
+    Description: Whether to create the ECR repository if it does not already exist
+    AllowedValues: ["true", "false"]
+    Default: "true"
+
+  EcrRepositoryName:
+    Type: String
+    Description: Name of the ECR repository (existing or to be created)
+    Default: "atlas-repo"
+
+  CreateLogGroup:
+    Type: String
+    Description: Whether to create the CloudWatch log group
+    AllowedValues: ["true", "false"]
+    Default: "true"
+
+  LogGroupName:
+    Type: String
+    Description: CloudWatch log group name for load job logs
+    AllowedValues: ["/aws/eks/PerformanceTesting"]
+    Default: "/aws/eks/PerformanceTesting"
+
+  ExportPrefix:
+    Type: String
+    Description: Prefix for CloudFormation export names
+    Default: "PlatformEks"
+
+Conditions:
+  CreateEcrRepositoryResource: !Equals [!Ref CreateEcrRepository, "true"]
+  CreateLogGroupResource: !Equals [!Ref CreateLogGroup, "true"]
+
+Resources:
+  LoadTestEcrRepository:
+    Type: AWS::ECR::Repository
+    Condition: CreateEcrRepositoryResource
+    Properties:
+      RepositoryName: !Ref EcrRepositoryName
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      ImageTagMutability: MUTABLE
+
+  LoadTestLogGroupKmsKey:
+    Type: AWS::KMS::Key
+    Condition: CreateLogGroupResource
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: KMS key for Atlas load-test CloudWatch log group
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: EnableAccountRootPermissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: AllowCloudWatchLogsUsage
+            Effect: Allow
+            Principal:
+              Service: !Sub "logs.${AWS::Region}.amazonaws.com"
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: "*"
+
+  LoadTestLogGroupKmsAlias:
+    Type: AWS::KMS::Alias
+    Condition: CreateLogGroupResource
+    Properties:
+      AliasName: !Sub "alias/atlas-loadtest-${AWS::Region}"
+      TargetKeyId: !Ref LoadTestLogGroupKmsKey
+
+  LoadTestLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: CreateLogGroupResource
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Ref LogGroupName
+      KmsKeyId: !GetAtt LoadTestLogGroupKmsKey.Arn
+      RetentionInDays: 30
+
+Outputs:
+  EcrRepositoryUri:
+    Description: URI of the load-runner ECR repository
+    Value: !If
+      - CreateEcrRepositoryResource
+      - !GetAtt LoadTestEcrRepository.RepositoryUri
+      - !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EcrRepositoryName}"
+    Export:
+      Name: !Sub "${ExportPrefix}-EcrRepositoryUri"
+
+  LogGroupName:
+    Description: CloudWatch log group for EKS load jobs
+    Value: !Ref LogGroupName
+    Export:
+      Name: !Sub "${ExportPrefix}-LogGroupName"

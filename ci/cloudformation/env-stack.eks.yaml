@@ -1,0 +1,187 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Per-environment EKS load-test resources (existing cluster, S3 bucket, IRSA role)
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Description: Name of the environment
+
+  ExistingClusterName:
+    Type: String
+    Description: Existing EKS cluster name where load jobs run
+
+  OidcProviderArn:
+    Type: String
+    Description: IAM OIDC provider ARN for the EKS cluster
+
+  OidcIssuerHostPath:
+    Type: String
+    Description: OIDC issuer host/path without https:// prefix
+
+  ServiceAccountNamespace:
+    Type: String
+    Description: Kubernetes namespace for load job service account
+    Default: atlas-load
+
+  ServiceAccountName:
+    Type: String
+    Description: Kubernetes service account name prefix trusted for load jobs (e.g. atlas-load-)
+    Default: atlas-load-
+
+  SourceUploadBucketName:
+    Type: String
+    Description: S3 bucket name used as source for real-file upload scenarios
+    Default: clbt-820445115660-e2e-performance-testing
+
+Resources:
+  LoadTestAccessLogsTargetBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LoggingConfiguration:
+        DestinationBucketName: !Ref SourceUploadBucketName
+        LogFilePrefix: access-logs-target-bucket/
+      Tags:
+        - Key: EnvironmentName
+          Value: !Ref EnvironmentName
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  LoadTestAccessLogsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LoggingConfiguration:
+        DestinationBucketName: !Ref LoadTestAccessLogsTargetBucket
+        LogFilePrefix: access-logs-bucket/
+      Tags:
+        - Key: EnvironmentName
+          Value: !Ref EnvironmentName
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  LoadTestBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LoggingConfiguration:
+        DestinationBucketName: !Ref LoadTestAccessLogsBucket
+        LogFilePrefix: access-logs/
+      Tags:
+        - Key: EnvironmentName
+          Value: !Ref EnvironmentName
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  LoadRunnerIrsaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Federated": "${OidcProviderArn}"
+              },
+              "Action": "sts:AssumeRoleWithWebIdentity",
+              "Condition": {
+                "StringEquals": {
+                  "${OidcIssuerHostPath}:aud": "sts.amazonaws.com"
+                },
+                "StringLike": {
+                  "${OidcIssuerHostPath}:sub": "system:serviceaccount:${ServiceAccountNamespace}:${ServiceAccountName}*"
+                }
+              }
+            }
+          ]
+        }
+      ManagedPolicyArns:
+        - !Ref LoadRunnerIrsaManagedPolicy
+
+  LoadRunnerIrsaManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:ListBucket
+              - s3:GetObject
+              - s3:PutObject
+            Resource:
+              - !GetAtt LoadTestBucket.Arn
+              - !Sub "${LoadTestBucket.Arn}/*"
+          - Effect: Allow
+            Action:
+              - s3:ListBucket
+            Resource:
+              - !Sub "arn:${AWS::Partition}:s3:::${SourceUploadBucketName}"
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+            Resource:
+              - !Sub "arn:${AWS::Partition}:s3:::${SourceUploadBucketName}/*"
+          - Effect: Allow
+            Action:
+              - ssm:GetParameter
+              - ssm:GetParameters
+            Resource:
+              - !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/perf02-gh-token-trigger*"
+          - Effect: Allow
+            Action:
+              - cognito-idp:ListUserPools
+              - cognito-idp:AdminUpdateUserAttributes
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:DescribeLogStreams
+              - logs:PutLogEvents
+            Resource: "*"
+
+Outputs:
+  ClusterName:
+    Description: Existing EKS cluster name
+    Value: !Ref ExistingClusterName
+
+  S3BucketName:
+    Description: S3 bucket for storing test results
+    Value: !Ref LoadTestBucket
+
+  IrsaRoleArn:
+    Description: IAM Role ARN for Kubernetes ServiceAccount (IRSA)
+    Value: !GetAtt LoadRunnerIrsaRole.Arn

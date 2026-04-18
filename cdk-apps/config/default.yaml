@@ -30,6 +30,10 @@ engine:
   metafinderMetadataBucketName: *metafinderMetadataBucketName
   domainName: titanai-backend.ai.aws.cellebrite.local
   certificateArn: *domainCertificateArn
+  # EKS settings (replaces ECS Fargate)
+  eksClusterName: eks-app-titan
+  eksOidcProviderArn: "" # set per-account, e.g. arn:aws:iam::<account>:oidc-provider/oidc.eks.<region>.amazonaws.com/id/<id>
+  eksOidcIssuerHostPath: "" # set per-account, e.g. oidc.eks.<region>.amazonaws.com/id/<id>
 
 ############################################################################################################
 frontend:

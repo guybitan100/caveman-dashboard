@@ -1,0 +1,5 @@
+apiVersion: v2
+name: titan-ai-generation
+description: Titan AI generation service on EKS
+version: 0.1.0
+appVersion: "2.0.9"

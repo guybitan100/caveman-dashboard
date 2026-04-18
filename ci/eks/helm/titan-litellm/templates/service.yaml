@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: titan-litellm
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: titan-litellm
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+  selector:
+    app: titan-litellm
