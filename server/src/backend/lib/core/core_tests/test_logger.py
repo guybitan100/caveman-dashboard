@@ -47,6 +47,7 @@ class TestBaseLogger:
             return "handled"
 
         from unittest.mock import MagicMock
+
         ctx = MagicMock()
         ctx.aws_request_id = "req1"
         result = handler({"job_id": "j1"}, context=ctx)

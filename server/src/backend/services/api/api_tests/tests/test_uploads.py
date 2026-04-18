@@ -60,10 +60,13 @@ class TestHandleUploadedChat:
 
 class TestVerifyUploadedFilesExistOrFail:
     @patch("api.uploads.TitanS3Client")
-    @patch("api.uploads.SETTINGS", MagicMock(
-        S3_TITAN_BUCKET_NAME="test-bucket",
-        S3_BUCKET_UPLOADS_PREFIX="uploads",
-    ))
+    @patch(
+        "api.uploads.SETTINGS",
+        MagicMock(
+            S3_TITAN_BUCKET_NAME="test-bucket",
+            S3_BUCKET_UPLOADS_PREFIX="uploads",
+        ),
+    )
     def test_no_tasks_no_stories(self, mock_s3_cls):
         mock_s3 = MagicMock()
         mock_s3_cls.return_value = mock_s3

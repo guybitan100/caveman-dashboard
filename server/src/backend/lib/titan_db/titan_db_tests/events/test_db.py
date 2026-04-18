@@ -44,21 +44,27 @@ from titan_db.events.db import (
 
 
 class TestConstructDbUrl:
-    @patch("titan_db.events.db.SETTINGS", MagicMock(
-        DEPLOYMENT="local",
-        DB_DOCUMENT_DB_URL="localhost:27017",
-    ))
+    @patch(
+        "titan_db.events.db.SETTINGS",
+        MagicMock(
+            DEPLOYMENT="local",
+            DB_DOCUMENT_DB_URL="localhost:27017",
+        ),
+    )
     def test_local(self):
         url = construct_db_url()
         assert url == "mongodb://localhost:27017/"
 
-    @patch("titan_db.events.db.SETTINGS", MagicMock(
-        DEPLOYMENT="aws",
-        DB_DOCUMENT_DB_USER="user",
-        DB_DOCUMENT_DB_PASSWORD="pass",
-        DB_DOCUMENT_DB_URL="docdb.host:27017",
-        DB_DOCUMENT_DB_CERT_PATH="/cert.pem",
-    ))
+    @patch(
+        "titan_db.events.db.SETTINGS",
+        MagicMock(
+            DEPLOYMENT="aws",
+            DB_DOCUMENT_DB_USER="user",
+            DB_DOCUMENT_DB_PASSWORD="pass",
+            DB_DOCUMENT_DB_URL="docdb.host:27017",
+            DB_DOCUMENT_DB_CERT_PATH="/cert.pem",
+        ),
+    )
     def test_aws(self):
         url = construct_db_url()
         assert "docdb.host:27017" in url
@@ -135,7 +141,9 @@ class TestSerializeEvent:
 
 
 class TestJobDbSessionDecorator:
-    @patch("titan_db.events.db.construct_db_url", return_value="mongodb://localhost:27017/")
+    @patch(
+        "titan_db.events.db.construct_db_url", return_value="mongodb://localhost:27017/"
+    )
     @patch("titan_db.events.db.MongoClient")
     def test_wraps_exceptions(self, mock_client, mock_url):
         @job_db_session
@@ -145,7 +153,9 @@ class TestJobDbSessionDecorator:
         with pytest.raises(GeneratedDataDbError, match="oops"):
             failing_func(job_id="j1")
 
-    @patch("titan_db.events.db.construct_db_url", return_value="mongodb://localhost:27017/")
+    @patch(
+        "titan_db.events.db.construct_db_url", return_value="mongodb://localhost:27017/"
+    )
     @patch("titan_db.events.db.MongoClient")
     def test_passes_through(self, mock_client, mock_url):
         @job_db_session
@@ -153,12 +163,16 @@ class TestJobDbSessionDecorator:
             return "ok"
 
         mock_client_instance = MagicMock()
-        mock_client.return_value.__enter__ = MagicMock(return_value=mock_client_instance)
+        mock_client.return_value.__enter__ = MagicMock(
+            return_value=mock_client_instance
+        )
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         result = ok_func(job_id="j1")
         assert result == "ok"
 
-    @patch("titan_db.events.db.construct_db_url", return_value="mongodb://localhost:27017/")
+    @patch(
+        "titan_db.events.db.construct_db_url", return_value="mongodb://localhost:27017/"
+    )
     @patch("titan_db.events.db.MongoClient")
     def test_generator_wrapping(self, mock_client, mock_url):
         @job_db_session
@@ -167,43 +181,57 @@ class TestJobDbSessionDecorator:
             yield 2
 
         mock_client_instance = MagicMock()
-        mock_client.return_value.__enter__ = MagicMock(return_value=mock_client_instance)
+        mock_client.return_value.__enter__ = MagicMock(
+            return_value=mock_client_instance
+        )
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         result = list(gen_func(job_id="j1"))
         assert result == [1, 2]
 
 
 class TestDeleteJob:
-    @patch("titan_db.events.db.construct_db_url", return_value="mongodb://localhost:27017/")
+    @patch(
+        "titan_db.events.db.construct_db_url", return_value="mongodb://localhost:27017/"
+    )
     @patch("titan_db.events.db.MongoClient")
     def test_delete_existing(self, mock_client, mock_url):
         mock_db = MagicMock()
         mock_db.list_collection_names.return_value = ["j1"]
         mock_client_instance = MagicMock()
         mock_client_instance.__getitem__ = MagicMock(return_value=mock_db)
-        mock_client.return_value.__enter__ = MagicMock(return_value=mock_client_instance)
+        mock_client.return_value.__enter__ = MagicMock(
+            return_value=mock_client_instance
+        )
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         delete_job(job_id="j1")
 
-    @patch("titan_db.events.db.construct_db_url", return_value="mongodb://localhost:27017/")
+    @patch(
+        "titan_db.events.db.construct_db_url", return_value="mongodb://localhost:27017/"
+    )
     @patch("titan_db.events.db.MongoClient")
     def test_delete_missing_no_raise(self, mock_client, mock_url):
         mock_db = MagicMock()
         mock_db.list_collection_names.return_value = []
         mock_client_instance = MagicMock()
         mock_client_instance.__getitem__ = MagicMock(return_value=mock_db)
-        mock_client.return_value.__enter__ = MagicMock(return_value=mock_client_instance)
+        mock_client.return_value.__enter__ = MagicMock(
+            return_value=mock_client_instance
+        )
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         delete_job(job_id="j1", raise_error_on_missing=False)
 
-    @patch("titan_db.events.db.construct_db_url", return_value="mongodb://localhost:27017/")
+    @patch(
+        "titan_db.events.db.construct_db_url", return_value="mongodb://localhost:27017/"
+    )
     @patch("titan_db.events.db.MongoClient")
     def test_delete_missing_raises(self, mock_client, mock_url):
         mock_db = MagicMock()
         mock_db.list_collection_names.return_value = []
         mock_client_instance = MagicMock()
         mock_client_instance.__getitem__ = MagicMock(return_value=mock_db)
-        mock_client.return_value.__enter__ = MagicMock(return_value=mock_client_instance)
+        mock_client.return_value.__enter__ = MagicMock(
+            return_value=mock_client_instance
+        )
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         with pytest.raises(GeneratedDataDbError):
             delete_job(job_id="j1", raise_error_on_missing=True)
@@ -225,7 +253,9 @@ class TestInitializeJobCollection:
     def test_creates_indexes(self, mock_client, mock_url):
         coll = MagicMock()
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         initialize_job_collection(job_id="j1")
@@ -238,7 +268,9 @@ class TestWriteDeviceInfo:
     def test_writes(self, mock_client, mock_url):
         coll = MagicMock()
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         device_info = MagicMock()
@@ -256,9 +288,16 @@ class TestWriteDeviceInfo:
 class TestReadAppByAppId:
     def test_found(self, mock_client, mock_url):
         coll = MagicMock()
-        coll.find_one.return_value = {"uid": "a1", "app_id": "a1", "name": "App", "event_types": []}
+        coll.find_one.return_value = {
+            "uid": "a1",
+            "app_id": "a1",
+            "name": "App",
+            "event_types": [],
+        }
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         with patch("titan_db.events.db.InstalledApplication") as mock_app:
@@ -270,7 +309,9 @@ class TestReadAppByAppId:
         coll = MagicMock()
         coll.find_one.return_value = None
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         result = read_app_by_appid(job_id="j1", app_id="a1")
@@ -284,11 +325,16 @@ class TestGetRandomAppsByEventType:
         coll = MagicMock()
         coll.aggregate.return_value = iter([])
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         from model.types import EventType
-        result = get_random_apps_by_event_type(job_id="j1", event_type=EventType.CALL, sample=5)
+
+        result = get_random_apps_by_event_type(
+            job_id="j1", event_type=EventType.CALL, sample=5
+        )
         assert result == []
 
 
@@ -299,7 +345,9 @@ class TestReadReferencedApps:
         coll = MagicMock()
         coll.distinct.return_value = []
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         result = list(read_referenced_apps(job_id="j1"))
@@ -313,10 +361,13 @@ class TestReadEventIds:
         coll = MagicMock()
         coll.find.return_value = [{"_id": "e1"}, {"_id": "e2"}]
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         from model.types import EventType
+
         result = list(read_event_ids(job_id="j1", event_type=EventType.CALL))
         assert result == ["e1", "e2"]
 
@@ -327,7 +378,9 @@ class TestWriteTaskEvents:
     def test_empty(self, mock_client, mock_url):
         coll = MagicMock()
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         write_task_events(job_id="j1", events=iter([]))
@@ -335,7 +388,9 @@ class TestWriteTaskEvents:
     def test_insert_many(self, mock_client, mock_url):
         coll = MagicMock()
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         event = MagicMock()
@@ -353,7 +408,9 @@ class TestWriteTaskEvents:
         coll = MagicMock()
         coll.insert_many.side_effect = InvalidOperation("No operations to execute")
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         event = MagicMock()
@@ -373,7 +430,9 @@ class TestWriteEvents:
         coll = MagicMock()
         coll.insert_many.return_value = MagicMock(inserted_ids=["a", "b"])
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         event = MagicMock()
@@ -389,7 +448,9 @@ class TestWriteEvents:
         coll = MagicMock()
         coll.insert_many.side_effect = InvalidOperation("No operations to execute")
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         result = write_events(job_id="j1", events=iter([]))
@@ -403,10 +464,13 @@ class TestReadEvents:
         coll = MagicMock()
         coll.find.return_value = MagicMock(batch_size=MagicMock(return_value=iter([])))
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         from model.types import EventType
+
         result = list(read_events(job_id="j1", event_type=EventType.CALL))
         assert result == []
 
@@ -418,7 +482,9 @@ class TestReadChatEventsWithoutMessages:
         coll = MagicMock()
         coll.find.return_value = MagicMock(batch_size=MagicMock(return_value=iter([])))
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         result = list(read_chat_events_without_messages(job_id="j1"))
@@ -431,10 +497,14 @@ class TestReadChatMessages:
     def test_returns_empty(self, mock_client, mock_url):
         coll = MagicMock()
         mock_find = MagicMock()
-        mock_find.sort.return_value = MagicMock(batch_size=MagicMock(return_value=iter([])))
+        mock_find.sort.return_value = MagicMock(
+            batch_size=MagicMock(return_value=iter([]))
+        )
         coll.find.return_value = mock_find
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         result = list(read_chat_messages(job_id="j1", chat_uid="c1"))
@@ -448,10 +518,14 @@ class TestReadLocationsByIdRange:
         coll = MagicMock()
         coll.find.return_value = MagicMock(batch_size=MagicMock(return_value=iter([])))
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
-        result = list(read_locations_by_id_range(job_id="j1", first_id="a", last_id="z"))
+        result = list(
+            read_locations_by_id_range(job_id="j1", first_id="a", last_id="z")
+        )
         assert result == []
 
 
@@ -462,11 +536,16 @@ class TestSampleEvents:
         coll = MagicMock()
         coll.aggregate.return_value = iter([])
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         from model.types import EventType
-        result = list(sample_events(job_id="j1", event_types={EventType.CALL}, sample=5))
+
+        result = list(
+            sample_events(job_id="j1", event_types={EventType.CALL}, sample=5)
+        )
         assert result == []
 
 
@@ -477,10 +556,13 @@ class TestGetAllEventTypes:
         coll = MagicMock()
         coll.distinct.return_value = ["calls", "sms/mms", "unknown_garbage"]
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         from model.types import EventType
+
         result = get_all_event_types(job_id="j1")
         assert EventType.CALL in result
         assert EventType.INSTANT_MESSAGE in result
@@ -494,7 +576,9 @@ class TestReadFileEvents:
         coll = MagicMock()
         coll.find.return_value = MagicMock(batch_size=MagicMock(return_value=iter([])))
         mock_ci = MagicMock()
-        mock_ci.__getitem__ = MagicMock(return_value=MagicMock(__getitem__=MagicMock(return_value=coll)))
+        mock_ci.__getitem__ = MagicMock(
+            return_value=MagicMock(__getitem__=MagicMock(return_value=coll))
+        )
         mock_client.return_value.__enter__ = MagicMock(return_value=mock_ci)
         mock_client.return_value.__exit__ = MagicMock(return_value=False)
         result = list(read_file_events(job_id="j1"))
@@ -503,11 +587,15 @@ class TestReadFileEvents:
 
 class TestDeserializeChildEvents:
     def test_primitive(self):
-        result = _deserialize_child_events(job_collection=MagicMock(), data_class=MagicMock(), data=42)
+        result = _deserialize_child_events(
+            job_collection=MagicMock(), data_class=MagicMock(), data=42
+        )
         assert result == 42
 
     def test_none(self):
-        result = _deserialize_child_events(job_collection=MagicMock(), data_class=MagicMock(), data=None)
+        result = _deserialize_child_events(
+            job_collection=MagicMock(), data_class=MagicMock(), data=None
+        )
         assert result is None
 
 
@@ -517,7 +605,13 @@ class TestParseQueryResults:
         data_class = MagicMock()
         data_class.foreign_fields = set()
         data_class.model_validate.return_value = "parsed"
-        results = list(_parse_query_results(job_collection=coll, data_dict_iter=[{"uid": "u1"}], data_class=data_class))
+        results = list(
+            _parse_query_results(
+                job_collection=coll,
+                data_dict_iter=[{"uid": "u1"}],
+                data_class=data_class,
+            )
+        )
         assert results == ["parsed"]
 
     def test_chunked(self):
@@ -528,11 +622,13 @@ class TestParseQueryResults:
         data_class = MagicMock()
         data_class.foreign_fields = set()
         data_class.model_validate.return_value = "parsed"
-        results = list(_parse_query_results(
-            job_collection=coll,
-            data_dict_iter=[{"chunked": True, "n_chunks": 1, "uid": "u1"}],
-            data_class=data_class,
-        ))
+        results = list(
+            _parse_query_results(
+                job_collection=coll,
+                data_dict_iter=[{"chunked": True, "n_chunks": 1, "uid": "u1"}],
+                data_class=data_class,
+            )
+        )
         assert results == ["parsed"]
 
 
@@ -542,5 +638,7 @@ class TestAssembleChunkedData:
         orig = {"uid": "u1", "data": "hello"}
         encoded = json.dumps(orig).encode("utf-8")
         coll.find.return_value = [{"chunk": encoded}]
-        result = _assemble_chunked_data(job_collection=coll, data_dict={"n_chunks": 1, "uid": "u1"})
+        result = _assemble_chunked_data(
+            job_collection=coll, data_dict={"n_chunks": 1, "uid": "u1"}
+        )
         assert result == orig

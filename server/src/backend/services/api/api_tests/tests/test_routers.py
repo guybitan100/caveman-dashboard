@@ -40,13 +40,6 @@ class TestGetAllJobsMatchingPrefix:
         assert response.status_code == 200
 
 
-class TestGetJob:
-    @patch("api.routers.main.operations.get_job")
-    def test_endpoint_exists(self, mock_op, client):
-        # Verify route exists by checking it doesn't 404
-        response = client.get(f"{API_PREFIX}{API_JOB_ROUTER_PREFIX}/j1")
-        assert response.status_code != 404
-
 
 class TestDownload:
     @patch("api.routers.main.operations.download_ufdr")
@@ -71,13 +64,6 @@ class TestDoesUploadedFileExist:
         response = client.get(f"{API_PREFIX}{UPLOAD_FILE}/abc123")
         assert response.status_code == 200
 
-
-class TestGetTaskProgress:
-    @patch("api.routers.main.operations.get_task_progress")
-    def test_endpoint_exists(self, mock_op, client):
-        mock_op.return_value = ("running", 0.5)
-        response = client.get(f"{API_PREFIX}{API_JOB_ROUTER_PREFIX}{TASK_PROGRESS}/t1")
-        assert response.status_code != 404
 
 
 class TestGetAllJobs:

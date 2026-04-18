@@ -56,7 +56,9 @@ class TestTitanS3Client:
 
     def test_download_object(self):
         c = self._make_client()
-        c._client.get_object.return_value = {"Body": MagicMock(read=MagicMock(return_value=b"data"))}
+        c._client.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=b"data"))
+        }
         result = c.download_object(bucket_name="b", file_name="f")
         assert result == b"data"
 
@@ -98,9 +100,14 @@ class TestTitanS3Client:
         c.delete_object(bucket_name="b", file_name="f")
         c._client.delete_object.assert_called_once()
 
-    @patch("core.s3_client.SETTINGS", MagicMock(S3_TITAN_BUCKET_NAME="bucket", AWS_REGION="us-east-1"))
+    @patch(
+        "core.s3_client.SETTINGS",
+        MagicMock(S3_TITAN_BUCKET_NAME="bucket", AWS_REGION="us-east-1"),
+    )
     def test_check_connection_fail(self):
         c = self._make_client()
-        c._client.head_bucket.side_effect = ClientError({"Error": {"Code": "403"}}, "HeadBucket")
+        c._client.head_bucket.side_effect = ClientError(
+            {"Error": {"Code": "403"}}, "HeadBucket"
+        )
         with pytest.raises(S3ClientError):
             c.check_connection()

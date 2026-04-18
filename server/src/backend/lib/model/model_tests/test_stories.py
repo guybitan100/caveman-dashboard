@@ -35,9 +35,7 @@ class TestHandleNullTypeJsonSchema:
     def test_nested_object(self):
         schema = {
             "type": "object",
-            "properties": {
-                "field": {"anyOf": [{"type": "integer"}, {"type": "null"}]}
-            },
+            "properties": {"field": {"anyOf": [{"type": "integer"}, {"type": "null"}]}},
         }
         result = _handle_null_type_json_schema(schema)
         assert result["properties"]["field"].get("nullable") is True
@@ -85,7 +83,9 @@ class TestEmailStoryData:
 
     def test_no_recipients_fails(self):
         with pytest.raises(Exception):
-            EmailStoryData(from_="e1", to=[], subject="test", time="2024-01-01T00:00:00")
+            EmailStoryData(
+                from_="e1", to=[], subject="test", time="2024-01-01T00:00:00"
+            )
 
 
 class TestChatStoryData:

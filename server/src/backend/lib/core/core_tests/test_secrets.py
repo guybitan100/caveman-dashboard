@@ -47,6 +47,7 @@ class TestGetSecretInternal:
     @patch("core.secrets.boto3.session.Session")
     def test_binary_secret(self, mock_session_cls):
         import base64
+
         mock_client = MagicMock()
         mock_client.get_secret_value.return_value = {
             "SecretBinary": base64.b64encode(b"binary_data")
@@ -58,6 +59,7 @@ class TestGetSecretInternal:
     @patch("core.secrets.boto3.session.Session")
     def test_internal_error_retry_success(self, mock_session_cls):
         from botocore.exceptions import ClientError
+
         error_response = {"Error": {"Code": "InternalServiceErrorException"}}
         mock_client = MagicMock()
         # First call raises, second call succeeds
@@ -75,9 +77,12 @@ class TestGetSecretInternal:
     @patch("core.secrets.boto3.session.Session")
     def test_internal_error_retry_fails(self, mock_session_cls):
         from botocore.exceptions import ClientError
+
         error_response = {"Error": {"Code": "InternalServiceErrorException"}}
         mock_client = MagicMock()
-        mock_client.get_secret_value.side_effect = ClientError(error_response, "GetSecretValue")
+        mock_client.get_secret_value.side_effect = ClientError(
+            error_response, "GetSecretValue"
+        )
         mock_session_cls.return_value.client.return_value = mock_client
         with patch("core.secrets.time.sleep"):
             with pytest.raises(TitanSecretsManagerError):
@@ -95,7 +100,11 @@ class TestGetSecret:
     @patch("core.secrets._get_secret")
     def test_postgres_secret(self, mock_get):
         mock_get.return_value = {
-            "username": "u", "password": "p", "host": "h", "port": "5432", "dbname": "d"
+            "username": "u",
+            "password": "p",
+            "host": "h",
+            "port": "5432",
+            "dbname": "d",
         }
         result = get_secret("TITAN_DB_ENGINE", "prefix")
         assert "postgresql" in result
