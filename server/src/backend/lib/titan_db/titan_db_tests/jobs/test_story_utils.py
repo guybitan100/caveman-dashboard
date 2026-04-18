@@ -20,20 +20,28 @@ from model.stories import CallStoryData, AppStoryData, _AppInfo
 
 
 def _make_call_story(story_id="s1", participant="e1", direction="Incoming"):
-    return CallStoryData(
-        story_id=story_id,
-        time=datetime(2024, 1, 1),
-        participant=participant,
-        direction=direction,
+    return CallStoryData.model_validate(
+        {
+            "story_id": story_id,
+            "time": datetime(2024, 1, 1).isoformat(),
+            "participant": participant,
+            "direction": direction,
+            "story_type": "call",
+        },
+        context={"source": "db"},
     )
 
 
 def _make_app_story(story_id="app1", app_id="com.example.app"):
-    return AppStoryData(
-        story_id=story_id,
-        time=datetime(2024, 1, 1),
-        app_id=app_id,
-        app=_AppInfo(app_id=app_id, name="ExampleApp"),
+    return AppStoryData.model_validate(
+        {
+            "story_id": story_id,
+            "time": datetime(2024, 1, 1).isoformat(),
+            "app_id": app_id,
+            "app": {"app_id": app_id, "name": "ExampleApp"},
+            "story_type": "app",
+        },
+        context={"source": "db"},
     )
 
 

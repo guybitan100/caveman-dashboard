@@ -437,6 +437,7 @@ class TestDeleteJobPhases:
         p2.delete.assert_called_once()
 
 
+@patch("titan_db.jobs.db_job_utils.DBJobModel", MagicMock())
 @patch("titan_db.jobs.db_job_utils.update_job_model")
 @patch("titan_db.jobs.db_job_utils.get_job_model")
 class TestCustomEvents:
@@ -475,17 +476,33 @@ class TestCustomEvents:
 @patch("titan_db.jobs.db_job_utils.get_job_model")
 class TestBuildGenerationJob:
     def test_builds_job(self, mock_get):
+        from model.device_models import DeviceModel
+        from model.job import DeviceContext
+        from model.types import OwnerEntity
+        from datetime import date
+        from networkx import DiGraph
+
         mock_db_job = MagicMock()
         mock_db_job.id = "j1"
         mock_db_job.name = "TestJob"
         mock_db_job.status = JobStatus.Draft
-        mock_db_job.device_context = MagicMock()
+        mock_db_job.device_context = DeviceContext(
+            device=DeviceModel(manufacturer="Samsung", name="Galaxy S21", os="android"),
+            start_date=date(2023, 1, 1),
+            end_date=date(2024, 1, 1),
+        )
         mock_db_job.device_info = []
         mock_db_job.tasks = []
-        mock_db_job.stories = MagicMock()
+        mock_db_job.stories = DiGraph()
         mock_db_job.custom_events = MagicMock()
         mock_db_job.custom_events.values.return_value = []
-        mock_db_job.owner_entity = MagicMock()
+        mock_db_job.owner_entity = OwnerEntity(
+            first_name="Test",
+            last_name="User",
+            phone="+1234567890",
+            email="test@test.com",
+            is_male=True,
+        )
         mock_db_job.entities = []
         mock_get.return_value = mock_db_job
         result = build_generation_job(job_id="j1")
