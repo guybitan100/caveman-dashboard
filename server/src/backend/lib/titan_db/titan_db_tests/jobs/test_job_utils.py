@@ -64,7 +64,13 @@ class TestInsertJob:
         mock_instance = MagicMock()
         mock_instance.id = "j1"
         mock_model.return_value = mock_instance
-        insert_job(user="ADMIN", name="Test", owner_entity=MagicMock(), device_context=MagicMock(), device_info=[])
+        insert_job(
+            user="ADMIN",
+            name="Test",
+            owner_entity=MagicMock(),
+            device_context=MagicMock(),
+            device_info=[],
+        )
         call_kwargs = mock_model.call_args[1]
         assert call_kwargs["user"] == "admin"
 
@@ -87,7 +93,9 @@ class TestGetDeviceInfo:
 @patch("titan_db.jobs.db_job_utils.update_job_model")
 class TestUpdateDeviceContextAndInfo:
     def test_calls_update(self, mock_update):
-        update_device_context_and_info(job_id="j1", device_context=MagicMock(), device_info=[])
+        update_device_context_and_info(
+            job_id="j1", device_context=MagicMock(), device_info=[]
+        )
         mock_update.assert_called_once()
 
 
@@ -147,38 +155,103 @@ class TestFilterJob:
 
     def test_pass_all_none(self):
         job = self._make_job()
-        assert filter_job(job, name=None, status=None, exclude_status=None, user=None, event_type=None)
+        assert filter_job(
+            job, name=None, status=None, exclude_status=None, user=None, event_type=None
+        )
 
     def test_filter_by_name(self):
         job = self._make_job(name="Alpha Job")
-        assert not filter_job(job, name="beta", status=None, exclude_status=None, user=None, event_type=None)
-        assert filter_job(job, name="alpha", status=None, exclude_status=None, user=None, event_type=None)
+        assert not filter_job(
+            job,
+            name="beta",
+            status=None,
+            exclude_status=None,
+            user=None,
+            event_type=None,
+        )
+        assert filter_job(
+            job,
+            name="alpha",
+            status=None,
+            exclude_status=None,
+            user=None,
+            event_type=None,
+        )
 
     def test_filter_by_status(self):
         job = self._make_job(status=JobStatus.Draft)
-        assert filter_job(job, name=None, status=JobStatus.Draft, exclude_status=None, user=None, event_type=None)
-        assert not filter_job(job, name=None, status=JobStatus.Done, exclude_status=None, user=None, event_type=None)
+        assert filter_job(
+            job,
+            name=None,
+            status=JobStatus.Draft,
+            exclude_status=None,
+            user=None,
+            event_type=None,
+        )
+        assert not filter_job(
+            job,
+            name=None,
+            status=JobStatus.Done,
+            exclude_status=None,
+            user=None,
+            event_type=None,
+        )
 
     def test_filter_exclude_status(self):
         job = self._make_job(status=JobStatus.Draft)
-        assert not filter_job(job, name=None, status=None, exclude_status=JobStatus.Draft, user=None, event_type=None)
+        assert not filter_job(
+            job,
+            name=None,
+            status=None,
+            exclude_status=JobStatus.Draft,
+            user=None,
+            event_type=None,
+        )
 
     def test_filter_by_user(self):
         job = self._make_job(user="admin")
-        assert filter_job(job, name=None, status=None, exclude_status=None, user="admin", event_type=None)
-        assert not filter_job(job, name=None, status=None, exclude_status=None, user="other", event_type=None)
+        assert filter_job(
+            job,
+            name=None,
+            status=None,
+            exclude_status=None,
+            user="admin",
+            event_type=None,
+        )
+        assert not filter_job(
+            job,
+            name=None,
+            status=None,
+            exclude_status=None,
+            user="other",
+            event_type=None,
+        )
 
     @patch("titan_db.jobs.db_job_utils.DBGenerationTaskModel")
     def test_filter_by_event_type(self, mock_model):
         job = self._make_job()
         mock_model.job_id_index.count.return_value = 5
-        assert filter_job(job, name=None, status=None, exclude_status=None, user=None, event_type="call")
+        assert filter_job(
+            job,
+            name=None,
+            status=None,
+            exclude_status=None,
+            user=None,
+            event_type="call",
+        )
 
     @patch("titan_db.jobs.db_job_utils.DBGenerationTaskModel")
     def test_filter_by_event_type_no_match(self, mock_model):
         job = self._make_job()
         mock_model.job_id_index.count.return_value = 0
-        assert not filter_job(job, name=None, status=None, exclude_status=None, user=None, event_type="call")
+        assert not filter_job(
+            job,
+            name=None,
+            status=None,
+            exclude_status=None,
+            user=None,
+            event_type="call",
+        )
 
 
 class TestGetJobMostRelevantTimestamp:
@@ -192,22 +265,38 @@ class TestGetJobMostRelevantTimestamp:
         return j
 
     def test_draft(self):
-        assert _get_job_most_relevant_timestamp(self._job(JobStatus.Draft)) == "2024-01-01"
+        assert (
+            _get_job_most_relevant_timestamp(self._job(JobStatus.Draft)) == "2024-01-01"
+        )
 
     def test_pending(self):
-        assert _get_job_most_relevant_timestamp(self._job(JobStatus.Pending)) == "2024-01-02"
+        assert (
+            _get_job_most_relevant_timestamp(self._job(JobStatus.Pending))
+            == "2024-01-02"
+        )
 
     def test_generating(self):
-        assert _get_job_most_relevant_timestamp(self._job(JobStatus.Generating)) == "2024-01-03"
+        assert (
+            _get_job_most_relevant_timestamp(self._job(JobStatus.Generating))
+            == "2024-01-03"
+        )
 
     def test_done(self):
-        assert _get_job_most_relevant_timestamp(self._job(JobStatus.Done)) == "2024-01-04"
+        assert (
+            _get_job_most_relevant_timestamp(self._job(JobStatus.Done)) == "2024-01-04"
+        )
 
     def test_failed(self):
-        assert _get_job_most_relevant_timestamp(self._job(JobStatus.Failed)) == "2024-01-03"
+        assert (
+            _get_job_most_relevant_timestamp(self._job(JobStatus.Failed))
+            == "2024-01-03"
+        )
 
     def test_cancelled(self):
-        assert _get_job_most_relevant_timestamp(self._job(JobStatus.Cancelled)) == "2024-01-03"
+        assert (
+            _get_job_most_relevant_timestamp(self._job(JobStatus.Cancelled))
+            == "2024-01-03"
+        )
 
 
 @patch("titan_db.jobs.db_job_utils.DBJobModel")
@@ -324,13 +413,17 @@ class TestUpdatePhaseStatus:
     def test_updates_phase(self, mock_model):
         mock_phase = MagicMock()
         mock_model.job_id_index.query.return_value = [mock_phase]
-        update_phase_status(job_id="j1", phase=TitanPhase.Generation, status=PhaseStatus.Done)
+        update_phase_status(
+            job_id="j1", phase=TitanPhase.Generation, status=PhaseStatus.Done
+        )
         assert mock_phase.update.call_count >= 1
 
     def test_phase_not_found(self, mock_model):
         mock_model.job_id_index.query.return_value = iter([])
         with pytest.raises(PhaseNotFoundError):
-            update_phase_status(job_id="j1", phase=TitanPhase.Generation, status=PhaseStatus.Done)
+            update_phase_status(
+                job_id="j1", phase=TitanPhase.Generation, status=PhaseStatus.Done
+            )
 
 
 @patch("titan_db.jobs.db_job_utils.DBJobPhaseModel")
@@ -364,7 +457,9 @@ class TestCustomEvents:
     def test_update_not_found(self, mock_get, mock_update):
         mock_get.return_value = MagicMock(custom_events={})
         with pytest.raises(TaskNotFoundError):
-            update_custom_event(job_id="j1", event_id="missing", custom_event=MagicMock())
+            update_custom_event(
+                job_id="j1", event_id="missing", custom_event=MagicMock()
+            )
 
     def test_delete_existing(self, mock_get, mock_update):
         mock_get.return_value = MagicMock(custom_events={"ce1": MagicMock()})
