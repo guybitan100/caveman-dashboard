@@ -161,6 +161,7 @@ class TestCreateRandomEvents:
         mock_task_utils.insert_tasks.assert_called_once()
 
 
+@patch("api.draft.DraftJobOperationResponse", MagicMock())
 @patch("api.draft.db_job_utils")
 @patch("api.draft.db_task_utils")
 @patch("api.draft.validate_task")
@@ -171,7 +172,7 @@ class TestCreateTask:
         )
         mock_db.build_generation_job.return_value = MOCK_JOB
         task = MagicMock()
-        result = create_task(job_id="j1", task=task, metafinder_client=MagicMock())
+        create_task(job_id="j1", task=task, metafinder_client=MagicMock())
         mock_task_utils.insert_task.assert_called_once()
 
     def test_invalid_task(self, mock_validate, mock_task_utils, mock_db):
@@ -179,10 +180,11 @@ class TestCreateTask:
             status=ValidationStatus.Failure, count=0
         )
         task = MagicMock()
-        result = create_task(job_id="j1", task=task, metafinder_client=MagicMock())
+        create_task(job_id="j1", task=task, metafinder_client=MagicMock())
         mock_task_utils.insert_task.assert_not_called()
 
 
+@patch("api.draft.DraftJobOperationResponse", MagicMock())
 @patch("api.draft.db_job_utils")
 @patch("api.draft.db_task_utils")
 @patch("api.draft.validate_task")
@@ -192,7 +194,7 @@ class TestUpdateTaskDraft:
             status=ValidationStatus.Success, count=5
         )
         mock_db.build_generation_job.return_value = MOCK_JOB
-        result = update_task(
+        update_task(
             job_id="j1", task_id="t1", task=MagicMock(), metafinder_client=MagicMock()
         )
         mock_task_utils.update_task.assert_called_once()
@@ -201,7 +203,7 @@ class TestUpdateTaskDraft:
         mock_validate.return_value = ValidationResult(
             status=ValidationStatus.Failure, count=0
         )
-        result = update_task(
+        update_task(
             job_id="j1", task_id="t1", task=MagicMock(), metafinder_client=MagicMock()
         )
         mock_task_utils.update_task.assert_not_called()

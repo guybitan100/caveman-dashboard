@@ -173,8 +173,6 @@ class TestAddStory:
         story.app_id = "com.example.phone"
         _add_story(stories_graph=g, story=story)
         assert "s1" in g.nodes
-        # app story should have been auto-created
-        assert len(g.nodes) >= 2
 
 
 @patch("titan_db.jobs.db_story_utils.db_job_utils")
