@@ -1,0 +1,29 @@
+{
+  "vpc-provider:account=339712891490:region=eu-central-1:returnAsymmetricSubnets=true": {
+    "vpcId": "vpc-095bbaa0f382b3d0e",
+    "vpcCidrBlock": "10.160.125.0/24",
+    "ownerAccountId": "896328128646",
+    "availabilityZones": [],
+    "subnetGroups": [
+      {
+        "name": "Private",
+        "type": "Private",
+        "subnets": [
+          {
+            "subnetId": "subnet-0fc97d01dd0f535c5",
+            "cidr": "10.160.125.0/25",
+            "availabilityZone": "eu-central-1a",
+            "routeTableId": "rtb-061e73819792292bb"
+          },
+          {
+            "subnetId": "subnet-0120110956727306b",
+            "cidr": "10.160.253.176/28",
+            "availabilityZone": "eu-central-1b",
+            "routeTableId": "rtb-061e73819792292bb"
+          }
+        ]
+      }
+    ]
+  },
+  "ssm:account=339712891490:parameterName=/six/infra/outputs:region=eu-central-1": "{\"documentDBClusterEndpoint\":\"docdbclustera801eb3c-vxct7umkvyzp.cluster-cr2ckg04i7q7.eu-central-1.docdb.amazonaws.com:27017\",\"documentDBClusterReaderEndpoint\":\"docdbclustera801eb3c-vxct7umkvyzp.cluster-ro-cr2ckg04i7q7.eu-central-1.docdb.amazonaws.com:27017\",\"documentDBCredentialsSecret\":\"/six/docdb/masteruser\",\"documentDBCredentialsSecretArn\":\"arn:aws:secretsmanager:eu-central-1:339712891490:secret:/six/docdb/masteruser-eCUnLX\",\"openSearchDomainEndpoint\":\"vpc-opensearchclust-0fhidfsw1s46-ofmcbcm7kxqrto5drdddesxwau.eu-central-1.es.amazonaws.com\",\"openSearchDomainArn\":\"arn:aws:es:eu-central-1:339712891490:domain/opensearchclust-0fhidfsw1s46\",\"openSearchMasterUserSecret\":\"/six/opensearch/masteruser\",\"openSearchMasterUserSecretArn\":\"arn:aws:secretsmanager:eu-central-1:339712891490:secret:/six/opensearch/masteruser-LXOrc6\"}"
+}

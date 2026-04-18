@@ -1,0 +1,32 @@
+{
+  "vpc-provider:account=339712891490:filter.vpc-id=vpc-095bbaa0f382b3d0e:region=eu-central-1:returnAsymmetricSubnets=true": {
+    "vpcId": "vpc-095bbaa0f382b3d0e",
+    "vpcCidrBlock": "10.160.125.0/24",
+    "ownerAccountId": "896328128646",
+    "availabilityZones": [],
+    "subnetGroups": [
+      {
+        "name": "Private",
+        "type": "Private",
+        "subnets": [
+          {
+            "subnetId": "subnet-0fc97d01dd0f535c5",
+            "cidr": "10.160.125.0/25",
+            "availabilityZone": "eu-central-1a",
+            "routeTableId": "rtb-061e73819792292bb"
+          },
+          {
+            "subnetId": "subnet-0120110956727306b",
+            "cidr": "10.160.253.176/28",
+            "availabilityZone": "eu-central-1b",
+            "routeTableId": "rtb-061e73819792292bb"
+          }
+        ]
+      }
+    ]
+  },
+  "security-group:account=339712891490:region=eu-central-1:securityGroupName=OfficeToAWS:vpcId=vpc-095bbaa0f382b3d0e": {
+    "securityGroupId": "sg-062497403a9823d48",
+    "allowAllOutbound": false
+  }
+}
