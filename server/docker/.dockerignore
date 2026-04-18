@@ -1,0 +1,12 @@
+*.venv
+logs/**/*
+node_modules
+**/node_modules
+cdk.out
+**/cdk.out
+.git
+.github
+*test*
+**/*test*
+*secret*
+**/*secret*

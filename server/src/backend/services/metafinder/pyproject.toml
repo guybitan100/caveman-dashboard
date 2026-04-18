@@ -1,0 +1,43 @@
+[build-system]
+requires = [ "poetry-core>=1.0.0",]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "metafinder"
+version = "0.0.0"
+description = "Six MetaFinder service"
+authors = [ "Yitzchak Siegel-Bareket <yitzchak.siegel-bareket@cellebrite.com>", "Daniel Hurwitz <daniel.hurwitz@cellebrite.com>",]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+fastapi = "^0.115.6"
+metafinder_core = {path = "../../lib/metafinder_core", develop = true, extras = ["athena"] }
+uvicorn = "^0.34.0"
+mangum = "^0.19.0"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+pytest-mock = "^3.7.0"
+black = "^22.6.0"
+pytest-env = "^1.1.5"
+
+[tool.pytest.ini_options]
+pythonpath = "."
+
+[tool.pytest_env]
+SIX_VERSION="2.0.9"
+SIX_AWS_REGION="eu-central-1"
+SIX_DEPLOYMENT="local"
+SIX_S3_SIX_BUCKET_NAME="six-bucket-test"
+SIX_METAFINDER_S3_BUCKET_NAME="metafinder-bucket-test"
+SIX_METAFINDER_OPENSEARCH_PASSWORD="password"
+SIX_METAFINDER_OPENSEARCH_USER="user"
+SIX_METAFINDER_OPENSEARCH_CA_CERTS="path/to/cert.pem"
+SIX_JOB_EXPIRY_DAYS="30"
+SIX_ENVIRONMENT="test"
+SIX_DB_DOCUMENT_DB_USER="user"
+SIX_DB_DOCUMENT_DB_PASSWORD="password"
+SIX_DB_DOCUMENT_DB_CERT_PATH="path/to/cert.pem"

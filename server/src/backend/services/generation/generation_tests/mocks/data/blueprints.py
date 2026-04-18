@@ -1,0 +1,89 @@
+from generation.simulation.events.blueprints import ChatBlueprint
+from model.types import Entity
+
+MOCK_BLUEPRINTS = [
+    ChatBlueprint(
+        participants=[
+            Entity(
+                uid="4ef3d29d-7521-47a2-975a-ac9e24321ca0",
+                first_name="Connie",
+                last_name="Lee",
+                phone="001-673-753-0409",
+                email="gevans@hubbard.com",
+            ),
+            Entity(
+                uid="bd78c522-a53c-4826-be6f-0bd39e9ec28d",
+                first_name=None,
+                last_name="Zavala",
+                phone=None,
+                email=None,
+            ),
+        ],
+        num_messages=0,
+        participant_probs=[0.2200988854499327, 0.7799011145500673],
+        msg_attachments={},
+    ),
+    ChatBlueprint(
+        participants=[
+            Entity(
+                uid="4ef3d29d-7521-47a2-975a-ac9e24321ca0",
+                first_name="Connie",
+                last_name="Lee",
+                phone="001-673-753-0409",
+                email="gevans@hubbard.com",
+            ),
+            Entity(
+                uid="bd78c522-a53c-4826-be6f-0bd39e9ec28d",
+                first_name=None,
+                last_name="Zavala",
+                phone=None,
+                email=None,
+            ),
+        ],
+        num_messages=0,
+        participant_probs=[0.4128693597553179, 0.5871306402446821],
+        msg_attachments={},
+    ),
+    ChatBlueprint(
+        participants=[
+            Entity(
+                uid="4ef3d29d-7521-47a2-975a-ac9e24321ca0",
+                first_name="Connie",
+                last_name="Lee",
+                phone="001-673-753-0409",
+                email="gevans@hubbard.com",
+            ),
+            Entity(
+                uid="bd78c522-a53c-4826-be6f-0bd39e9ec28d",
+                first_name=None,
+                last_name="Zavala",
+                phone=None,
+                email=None,
+            ),
+        ],
+        num_messages=1,
+        participant_probs=[0.16074008903768716, 0.8392599109623129],
+        msg_attachments={},
+    ),
+    ChatBlueprint(
+        participants=[
+            Entity(
+                uid="4ef3d29d-7521-47a2-975a-ac9e24321ca0",
+                first_name="Connie",
+                last_name="Lee",
+                phone="001-673-753-0409",
+                email="gevans@hubbard.com",
+            ),
+            Entity(
+                uid="bd78c522-a53c-4826-be6f-0bd39e9ec28d",
+                first_name=None,
+                last_name="Zavala",
+                phone=None,
+                email=None,
+            ),
+        ],
+        num_messages=0,
+        participant_probs=[0.12345417027978096, 0.876545829720219],
+        msg_attachments={},
+    ),
+]

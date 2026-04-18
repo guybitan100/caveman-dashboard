@@ -20,6 +20,7 @@ __pycache__
 /bin
 /output/
 /server/output/
+/server/logs/
 .venv
 .vscode
 /temp

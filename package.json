@@ -8,6 +8,8 @@
     "build": "tsc -b web/tsconfig.json && vite build --config web/vite.config.ts",
     "lint": "eslint .",
     "preview": "vite preview --config web/vite.config.ts",
+    "server:start": "bash server/scripts/start-dev.sh",
+    "server:stop": "bash server/scripts/stop-dev.sh",
     "test": "vitest --config web/vitest.config.ts",
     "test:ui": "vitest --config web/vitest.config.ts --ui",
     "test:run": "vitest run --config web/vitest.config.ts",

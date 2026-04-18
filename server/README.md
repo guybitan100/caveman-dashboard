@@ -1,8 +1,53 @@
 # Server
 
-This folder is reserved for backend and runtime logic.
+This directory now contains the backend logic imported from the SiX snapshot that previously lived under `tmp/SiX`.
 
-Current state:
-- No server implementation existed in this repository at the time of the split.
-- The web app in `../web` talks to external UFDR services over HTTP.
-- When backend code is brought into this repository, place it here instead of mixing it into the frontend tree.
+## Layout
+
+- `src/backend/lib/` shared Python packages used across the services
+- `src/backend/services/` deployable services and server-side handlers
+- `src/clients/` local Python client packages referenced by backend services
+- `docker/` Dockerfiles for backend deployments
+- `scripts/validate-connectivity/` backend connectivity validation tooling
+- `example.env` example backend environment configuration
+
+## Services
+
+- `api/` FastAPI + Typer service for jobs, DB initialization, and manager APIs
+- `metafinder/` FastAPI service for metadata lookup
+- `generation/` generation job handlers and scripts
+- `ai-generator/` AI generation service package
+- `llm-gateway/` LiteLLM proxy package
+- `location_thumbnail/` Node-based thumbnail helper
+
+## Local Development
+
+Prerequisites:
+
+- Python 3.13+
+- Poetry
+- Node.js 18+ for `location_thumbnail`
+
+Start the core long-running backend services:
+
+```bash
+npm run server:start
+```
+
+This starts:
+
+- API on `http://localhost:8000`
+- Metafinder on `http://localhost:8001`
+
+Stop them with:
+
+```bash
+npm run server:stop
+```
+
+Logs are written to `server/logs/`.
+
+## Notes
+
+- The imported backend tree preserves the original relative paths used by the service `pyproject.toml` files.
+- The separate UFDR runtime server used by `web/src/api/ufdrRuntimeApi.ts` was not present in the SiX snapshot and is still not implemented inside this repository.

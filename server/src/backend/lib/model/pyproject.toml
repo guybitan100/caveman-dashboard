@@ -1,0 +1,45 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = [ "poetry-core>=1.0.0",]
+
+[tool.poetry]
+authors = [ "Yitzchak Siegel-Bareket <yitzchak.siegel-bareket@cellebrite.com>", "Daniel Hurwitz <daniel.hurwitz@cellebrite.com>",]
+description = "Six Models package"
+name = "model"
+version = "1.0.2"
+
+[[tool.poetry.source]]
+name = "artifact"
+url = "https://cellebrite-983918838720.d.codeartifact.us-east-1.amazonaws.com/pypi/six/"
+priority = "explicit"
+
+[tool.poetry.dependencies]
+pydantic = "^2.10.4"
+python = "^3.13"
+python-dateutil = "^2.8.2"
+pytz = "^2024.2"
+networkx = "^3.6"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+pytest-mock = "^3.7.0"
+black = "^24.10.0"
+pytest-env = "^1.1.5"
+
+[tool.pytest_env]
+SIX_VERSION="2.0.9"
+SIX_AWS_REGION="eu-central-1"
+SIX_DEPLOYMENT="local"
+SIX_S3_SIX_BUCKET_NAME="six-bucket-test"
+SIX_METAFINDER_S3_BUCKET_NAME="metafinder-bucket-test"
+SIX_METAFINDER_OPENSEARCH_PASSWORD="password"
+SIX_METAFINDER_OPENSEARCH_USER="user"
+SIX_METAFINDER_OPENSEARCH_CA_CERTS="path/to/cert.pem"
+SIX_JOB_EXPIRY_DAYS="30"
+SIX_ENVIRONMENT="test"
+SIX_DB_DOCUMENT_DB_USER="user"
+SIX_DB_DOCUMENT_DB_PASSWORD="password"
+SIX_DB_DOCUMENT_DB_CERT_PATH="path/to/cert.pem"

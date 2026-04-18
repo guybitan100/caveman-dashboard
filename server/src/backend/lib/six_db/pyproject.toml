@@ -1,0 +1,44 @@
+[tool.poetry]
+name = "six-db"
+version = "0.1.0"
+description = "A package including dynamoDB utilitis for SiX"
+authors = ["Yitzchak Siegel-Bareket <yitzchak.siegel-bareket@cellebrite.com>"]
+packages = [{include = "six_db"}]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+pynamodb = "^6.0.1"
+pydantic = "^2.10.4"
+randomname = "^0.2.1"
+pymongo = "^3.12.1"
+model = {path = "../model", develop = true}
+core = {path = "../core", develop = true}
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+moto = "^4.1.8"
+pytest = "^8.3.4"
+pytest-mock = "^3.7.0"
+black = "^22.6.0"
+pytest-env = "^1.1.5"
+
+[tool.pytest_env]
+SIX_VERSION="2.0.9"
+SIX_AWS_REGION="eu-central-1"
+SIX_DEPLOYMENT="local"
+SIX_S3_SIX_BUCKET_NAME="six-bucket-test"
+SIX_METAFINDER_S3_BUCKET_NAME="metafinder-bucket-test"
+SIX_METAFINDER_OPENSEARCH_PASSWORD="password"
+SIX_METAFINDER_OPENSEARCH_USER="user"
+SIX_METAFINDER_OPENSEARCH_CA_CERTS="path/to/cert.pem"
+SIX_JOB_EXPIRY_DAYS="30"
+SIX_ENVIRONMENT="test"
+SIX_DB_DOCUMENT_DB_USER="user"
+SIX_DB_DOCUMENT_DB_PASSWORD="password"
+SIX_DB_DOCUMENT_DB_CERT_PATH="path/to/cert.pem"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

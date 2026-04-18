@@ -1,0 +1,30 @@
+[project]
+name = "llm-gateway"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "yitzchak.siegel-bareket",email = "yitzchak.siegel-bareket@cellebrite.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13,<4.0"
+dependencies = [
+    "litellm[proxy] (>=1.80.7,<2.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "llm_gateway", from = "src"}]
+
+
+[[tool.poetry.source]]
+name = "fpho"
+url = "https://files.pythonhosted.org"
+priority = "primary"
+
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -4,9 +4,9 @@
 
 The repository is split by ownership boundary:
 - `web/` contains the current React/Vite application and all frontend tests.
-- `server/` is reserved for in-repo backend/runtime logic.
+- `server/` contains the imported SiX backend services, shared Python libraries, local backend clients, and Dockerfiles.
 
-At the moment, this repository only contains the web client. The backend services described below are external services consumed over HTTP.
+The current repository now contains the web client plus the available SiX backend snapshot. The separate UFDR runtime server used by the web app is still external to this repository.
 
 ---
 
@@ -71,7 +71,12 @@ titan/
 │   ├── playwright.config.ts      # Playwright config for the web app
 │   └── tsconfig.json             # TypeScript project refs for the web app
 ├── server/
-│   └── README.md                 # Placeholder for future in-repo backend logic
+│   ├── src/backend/              # Imported SiX backend libs + services
+│   ├── src/clients/              # Local Python client packages used by backend services
+│   ├── docker/                   # Backend Dockerfiles
+│   ├── scripts/                  # Backend utility scripts
+│   ├── example.env               # Example backend environment variables
+│   └── README.md                 # Backend layout and run instructions
 ├── package.json
 └── build.sh
 ```
@@ -95,6 +100,17 @@ npm install
 npm run dev
 ```
 Opens Vite dev server at `http://localhost:5176`.
+
+### Backend Services
+```bash
+npm run server:start
+```
+
+Starts the imported API and Metafinder services from `server/`. Stop them with:
+
+```bash
+npm run server:stop
+```
 
 ### Build
 ```bash
@@ -156,6 +172,14 @@ All state is managed with **Zustand** stores using the **Immer** middleware for 
 Each backend domain has its own API module built on **Axios**:
 - `jobsApi` / `pipelineApi` / `ufdrApi` — AI generation backend
 - `ufdrRuntimeApi` — UFDR runtime server (health, files, run, cancel, summary)
+
+### In-Repo Backend
+The `server/` directory contains the imported SiX backend snapshot with:
+- shared libraries under `server/src/backend/lib`
+- services under `server/src/backend/services`
+- local Python client packages under `server/src/clients`
+
+This backend tree covers the SiX generation/API side. The UFDR runtime server consumed by `ufdrRuntimeApi` was not present in the source snapshot and remains external.
 
 ### Testing Strategy
 - **Unit tests** with Vitest + Testing Library (440+ tests)
