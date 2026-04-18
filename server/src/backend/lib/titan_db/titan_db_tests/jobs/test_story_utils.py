@@ -7,7 +7,6 @@ from networkx import DiGraph
 from titan_db.jobs.db_story_utils import (
     insert_story,
     insert_stories,
-    update_story,
     delete_story,
     _add_story,
     _add_story_node,
@@ -17,18 +16,15 @@ from titan_db.jobs.db_story_utils import (
     _remove_edge,
 )
 from titan_db.jobs.errors import StoryNotFoundError
-from model.stories import EventStoryData, AppStoryData, _AppInfo, StoryDataAdapter
+from model.stories import CallStoryData, AppStoryData, _AppInfo
 
 
-def _make_event_story(
-    story_id="s1", event_type="call", time=None, app_id=None, chat_uid=None
-):
-    return EventStoryData(
+def _make_call_story(story_id="s1", participant="e1", direction="Incoming"):
+    return CallStoryData(
         story_id=story_id,
-        event_type=event_type,
-        time=time or datetime(2024, 1, 1),
-        app_id=app_id,
-        chat_uid=chat_uid,
+        time=datetime(2024, 1, 1),
+        participant=participant,
+        direction=direction,
     )
 
 
@@ -44,25 +40,25 @@ def _make_app_story(story_id="app1", app_id="com.example.app"):
 class TestGraphHelpers:
     def test_add_story_node(self):
         g = DiGraph()
-        story = _make_event_story(story_id="s1")
+        story = _make_call_story(story_id="s1")
         _add_story_node(graph=g, story=story)
         assert "s1" in g.nodes
         assert "data" in g.nodes["s1"]
 
     def test_update_story_node(self):
         g = DiGraph()
-        story = _make_event_story(story_id="s1", event_type="call")
+        story = _make_call_story(story_id="s1", direction="Incoming")
         _add_story_node(graph=g, story=story)
-        story2 = _make_event_story(story_id="s1", event_type="sms")
+        story2 = _make_call_story(story_id="s1", direction="Outgoing")
         _update_story_node(graph=g, story=story2)
-        assert g.nodes["s1"]["data"]["event_type"] == "sms"
+        assert g.nodes["s1"]["data"]["direction"] == "Outgoing"
 
     def test_get_story_node(self):
         g = DiGraph()
-        story = _make_event_story(story_id="s1")
+        story = _make_call_story(story_id="s1")
         _add_story_node(graph=g, story=story)
         retrieved = _get_story_node(graph=g, story_id="s1")
-        assert retrieved.event_type == "call"
+        assert retrieved.direction == "Incoming"
 
     def test_get_story_node_not_found(self):
         g = DiGraph()
@@ -159,13 +155,13 @@ class TestRemoveEdge:
 class TestAddStory:
     def test_add_simple_story(self):
         g = DiGraph()
-        story = _make_event_story(story_id="s1")
+        story = _make_call_story(story_id="s1")
         _add_story(stories_graph=g, story=story)
         assert "s1" in g.nodes
 
     def test_add_event_story_auto_creates_app(self):
         g = DiGraph()
-        story = _make_event_story(story_id="s1", app_id="com.example.app")
+        story = _make_call_story(story_id="s1", app_id="com.example.app")
         _add_story(stories_graph=g, story=story)
         assert "s1" in g.nodes
         # app story should have been auto-created
@@ -178,7 +174,7 @@ class TestInsertStory:
         mock_job = MagicMock()
         mock_job.stories = DiGraph()
         mock_utils.get_job_model.return_value = mock_job
-        story = _make_event_story(story_id="s1")
+        story = _make_call_story(story_id="s1")
         insert_story(job_id="j1", story=story)
         mock_utils.update_job_model.assert_called_once()
 
@@ -186,7 +182,7 @@ class TestInsertStory:
         mock_job = MagicMock()
         mock_job.stories = DiGraph()
         mock_utils.get_job_model.return_value = mock_job
-        stories = [_make_event_story(story_id="s1"), _make_event_story(story_id="s2")]
+        stories = [_make_call_story(story_id="s1"), _make_call_story(story_id="s2")]
         insert_stories(job_id="j1", stories=stories)
         mock_utils.update_job_model.assert_called_once()
 
@@ -195,7 +191,7 @@ class TestInsertStory:
 class TestDeleteStory:
     def test_delete_existing_story(self, mock_utils):
         g = DiGraph()
-        story = _make_event_story(story_id="s1")
+        story = _make_call_story(story_id="s1")
         _add_story_node(graph=g, story=story)
         mock_job = MagicMock()
         mock_job.stories = g

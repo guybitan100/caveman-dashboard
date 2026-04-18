@@ -188,7 +188,9 @@ class TestCreateTask:
 @patch("api.draft.validate_task")
 class TestUpdateTaskDraft:
     def test_valid(self, mock_validate, mock_task_utils, mock_db):
-        mock_validate.return_value = MagicMock(status=ValidationStatus.Success)
+        mock_validate.return_value = ValidationResult(
+            status=ValidationStatus.Success, count=5
+        )
         mock_db.build_generation_job.return_value = MOCK_JOB
         result = update_task(
             job_id="j1", task_id="t1", task=MagicMock(), metafinder_client=MagicMock()
@@ -196,7 +198,9 @@ class TestUpdateTaskDraft:
         mock_task_utils.update_task.assert_called_once()
 
     def test_invalid(self, mock_validate, mock_task_utils, mock_db):
-        mock_validate.return_value = MagicMock(status=ValidationStatus.Failure)
+        mock_validate.return_value = ValidationResult(
+            status=ValidationStatus.Failure, count=0
+        )
         result = update_task(
             job_id="j1", task_id="t1", task=MagicMock(), metafinder_client=MagicMock()
         )
