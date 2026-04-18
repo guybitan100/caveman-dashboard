@@ -27,6 +27,7 @@ from api.draft import (
     RandomEventsRequest,
 )
 from model.status import JobStatus, ValidationStatus
+from model.tasks import ValidationResult
 
 
 MOCK_JOB = MagicMock()
@@ -165,15 +166,18 @@ class TestCreateRandomEvents:
 @patch("api.draft.validate_task")
 class TestCreateTask:
     def test_valid_task(self, mock_validate, mock_task_utils, mock_db):
-        mock_validate.return_value = MagicMock(status=ValidationStatus.Success)
+        mock_validate.return_value = ValidationResult(
+            status=ValidationStatus.Success, count=10
+        )
         mock_db.build_generation_job.return_value = MOCK_JOB
         task = MagicMock()
         result = create_task(job_id="j1", task=task, metafinder_client=MagicMock())
         mock_task_utils.insert_task.assert_called_once()
 
     def test_invalid_task(self, mock_validate, mock_task_utils, mock_db):
-        validation = MagicMock(status=ValidationStatus.Failure)
-        mock_validate.return_value = validation
+        mock_validate.return_value = ValidationResult(
+            status=ValidationStatus.Failure, count=0
+        )
         task = MagicMock()
         result = create_task(job_id="j1", task=task, metafinder_client=MagicMock())
         mock_task_utils.insert_task.assert_not_called()

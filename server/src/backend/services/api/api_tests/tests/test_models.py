@@ -9,7 +9,13 @@ class TestJobsListResponse:
         assert resp.jobs == []
 
     def test_with_jobs(self):
-        job = {"id": "1", "name": "test", "status": "Done", "timestamp": "2024-01-01"}
+        job = {
+            "id": "1",
+            "name": "test",
+            "status": "Done",
+            "timestamp": "2024-01-01",
+            "user": "admin",
+        }
         resp = JobsListResponse(jobs=[job], total=1)
         assert resp.total == 1
 
@@ -38,9 +44,6 @@ class TestGenerateEntityRequest:
         req = GenerateEntityRequest(count=5)
         assert req.count == 5
 
-    def test_create_with_country(self):
-        req = GenerateEntityRequest(
-            count=3,
-            country_info={"country_code": "US", "country_name": "United States"},
-        )
+    def test_create_with_count(self):
+        req = GenerateEntityRequest(count=3)
         assert req.count == 3
