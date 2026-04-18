@@ -128,7 +128,7 @@ class LocationContractor(EventContractor[LocationTask, Location]):
             job_id=self.job.job_id, location_data=thumbnail_params)
         thumbnails = [
             Image(s3_key=thumbnail.path, size=thumbnail.size, md5=thumbnail.md5, format='png',
-                  s3_bucket=SETTINGS.S3_SIX_BUCKET_NAME, is_sub_event=True, deleted_state='Intact')
+                  s3_bucket=SETTINGS.S3_TITAN_BUCKET_NAME, is_sub_event=True, deleted_state='Intact')
             for thumbnail in thumbnails_data
         ]
         return thumbnails

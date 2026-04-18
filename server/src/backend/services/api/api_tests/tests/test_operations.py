@@ -18,12 +18,12 @@ m.patch('pynamodb.models.Model.exists', return_value=True)
 
 
 def test_create_new_job(mocker: MockerFixture):
-    build_generation_job_patch = mocker.patch('six_db.jobs.db_job_utils.build_generation_job', return_value=MOCK_NEW_JOB)
+    build_generation_job_patch = mocker.patch('titan_db.jobs.db_job_utils.build_generation_job', return_value=MOCK_NEW_JOB)
     verify_uploads_patch = mocker.patch('api.operations.verify_uploaded_files_exist_or_fail')
-    update_job_status_patch = mocker.patch('six_db.jobs.db_job_utils.update_job_status')
+    update_job_status_patch = mocker.patch('titan_db.jobs.db_job_utils.update_job_status')
     dispatcher_mock = mocker.Mock()
     dispatcher_mock.run_generation_job.return_value = 'ecs-task-123'
-    update_job_ecs_task_id_patch = mocker.patch('six_db.jobs.db_job_utils.update_job_ecs_task_id')
+    update_job_ecs_task_id_patch = mocker.patch('titan_db.jobs.db_job_utils.update_job_ecs_task_id')
     
     result = operations.run_job(MOCK_JOB_ID, dispatcher_mock)
 
@@ -37,13 +37,13 @@ def test_create_new_job(mocker: MockerFixture):
 
 
 def test_re_run_job(mocker: MockerFixture):
-    get_job_status_patch = mocker.patch('six_db.jobs.db_job_utils.get_job_status', return_value=JobStatus.Done)
-    delete_phases_patch = mocker.patch('six_db.jobs.db_job_utils.delete_job_phases')
-    update_status_patch = mocker.patch('six_db.jobs.db_job_utils.update_job_status')
+    get_job_status_patch = mocker.patch('titan_db.jobs.db_job_utils.get_job_status', return_value=JobStatus.Done)
+    delete_phases_patch = mocker.patch('titan_db.jobs.db_job_utils.delete_job_phases')
+    update_status_patch = mocker.patch('titan_db.jobs.db_job_utils.update_job_status')
     dispatcher_mock = mocker.Mock()
     dispatcher_mock.run_generation_job.return_value = 'ecs-task-123'
-    update_job_ecs_task_id_patch = mocker.patch('six_db.jobs.db_job_utils.update_job_ecs_task_id')
-    build_generation_job_patch = mocker.patch('six_db.jobs.db_job_utils.build_generation_job', return_value=MOCK_NEW_JOB)
+    update_job_ecs_task_id_patch = mocker.patch('titan_db.jobs.db_job_utils.update_job_ecs_task_id')
+    build_generation_job_patch = mocker.patch('titan_db.jobs.db_job_utils.build_generation_job', return_value=MOCK_NEW_JOB)
 
     result = operations.re_run_job(job_id=MOCK_JOB_ID, dispatcher=dispatcher_mock)
     
@@ -63,11 +63,11 @@ def test_re_run_job(mocker: MockerFixture):
 ])
 def test_cancel_running_job(mocker: MockerFixture, job_status: JobStatus):
     job_id = 'abcd'
-    get_job_status_patch = mocker.patch('six_db.jobs.db_job_utils.get_job_status', return_value=job_status)
+    get_job_status_patch = mocker.patch('titan_db.jobs.db_job_utils.get_job_status', return_value=job_status)
     ecs_task_id = '1234'
-    get_ecs_task_id_patch = mocker.patch('six_db.jobs.db_job_utils.get_ecs_task_id', return_value=ecs_task_id)
+    get_ecs_task_id_patch = mocker.patch('titan_db.jobs.db_job_utils.get_ecs_task_id', return_value=ecs_task_id)
     dispatcher_mock = mocker.patch('api.dispatcher.Dispatcher', return_value=mocker.Mock())
-    update_job_status_patch = mocker.patch('six_db.jobs.db_job_utils.update_job_status')
+    update_job_status_patch = mocker.patch('titan_db.jobs.db_job_utils.update_job_status')
 
     operations.cancel_job(job_id=job_id, dispatcher=dispatcher_mock)
 
@@ -85,11 +85,11 @@ def test_cancel_running_job(mocker: MockerFixture, job_status: JobStatus):
 ])
 def test_cancel_done_job(mocker: MockerFixture, job_status: JobStatus):
     job_id = 'abcd'
-    get_job_status_patch = mocker.patch('six_db.jobs.db_job_utils.get_job_status', return_value=job_status)
+    get_job_status_patch = mocker.patch('titan_db.jobs.db_job_utils.get_job_status', return_value=job_status)
     ecs_task_id = '1234'
-    get_ecs_task_id_patch = mocker.patch('six_db.jobs.db_job_utils.get_ecs_task_id',  return_value=ecs_task_id)
+    get_ecs_task_id_patch = mocker.patch('titan_db.jobs.db_job_utils.get_ecs_task_id',  return_value=ecs_task_id)
     dispatcher_mock = mocker.patch('api.dispatcher.Dispatcher', return_value=mocker.Mock())
-    update_job_status_patch = mocker.patch('six_db.jobs.db_job_utils.update_job_status')
+    update_job_status_patch = mocker.patch('titan_db.jobs.db_job_utils.update_job_status')
 
     operations.cancel_job(job_id=job_id, dispatcher=dispatcher_mock)
 
@@ -108,7 +108,7 @@ def test_cancel_done_job(mocker: MockerFixture, job_status: JobStatus):
 ])
 def test_delete_job_status_done(mocker: MockerFixture, job_status: JobStatus):
     job_id = '1234'
-    get_job_status_patch = mocker.patch('six_db.jobs.db_job_utils.get_job_status', return_value=job_status)
+    get_job_status_patch = mocker.patch('titan_db.jobs.db_job_utils.get_job_status', return_value=job_status)
     _delete_job_patch = mocker.patch('api.operations._delete_job')
     dispatcher_mock = mocker.patch('api.dispatcher.Dispatcher', return_value=mocker.Mock())
 
@@ -126,7 +126,7 @@ def test_delete_job_status_done(mocker: MockerFixture, job_status: JobStatus):
 ])
 def test_delete_job_status_generating(mocker: MockerFixture, job_status: JobStatus):
     job_id = '1234'
-    get_job_status_patch = mocker.patch('six_db.jobs.db_job_utils.get_job_status', return_value=job_status)
+    get_job_status_patch = mocker.patch('titan_db.jobs.db_job_utils.get_job_status', return_value=job_status)
     cancel_job_patch = mocker.patch('api.operations.cancel_job')
     _delete_job_patch = mocker.patch('api.operations._delete_job')
     dispatcher_mock = mocker.patch('api.dispatcher.Dispatcher', return_value=mocker.Mock())
@@ -140,7 +140,7 @@ def test_delete_job_status_generating(mocker: MockerFixture, job_status: JobStat
 
 
 def test_get_all_jobs(mocker: MockerFixture):
-    db_patch = mocker.patch('six_db.jobs.db_job_utils.get_all_jobs')
+    db_patch = mocker.patch('titan_db.jobs.db_job_utils.get_all_jobs')
     db_result = ([], 0)
     db_patch.return_value = db_result
     kwargs = {
@@ -158,7 +158,7 @@ def test_get_all_jobs(mocker: MockerFixture):
 
 
 def test_get_all_jobs_matching_prefix(mocker: MockerFixture):
-    db_patch = mocker.patch('six_db.jobs.db_job_utils.get_all_jobs_matching_prefix')
+    db_patch = mocker.patch('titan_db.jobs.db_job_utils.get_all_jobs_matching_prefix')
     db_result = [{}]
     db_patch.return_value = db_result
     prefix = 'ab'
@@ -168,7 +168,7 @@ def test_get_all_jobs_matching_prefix(mocker: MockerFixture):
 
 
 def test_get_job_status(mocker: MockerFixture):
-    db_patch = mocker.patch('six_db.jobs.db_job_utils.get_job_status')
+    db_patch = mocker.patch('titan_db.jobs.db_job_utils.get_job_status')
     db_result = JobStatus.Done
     db_patch.return_value = db_result
     job_id = 'ab'
@@ -179,7 +179,7 @@ def test_get_job_status(mocker: MockerFixture):
 
 def test_get_job(mocker: MockerFixture):
     job_id = '1234'
-    job_patch = mocker.patch('six_db.jobs.db_job_utils.build_generation_job')
+    job_patch = mocker.patch('titan_db.jobs.db_job_utils.build_generation_job')
     job_patch.return_value = MOCK_GENERATION_JOB
 
     result = operations.get_job(job_id)
@@ -190,8 +190,8 @@ def test_get_job(mocker: MockerFixture):
 
 def test_private_delete_job(mocker: MockerFixture):
     job_id = '1234'
-    delete_events_patch = mocker.patch('six_db.events.db.delete_job')
-    db_delete_job_patch = mocker.patch('six_db.jobs.db_job_utils.delete_job')
+    delete_events_patch = mocker.patch('titan_db.events.db.delete_job')
+    db_delete_job_patch = mocker.patch('titan_db.jobs.db_job_utils.delete_job')
 
     operations._delete_job(job_id=job_id)
 
@@ -218,7 +218,7 @@ def test_download_ufdr(mocker: MockerFixture):
 
     get_job_patch.assert_called_once_with(job_id=job_id)
     get_presigned_url_patch.assert_called_once_with(
-        bucket_name=SETTINGS.S3_SIX_BUCKET_NAME,
+        bucket_name=SETTINGS.S3_TITAN_BUCKET_NAME,
         file_name=f'jobs/{job_id}/{job_name}.ufdr',
     )
 
@@ -239,13 +239,13 @@ def test_missing_uploads(mocker: MockerFixture):
     job = create_test_generation_job(tasks=tasks)
     expected_outputs = [False, True, False]     # Expected return values for "does_prefix_exist" (2 missing, 1 valid)
 
-    does_prefix_exist_patch = mocker.patch('core.s3_client.SixS3Client.does_prefix_exist', side_effect=expected_outputs)
+    does_prefix_exist_patch = mocker.patch('core.s3_client.TitanS3Client.does_prefix_exist', side_effect=expected_outputs)
 
     with pytest.raises(KeyError):
         operations.verify_uploaded_files_exist_or_fail(job=job)
 
     does_prefix_exist_patch.assert_has_calls([
-        call(prefix=f'uploads/{task.md5}', bucket_name=SETTINGS.S3_SIX_BUCKET_NAME)
+        call(prefix=f'uploads/{task.md5}', bucket_name=SETTINGS.S3_TITAN_BUCKET_NAME)
         for task in job.tasks
     ])
 
@@ -257,7 +257,7 @@ class TestGetAllJobs:
 
     def test_get_all_jobs_with_status_filter(self, mocker: MockerFixture):
         """Test filtering jobs by status."""
-        db_patch = mocker.patch('six_db.jobs.db_job_utils.get_all_jobs')
+        db_patch = mocker.patch('titan_db.jobs.db_job_utils.get_all_jobs')
         mock_jobs = [{'id': 'job-1', 'status': 'Done'}]
         db_patch.return_value = (mock_jobs, 1)
 
@@ -284,7 +284,7 @@ class TestGetAllJobs:
 
     def test_get_all_jobs_with_exclude_status(self, mocker: MockerFixture):
         """Test filtering jobs by exclude_status (e.g., exclude drafts)."""
-        db_patch = mocker.patch('six_db.jobs.db_job_utils.get_all_jobs')
+        db_patch = mocker.patch('titan_db.jobs.db_job_utils.get_all_jobs')
         mock_jobs = [{'id': 'job-1', 'status': 'Done'}, {'id': 'job-2', 'status': 'Pending'}]
         db_patch.return_value = (mock_jobs, 2)
 
@@ -311,7 +311,7 @@ class TestGetAllJobs:
 
     def test_get_all_jobs_with_user_filter(self, mocker: MockerFixture):
         """Test filtering jobs by user."""
-        db_patch = mocker.patch('six_db.jobs.db_job_utils.get_all_jobs')
+        db_patch = mocker.patch('titan_db.jobs.db_job_utils.get_all_jobs')
         mock_jobs = [{'id': 'job-1', 'user': 'alice'}]
         db_patch.return_value = (mock_jobs, 1)
 
@@ -338,7 +338,7 @@ class TestGetAllJobs:
 
     def test_get_all_jobs_with_name_search(self, mocker: MockerFixture):
         """Test filtering jobs by name prefix."""
-        db_patch = mocker.patch('six_db.jobs.db_job_utils.get_all_jobs')
+        db_patch = mocker.patch('titan_db.jobs.db_job_utils.get_all_jobs')
         mock_jobs = [{'id': 'job-1', 'name': 'test-job-1'}]
         db_patch.return_value = (mock_jobs, 1)
 
@@ -365,7 +365,7 @@ class TestGetAllJobs:
 
     def test_get_all_jobs_pagination(self, mocker: MockerFixture):
         """Test pagination with different page sizes."""
-        db_patch = mocker.patch('six_db.jobs.db_job_utils.get_all_jobs')
+        db_patch = mocker.patch('titan_db.jobs.db_job_utils.get_all_jobs')
         mock_jobs = [{'id': f'job-{i}'} for i in range(10)]
         db_patch.return_value = (mock_jobs, 50)
 
@@ -394,7 +394,7 @@ class TestGetAllJobs:
 
     def test_get_all_jobs_with_event_type_filter(self, mocker: MockerFixture):
         """Test filtering jobs by event type."""
-        db_patch = mocker.patch('six_db.jobs.db_job_utils.get_all_jobs')
+        db_patch = mocker.patch('titan_db.jobs.db_job_utils.get_all_jobs')
         mock_jobs = [{'id': 'job-1', 'event_types': ['chat messages']}]
         db_patch.return_value = (mock_jobs, 1)
 
@@ -421,7 +421,7 @@ class TestGetAllJobs:
 
     def test_get_all_jobs_empty_result(self, mocker: MockerFixture):
         """Test handling empty results."""
-        db_patch = mocker.patch('six_db.jobs.db_job_utils.get_all_jobs')
+        db_patch = mocker.patch('titan_db.jobs.db_job_utils.get_all_jobs')
         db_patch.return_value = ([], 0)
 
         result = operations.get_all_jobs(
@@ -444,7 +444,7 @@ class TestReRunJob:
 
     def test_re_run_draft_job_raises_exception(self, mocker: MockerFixture):
         """Test that re-running a draft job raises an exception."""
-        mocker.patch('six_db.jobs.db_job_utils.get_job_status', return_value=JobStatus.Draft)
+        mocker.patch('titan_db.jobs.db_job_utils.get_job_status', return_value=JobStatus.Draft)
         dispatcher_mock = mocker.Mock()
 
         with pytest.raises(Exception, match="Could not re-run job"):
@@ -462,9 +462,9 @@ class TestCancelJob:
     def test_cancel_running_job_returns_true(self, mocker: MockerFixture, job_status: JobStatus):
         """Test that canceling a running job returns True."""
         job_id = 'running-job-123'
-        mocker.patch('six_db.jobs.db_job_utils.get_job_status', return_value=job_status)
-        mocker.patch('six_db.jobs.db_job_utils.get_ecs_task_id', return_value='ecs-123')
-        mocker.patch('six_db.jobs.db_job_utils.update_job_status')
+        mocker.patch('titan_db.jobs.db_job_utils.get_job_status', return_value=job_status)
+        mocker.patch('titan_db.jobs.db_job_utils.get_ecs_task_id', return_value='ecs-123')
+        mocker.patch('titan_db.jobs.db_job_utils.update_job_status')
         dispatcher_mock = mocker.Mock()
         dispatcher_mock.stop_generation_job.return_value = True
 
@@ -482,7 +482,7 @@ class TestCancelJob:
     def test_cancel_non_running_job_returns_false(self, mocker: MockerFixture, job_status: JobStatus):
         """Test that canceling a non-running job returns False."""
         job_id = 'non-running-job-123'
-        mocker.patch('six_db.jobs.db_job_utils.get_job_status', return_value=job_status)
+        mocker.patch('titan_db.jobs.db_job_utils.get_job_status', return_value=job_status)
 
         dispatcher_mock = mocker.Mock()
 
@@ -493,8 +493,8 @@ class TestCancelJob:
     def test_cancel_job_raises_when_dispatcher_fails(self, mocker: MockerFixture):
         """Test that cancel raises exception when dispatcher fails to stop ECS task."""
         job_id = 'job-123'
-        mocker.patch('six_db.jobs.db_job_utils.get_job_status', return_value=JobStatus.Generating)
-        mocker.patch('six_db.jobs.db_job_utils.get_ecs_task_id', return_value='ecs-123')
+        mocker.patch('titan_db.jobs.db_job_utils.get_job_status', return_value=JobStatus.Generating)
+        mocker.patch('titan_db.jobs.db_job_utils.get_ecs_task_id', return_value='ecs-123')
         dispatcher_mock = mocker.Mock()
         dispatcher_mock.stop_generation_job.return_value = False
 
@@ -509,7 +509,7 @@ class TestGetTaskProgress:
         """Test retrieving task progress."""
         from model.status import GenerationTaskStatus
 
-        db_patch = mocker.patch('six_db.jobs.db_task_utils.get_task_progress')
+        db_patch = mocker.patch('titan_db.jobs.db_task_utils.get_task_progress')
         db_patch.return_value = (GenerationTaskStatus.Generating, 0.75)
 
         result = operations.get_task_progress(task_id='task-123')
@@ -533,7 +533,7 @@ class TestUploadOperations:
         assert result is True
         s3_client_mock.does_prefix_exist.assert_called_once_with(
             prefix='uploads/abc123',
-            bucket_name=SETTINGS.S3_SIX_BUCKET_NAME
+            bucket_name=SETTINGS.S3_TITAN_BUCKET_NAME
         )
 
     def test_does_uploaded_file_exists_returns_false(self, mocker: MockerFixture):
@@ -561,5 +561,5 @@ class TestUploadOperations:
         assert result == mock_result
         s3_client_mock.get_upload_presigned_url.assert_called_once_with(
             file_name='uploads/test-file.jpg',
-            bucket_name=SETTINGS.S3_SIX_BUCKET_NAME
+            bucket_name=SETTINGS.S3_TITAN_BUCKET_NAME
         )

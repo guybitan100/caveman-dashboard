@@ -1,7 +1,7 @@
 // =============================================================================
-// SiX COMPONENT OVERRIDES
+// Titan COMPONENT OVERRIDES
 // =============================================================================
-// MUI component style overrides for the SiX application.
+// MUI component style overrides for the Titan application.
 // =============================================================================
 
 import { Components, Theme, alpha } from "@mui/material/styles";

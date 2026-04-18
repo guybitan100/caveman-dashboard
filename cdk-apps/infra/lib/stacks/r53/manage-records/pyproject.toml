@@ -1,7 +1,7 @@
 [project]
 name = "manage-records"
 version = "0.1.0"
-description = "Manage AWS Route53 records for SiX in the networking aws account"
+description = "Manage AWS Route53 records for Titan in the networking aws account"
 authors = [
     {name = "lior.dux@cellebrite.com"}
 ]

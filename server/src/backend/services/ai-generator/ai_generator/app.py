@@ -22,7 +22,7 @@ from ai_generator.models.phone_stories import JobGenerationResult
 from ai_generator.pipeline import Pipeline
 from ai_generator.prompt_render import render_entity_summary, render_story
 
-app = FastAPI(name="Six AI Generation API")
+app = FastAPI(name="Titan AI Generation API")
 
 origins = ["*"]
 

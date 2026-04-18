@@ -156,7 +156,7 @@ def test_construct_five_emails(job: pytest.fixture, job_hub: pytest.fixture, moc
     task = EmailTask(quantity=len(email_blueprints))
     metafinder_client_get_text_mock = mocker.patch("metafinder_core.queries.MetaFinderQueryParams.query")
     metafinder_client_get_sentences_mock = mocker.patch("metafinder_core.queries.MetaFinderQueryParams.query")
-    mocker.patch('six_db.events.db.read_events')
+    mocker.patch('titan_db.events.db.read_events')
     metafinder_client_get_text_mock.return_value = [
         TextModel(
             text="template string for testing",

@@ -124,12 +124,12 @@ def test_documentdb_connection(endpoint, username, password):
 def main():
     try:
         # Fetch OpenSearch, DocumentDB endpoints
-        infraOutputParameter = '/six/infra/outputs'
+        infraOutputParameter = '/titan/infra/outputs'
         infraOutputs = get_parameter_outputs(infraOutputParameter)
         docdb_endpoint = infraOutputs["documentDBClusterEndpoint"]
 
         # Fetch credentials from Secrets Manager
-        docdb_credentials = get_secret("/six/docdb/masteruser")
+        docdb_credentials = get_secret("/titan/docdb/masteruser")
 
         logging.info("###################### Testing official endpoints.. ######################")
 

@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_prefix="six_", env_file=get_env_dotenv_file(), extra="ignore"
+        env_prefix="titan_", env_file=get_env_dotenv_file(), extra="ignore"
     )
 
     LITELLM_API_KEY: SecretStr
@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     VIDEO_GENERATION_POLL_INTERVAL: int = 10  # seconds between polls
     VIDEO_GENERATION_TIMEOUT: int = 600  # max seconds to wait (10 minutes)
 
-    S3_SIX_BUCKET_NAME: str
+    S3_TITAN_BUCKET_NAME: str
 
     S3_UPLOADS_PREFIX: str = "uploads"
 

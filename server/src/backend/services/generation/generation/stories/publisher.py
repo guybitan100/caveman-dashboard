@@ -1,7 +1,7 @@
 from networkx import DiGraph
 
 from model.utils import deserialize
-from six_db.events import db
+from titan_db.events import db
 from generation.stories.authors.author import get_author
 from model.stories import StoryData, StoryType, EventStoryData, GroupStoryData, StoryDataAdapter
 from model.types import EventData

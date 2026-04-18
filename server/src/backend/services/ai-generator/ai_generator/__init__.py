@@ -1,4 +1,4 @@
-"""AI Generator - Story generation pipeline for SiX.
+"""AI Generator - Story generation pipeline for Titan.
 
 Main entry point is the Pipeline class.
 

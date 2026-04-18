@@ -271,7 +271,7 @@ export function LoginPage() {
             <LogoWrapper>
               <SmallLogo height={48} width={48} />
             </LogoWrapper>
-            <LogoText>Six</LogoText>
+            <LogoText>Titan</LogoText>
           </LogoContainer>
 
           <Subtitle>Cellebrite AI</Subtitle>

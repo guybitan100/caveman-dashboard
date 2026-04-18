@@ -1,7 +1,7 @@
 from model.types import EventType, DeviceInfoEntry, DeviceInfo
 from metafinder_core.models import AppModel
 from model_tests.test_utils import create_test_generation_job
-from six_db.events import db
+from titan_db.events import db
 
 from pytest_mock import MockerFixture
 
@@ -25,7 +25,7 @@ class TestEngine:
         apps_spy.assert_called_once_with(job=job)
 
     def test_create_device_info(self, mocker: MockerFixture):
-        mocker.patch("six_db.events.db.write_device_info")
+        mocker.patch("titan_db.events.db.write_device_info")
         job = MOCK_GENERATION_JOB
         device_info = [
             DeviceInfoEntry(key='key1', value='value1'),
@@ -37,7 +37,7 @@ class TestEngine:
         write_device_info_spy.assert_called_once()
 
     def test_install_apps_with_apps(self, mocker: MockerFixture):
-        write_events_patch = mocker.patch("six_db.events.db.write_events")
+        write_events_patch = mocker.patch("titan_db.events.db.write_events")
         metafinder_patch = mocker.patch("metafinder_core.queries.MetaFinderQueryParams.query")
         metafinder_patch.return_value = [AppModel.model_validate(app) for app in APPS_MF_RESPONSE]
         job = MOCK_GENERATION_JOB_WITH_APPS

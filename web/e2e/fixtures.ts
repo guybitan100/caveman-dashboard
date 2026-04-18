@@ -20,8 +20,8 @@ export const test = base.extend<{
     // Navigate to app and login
     await page.goto('/');
     
-    // Wait for login page (SiX text might be a paragraph or heading)
-    await expect(page.getByText(/SiX/i).first()).toBeVisible();
+    // Wait for login page (Titan text might be a paragraph or heading)
+    await expect(page.getByText(/Titan/i).first()).toBeVisible();
     
     // Fill in email and submit
     const emailInput = page.getByPlaceholder(/your.name@cellebrite.com/i);

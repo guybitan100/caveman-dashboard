@@ -1,4 +1,4 @@
-# SiX Engine CDK APP
+# Titan Engine CDK APP
 
 ## Useful commands
 

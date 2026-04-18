@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
-from core.six_logger import logger
+from core.titan_logger import logger
 
 from ai_generator.models import (
     Entity,

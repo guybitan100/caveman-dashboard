@@ -4,7 +4,7 @@ from typing import Iterator
 
 from pydantic import BaseModel, field_validator, ValidationInfo
 
-from core.six_logger import logger
+from core.titan_logger import logger
 from generation.simulation.entities import get_entity_total
 from model.job import GenerationJob
 from model.tasks import GenerationTask, LocationTask

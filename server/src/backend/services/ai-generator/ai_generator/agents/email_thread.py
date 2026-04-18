@@ -36,7 +36,7 @@ email_thread_planning_agent = Agent(
 # Story generation agent
 email_story_generation_agent = Agent(
     name="email_story_generation_agent",
-    model=get_model("six/story-model"),
+    model=get_model("titan/story-model"),
     output_type=EmailStoryData,
     instructions=_GENERATION_INSTRUCTIONS,
 )

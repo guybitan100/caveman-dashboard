@@ -1,6 +1,6 @@
 # E2E Testing Guide
 
-End-to-End tests for the SiX Frontend using Playwright.
+End-to-End tests for the Titan Frontend using Playwright.
 
 ## Overview
 

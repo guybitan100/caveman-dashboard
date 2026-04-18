@@ -29,7 +29,7 @@ locations = [
 
 
 def test_construct_five_journeys(job_hub: pytest.fixture, mocker: MockerFixture):
-    read_events_mock = mocker.patch('six_db.events.db.read_events')
+    read_events_mock = mocker.patch('titan_db.events.db.read_events')
     read_events_mock.return_value = []
     journeys_count = 5
     task = JourneyTask(quantity=journeys_count)

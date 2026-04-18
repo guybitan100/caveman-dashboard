@@ -3,7 +3,7 @@ import { styled } from '@mui/material/styles';
 import { Box, Typography, TextField } from '@mui/material';
 import { useConversationStore, Message } from '../../stores/conversationStore.ts';
 import { PIPELINE_STEPS } from '../../types/pipeline.ts';
-import sixLogo from '../../assets/six-logo.svg';
+import titanLogo from '../../assets/titan-logo.svg';
 import { GoButton } from '../shared/GoButton.tsx';
 
 const PanelContainer = styled(Box)(({ theme }) => ({
@@ -214,7 +214,7 @@ export function ChatPanel() {
                     <MessageRow key={message.id} isUser={message.role === 'user'}>
                         {message.role === 'assistant' && (
                             <Avatar>
-                                <AvatarImage src={sixLogo} alt="Six" />
+                                <AvatarImage src={titanLogo} alt="Titan" />
                             </Avatar>
                         )}
                         <MessageBubble isUser={message.role === 'user'}>
@@ -225,7 +225,7 @@ export function ChatPanel() {
                 {isLoading && (
                     <MessageRow isUser={false}>
                         <Avatar>
-                            <AvatarImage src={sixLogo} alt="Six" />
+                            <AvatarImage src={titanLogo} alt="Titan" />
                         </Avatar>
                         <MessageBubble isUser={false}>
                             <Typography sx={(theme) => ({ color: theme.custom.palette.text.muted, fontStyle: 'italic' })}>

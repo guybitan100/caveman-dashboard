@@ -9,10 +9,10 @@ from pymongo.collection import Collection
 
 from model.types import Entity
 from core.config import SETTINGS
-from core.six_logger import logger
+from core.titan_logger import logger
 from generation.simulation.social import SocialContext, LocationIdAllocation
 from model.utils import deserialize
-from six_db.events.db import job_db_session, GRAPH_CHUNK_SIZE, FIELD_CLASS_NAME, SOCIAL_CONTEXT_WEIGHTS_CLASS_NAME, \
+from titan_db.events.db import job_db_session, GRAPH_CHUNK_SIZE, FIELD_CLASS_NAME, SOCIAL_CONTEXT_WEIGHTS_CLASS_NAME, \
     SOCIAL_CONTEXT_LOCATIONS_CLASS_NAME, QUERY_FILTERS,  serialize
 
 

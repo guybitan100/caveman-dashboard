@@ -4,15 +4,15 @@ import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as cr from "aws-cdk-lib/custom-resources";
 import { Construct } from "constructs";
-import { SixEnvironmentVariables } from "../../types";
+import { TitanEnvironmentVariables } from "../../types";
 
 export interface TablesStackProps extends cdk.StackProps {
   vpc: ec2.IVpc;
   subnets: ec2.ISubnet[];
   dockerFilePath: string;
   dynamodbPolicy: iam.PolicyStatement;
-  environment: SixEnvironmentVariables;
-  sixEnvironment: string;
+  environment: TitanEnvironmentVariables;
+  titanEnvironment: string;
 }
 
 export class TablesStack extends cdk.NestedStack {
@@ -28,7 +28,7 @@ export class TablesStack extends cdk.NestedStack {
       dynamodbPolicy,
       dockerFilePath,
       environment,
-      sixEnvironment,
+      titanEnvironment,
     } = props;
 
     this.createFn = new lambda.DockerImageFunction(this, "CreateTablesFn", {
@@ -40,7 +40,7 @@ export class TablesStack extends cdk.NestedStack {
       vpcSubnets: {
         subnets,
       },
-      // @ts-expect-error - SixEnvironmentVariables not compatible with Lambda function environment
+      // @ts-expect-error - TitanEnvironmentVariables not compatible with Lambda function environment
       environment,
       timeout: cdk.Duration.minutes(15),
       memorySize: 10240,
@@ -56,7 +56,7 @@ export class TablesStack extends cdk.NestedStack {
       vpcSubnets: {
         subnets,
       },
-      // @ts-expect-error - SixEnvironmentVariables not compatible with Lambda function environment
+      // @ts-expect-error - TitanEnvironmentVariables not compatible with Lambda function environment
       environment,
       timeout: cdk.Duration.minutes(15),
       memorySize: 10240,
@@ -69,7 +69,7 @@ export class TablesStack extends cdk.NestedStack {
         action: "invoke",
         parameters: {
           FunctionName: this.createFn.functionName,
-          Environment: sixEnvironment,
+          Environment: titanEnvironment,
         },
         physicalResourceId: cr.PhysicalResourceId.of("CreateTablesFn"),
       },
@@ -78,7 +78,7 @@ export class TablesStack extends cdk.NestedStack {
         action: "invoke",
         parameters: {
           FunctionName: this.deleteFn.functionName,
-          Environment: sixEnvironment,
+          Environment: titanEnvironment,
         },
         physicalResourceId: cr.PhysicalResourceId.of("DeleteTablesFn"),
       },

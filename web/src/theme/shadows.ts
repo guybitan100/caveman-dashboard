@@ -1,7 +1,7 @@
 // =============================================================================
-// SiX SHADOWS
+// Titan SHADOWS
 // =============================================================================
-// Shadow configuration for the SiX application.
+// Shadow configuration for the Titan application.
 // =============================================================================
 
 import { Shadows } from "@mui/material/styles";

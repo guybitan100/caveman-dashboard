@@ -1,7 +1,7 @@
 # Generation
 
-This Project holds the core logic of SiX generation service. 
-It is responsible for generation SiX Events and converting them into a UFDR
+This Project holds the core logic of Titan generation service. 
+It is responsible for generation Titan Events and converting them into a UFDR
 
 
 ## Development
@@ -22,8 +22,8 @@ poetry install --with dev --all-extras
 There are 3 scripts that can be run:
 
 1. `generate-entities` - This script generates entities for UI Storyboard
-2. `generate-job` - Main script that generates SiX Events and converts them into UFDR
-3. `random-job` - This script is used mainly by the `six-clent` to generate a random SiX job.
+2. `generate-job` - Main script that generates Titan Events and converts them into UFDR
+3. `random-job` - This script is used mainly by the `titan-clent` to generate a random Titan job.
 
 All scripts entry points are located in the `generation/handlres` directory.
 
@@ -45,7 +45,7 @@ Each script has it's own dependencies, which are specified in the `extras` attri
 
 ```toml
 [tool.poetry.extras]
-genertae = ["Faker", "numpy", "xsdata", "smart-open", "six_db", "metafinder_client", "geopy", "aiohttp", "tzdata"]
+genertae = ["Faker", "numpy", "xsdata", "smart-open", "titan_db", "metafinder_client", "geopy", "aiohttp", "tzdata"]
 genertae_entities = ["Faker"]
 genertae_job = ["numpy"]
 ```

@@ -14,7 +14,7 @@ from model.utils import AutoUID
 
 class EventType(StrEnum):
     """
-    Enum representing SiX supported events.
+    Enum representing Titan supported events.
     """
 
     CHAT = 'chat messages'
@@ -71,7 +71,7 @@ class Coordinate(BaseModel):
 
 class GeneratedData(ABC, BaseModel):
     """
-    Abstract class of all SiX generated data.
+    Abstract class of all Titan generated data.
 
     Attributes:
         uid:            Id of the event.

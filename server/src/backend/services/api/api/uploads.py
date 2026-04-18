@@ -1,7 +1,7 @@
 from uuid import uuid4
 
 from core.config import SETTINGS
-from core.s3_client import SixS3Client
+from core.s3_client import TitanS3Client
 from model.job import GenerationJob
 from model.tasks import UploadedFileTask
 from model.stories import ChatMessageStoryData, _ChatStoryData, ChatStoryData, FILE_STORY_TYPES, StoryFileTypes, \
@@ -66,7 +66,7 @@ def convert_uploaded_data(uploaded_data: UploadedData) -> dict:
 
 
 def verify_uploaded_files_exist_or_fail(job: GenerationJob) -> None:
-    s3_client = SixS3Client()
+    s3_client = TitanS3Client()
 
     missing_task_upload_msgs = []
     for root_task in job.tasks:
@@ -74,7 +74,7 @@ def verify_uploaded_files_exist_or_fail(job: GenerationJob) -> None:
             if isinstance(task, UploadedFileTask):
                 if not s3_client.does_prefix_exist(
                         prefix=f'{SETTINGS.S3_BUCKET_UPLOADS_PREFIX}/{task.md5}',
-                        bucket_name=SETTINGS.S3_SIX_BUCKET_NAME
+                        bucket_name=SETTINGS.S3_TITAN_BUCKET_NAME
                 ):
                     missing_task_upload_msgs.append(
                         f'- [Task] Key/MD5={task.md5}, Filename={task.file_name}, Size={task.file_size}')
@@ -85,7 +85,7 @@ def verify_uploaded_files_exist_or_fail(job: GenerationJob) -> None:
         if isinstance(story, FileStoryData) \
                 and story.file.file_type is StoryFileTypes.UPLOAD \
                 and not s3_client.does_prefix_exist(prefix=f'{SETTINGS.S3_BUCKET_UPLOADS_PREFIX}/{story.file.s3_key}',
-                                                    bucket_name=SETTINGS.S3_SIX_BUCKET_NAME):
+                                                    bucket_name=SETTINGS.S3_TITAN_BUCKET_NAME):
             missing_story_upload_msgs.append(
                 f'- [Story] Key/MD5={story.file.s3_key}, Filename={story.file.file_name}, Size={story.file.size}')
 

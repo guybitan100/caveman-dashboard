@@ -17,7 +17,7 @@ export class DatadogEcs extends Construct {
     super(scope, id);
 
     const {
-      service = "six",
+      service = "titan",
       environment: env,
       version,
       datadogApiKeySecretArn,
@@ -46,7 +46,7 @@ export class DatadogEcs extends Construct {
         fluentbitConfig: {
           logDriverConfig: {
             serviceName: service,
-            sourceName: "six",
+            sourceName: "titan",
           },
           firelensOptions: {
             isParseJson: true,

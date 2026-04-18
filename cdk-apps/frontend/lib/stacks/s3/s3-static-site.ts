@@ -58,7 +58,7 @@ export class S3StaticSiteStack extends NestedStack {
       stdio: ["ignore", process.stderr, "inherit"],
       env: {
         ...process.env,
-        VITE_SIX_API_URL: apiUrl,
+        VITE_TITAN_API_URL: apiUrl,
         VITE_METAFINDER_HOST: metafinderUrl,
         VITE_WS_ENDPOINT: props.websocketEndpoint,
         VITE_WS_API_KEY: props.websocketApiKey,

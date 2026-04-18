@@ -14,9 +14,9 @@ from model.types import Entity
 class TestDB(unittest.TestCase):
     def setUp(self):
         self.client = boto3.client('s3')
-        self.client.create_bucket(Bucket=SETTINGS.S3_SIX_BUCKET_NAME)
+        self.client.create_bucket(Bucket=SETTINGS.S3_TITAN_BUCKET_NAME)
 
-    @patch('six_db.events.db.MongoClient')
+    @patch('titan_db.events.db.MongoClient')
     @patch('numpy.array_split', wraps=np.array_split)
     def test_write_social_context(self, mock_array_split, mock_mongo_client):
         from generation.simulation.social import SocialContext
@@ -53,7 +53,7 @@ class TestDB(unittest.TestCase):
             mock_collection.insert_one.assert_called_once()
             mock_array_split.assert_called_once_with([0.5, 0.5], 1)
 
-    @patch('six_db.events.db.MongoClient')
+    @patch('titan_db.events.db.MongoClient')
     @patch('numpy.array_split', wraps=np.array_split)
     def test_write_social_context_no_entities(self, mock_array_split, mock_mongo_client):
         from generation.simulation.social import SocialContext

@@ -30,7 +30,7 @@ export class CloudWatchEventBridgeStack extends NestedStack {
       new cdk.aws_iam.PolicyStatement({
         actions: ["cloudwatch:PutDashboard"],
         resources: [
-          `arn:aws:cloudwatch::${account}:dashboard/SixStacksDashboard`,
+          `arn:aws:cloudwatch::${account}:dashboard/TitanStacksDashboard`,
         ],
       }),
     );

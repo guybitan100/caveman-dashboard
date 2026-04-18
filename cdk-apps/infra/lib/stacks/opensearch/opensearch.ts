@@ -39,7 +39,7 @@ export class openSearch extends cdk.NestedStack {
       this,
       "openSearchMasterSecret",
       {
-        secretName: "/six/opensearch/masteruser",
+        secretName: "/titan/opensearch/masteruser",
         generateSecretString: {
           secretStringTemplate: JSON.stringify({ username: "admin" }),
           generateStringKey: "password",

@@ -108,7 +108,7 @@ def create_widget(stack_name: str) -> dict:
     stack_status = stack_details["Stacks"][0]["StackStatus"]
 
     stack_url = f"https://{REGION}.console.aws.amazon.com/cloudformation/home?region={REGION}#/stacks/stackinfo?stackId={stack_details['Stacks'][0]['StackId']}"
-    code_url = f"https://github.com/clbt-10daa690/SiX/{"tree/" + git_version_tag if git_version_tag != 'N/A' else ''}"
+    code_url = f"https://github.com/clbt-10daa690/Titan/{"tree/" + git_version_tag if git_version_tag != 'N/A' else ''}"
 
     html_string = f"""
     <h1>{stack_name}</h1><br>
@@ -192,7 +192,7 @@ def main(event):
     # Add debug logs to inspect dashboard_body
     logging.debug(f"Dashboard body: {dashboard_body}")
 
-    put_dashboard("SixStacksDashboard", dashboard_body)
+    put_dashboard("TitanStacksDashboard", dashboard_body)
     logging.info("Finished execution")
     return {"statusCode": 200, "body": "Dashboard created successfully"}
 

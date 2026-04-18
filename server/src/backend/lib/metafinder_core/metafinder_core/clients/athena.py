@@ -7,7 +7,7 @@ from mypy_boto3_athena import AthenaClient as AWSAthenaClient
 from mypy_boto3_athena.type_defs import DatumTypeDef
 
 from core.config import SETTINGS
-from core.six_logger import logger
+from core.titan_logger import logger
 from metafinder_core.clients.base import BaseQueryClient
 from metafinder_core.queries import MetaFinderIndex
 

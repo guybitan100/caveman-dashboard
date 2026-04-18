@@ -43,7 +43,7 @@ class UploadedFileContractor(FileContractor[UploadedFileTask, FileData]):
             is_uploaded=True,
             time=time,
             md5=self.task.md5,
-            s3_bucket=SETTINGS.S3_SIX_BUCKET_NAME,
+            s3_bucket=SETTINGS.S3_TITAN_BUCKET_NAME,
             deleted_state=deleted_state.value
         )
         if data_type is None:       # to accommodate literal data_types in Audio, Video, Image (avoid errors)

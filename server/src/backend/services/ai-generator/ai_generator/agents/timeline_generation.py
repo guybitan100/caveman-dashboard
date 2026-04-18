@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field, ValidationError
 from pydantic_ai import Agent
 
-from core.six_logger import logger
+from core.titan_logger import logger
 
 from ai_generator.models.timeline import TimelineEvent, EventCategory
 from ai_generator.utils import get_model

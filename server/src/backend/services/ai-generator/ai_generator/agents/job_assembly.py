@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import Optional, List, Dict, Any, Set
 
-from core.six_logger import logger
+from core.titan_logger import logger
 
 from model.job import GenerationJob, DeviceContext, DeviceModel
 from model.types import DeviceInfo, DeviceInfoEntry

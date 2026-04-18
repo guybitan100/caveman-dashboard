@@ -76,7 +76,7 @@ class GeocodingConfig:
     """Configuration for the geocoding service."""
     
     # AWS Location Service index name
-    place_index_name: str = "six-place-index"
+    place_index_name: str = "titan-place-index"
     
     # AWS region
     aws_region: str = "eu-west-1"

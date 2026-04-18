@@ -16,7 +16,7 @@ def mock_init(*args, **kwargs):
 @pytest.fixture
 def metafinder_client() -> MetaFinderClient:
     with patch(
-            "core.s3_client.SixS3Client.__init__",
+            "core.s3_client.TitanS3Client.__init__",
             new=mock_init,
     ):
         yield MetaFinderClient()

@@ -2,7 +2,7 @@ FROM python:3.13-slim
 
 ARG VERSION
 ARG POETRY_VERSION=1.8.3
-ENV SIX_VERSION=$VERSION
+ENV TITAN_VERSION=$VERSION
 
 RUN  apt-get update \
     && apt-get install -y wget \
@@ -11,19 +11,19 @@ RUN  apt-get update \
 RUN pip install poetry==$POETRY_VERSION --no-cache-dir && \
     poetry config virtualenvs.create false
 
-WORKDIR /six
+WORKDIR /titan
 
 RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 
-ENV SIX_DB_DOCUMENT_DB_CERT_PATH=/six/global-bundle.pem
+ENV TITAN_DB_DOCUMENT_DB_CERT_PATH=/titan/global-bundle.pem
 
-COPY src/backend/lib /six/src/backend/lib
-COPY src/clients /six/src/clients
-COPY src/backend/services/generation/pyproject.toml /six/src/backend/services/generation/
+COPY src/backend/lib /titan/src/backend/lib
+COPY src/clients /titan/src/clients
+COPY src/backend/services/generation/pyproject.toml /titan/src/backend/services/generation/
 
-WORKDIR /six/src/backend/services/generation
+WORKDIR /titan/src/backend/services/generation
 
-COPY src/backend/services/generation /six/src/backend/services/generation
+COPY src/backend/services/generation /titan/src/backend/services/generation
 
 RUN poetry install --no-interaction --extras generate_job
 

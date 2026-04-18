@@ -232,7 +232,7 @@ class ReportFileSerializer(BaseReportSerializer):
         )
 
         tagged_file = File(
-            fs="SiX file system",
+            fs="Titan file system",
             fsid="00000000-0000-0000-0000-000000000001",
             path=str(file_data.path),
             size=file_data.size or 0,

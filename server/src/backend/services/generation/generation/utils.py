@@ -5,18 +5,18 @@ from typing import Callable, Protocol
 from botocore.exceptions import ClientError
 from types_aiobotocore_lambda import LambdaClient
 
-from core.six_logger import logger
+from core.titan_logger import logger
 from model.job import GenerationJob
-from model.phase import SixPhase
+from model.phase import TitanPhase
 from model.status import PhaseStatus
-from six_db.jobs import db_job_utils
+from titan_db.jobs import db_job_utils
 
 
 class EngineCallable(Protocol):
     def __call__(self, job: GenerationJob) -> None: ...
 
 
-def six_phase(phase: SixPhase) -> Callable[[EngineCallable], EngineCallable]:
+def titan_phase(phase: TitanPhase) -> Callable[[EngineCallable], EngineCallable]:
     """
     Decorator for phase functions. All function must have job (GenerationJob) as the first argument.
     """
@@ -38,7 +38,7 @@ def six_phase(phase: SixPhase) -> Callable[[EngineCallable], EngineCallable]:
     return decorator
 
 
-def _update_phase_status(job_id: str, phase: SixPhase, status: PhaseStatus):
+def _update_phase_status(job_id: str, phase: TitanPhase, status: PhaseStatus):
     # Todo: emit websocket event
     db_job_utils.update_phase_status(job_id=job_id, status=status, phase=phase)
     

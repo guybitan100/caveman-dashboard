@@ -258,7 +258,7 @@ def metafinder_get_sentences_side_effect(count: int) -> Iterator[ChatModel]:
 def test_construct_five_chats(job_hub: pytest.fixture, mocker: MockerFixture):
     total_messages = sum(blueprint.num_messages for blueprint in chats_blueprints)
     task = ChatTask(quantity=total_messages)
-    read_events_mock = mocker.patch('six_db.events.db.read_events')
+    read_events_mock = mocker.patch('titan_db.events.db.read_events')
     read_events_mock.return_value = []
     get_sentences_mock = mocker.patch("metafinder_core.queries.MetaFinderQueryParams.query")
     get_sentences_mock.side_effect = metafinder_get_sentences_side_effect
@@ -273,7 +273,7 @@ def test_construct_five_chats(job_hub: pytest.fixture, mocker: MockerFixture):
 def test_construct_five_chats_with_attachments_hub_fail(job_hub: pytest.fixture, mocker: MockerFixture):
     total_messages = sum(blueprint.num_messages for blueprint in chat_blueprints_with_attachments)
     task = chat_task_with_attachments(total_messages)
-    file_data_mock = mocker.patch("six_db.events.db.read_events")
+    file_data_mock = mocker.patch("titan_db.events.db.read_events")
     file_data_mock.side_effect = read_events_side_effect
     get_sentences_mock = mocker.patch("metafinder_core.queries.MetaFinderQueryParams.query")
     get_sentences_mock.side_effect = metafinder_get_sentences_side_effect
@@ -286,7 +286,7 @@ def test_construct_five_chats_with_attachments_hub_fail(job_hub: pytest.fixture,
 def test_construct_five_chats_with_attachments(job_hub: pytest.fixture, mocker: MockerFixture):
     total_messages = sum(blueprint.num_messages for blueprint in chat_blueprints_with_attachments)
     task = chat_task_with_attachments(total_messages)
-    file_data_mock = mocker.patch("six_db.events.db.read_events")
+    file_data_mock = mocker.patch("titan_db.events.db.read_events")
     file_data_mock.side_effect = read_events_side_effect
     get_sentences_mock = mocker.patch("metafinder_core.queries.MetaFinderQueryParams.query")
     get_sentences_mock.side_effect = metafinder_get_sentences_side_effect

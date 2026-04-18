@@ -104,12 +104,12 @@ export class internalAlbStack extends NestedStack {
       httpsListener.addAction("OldDomainWarning", {
         priority: 20,
         conditions: [
-          elbv2.ListenerCondition.hostHeaders(["six.cellebrite.cto"]),
+          elbv2.ListenerCondition.hostHeaders(["titan.cellebrite.cto"]),
         ],
         action: elbv2.ListenerAction.fixedResponse(200, {
           contentType: "text/html",
           messageBody:
-            '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cellebrite SiX Moved</title><style>body{background-color:#fff;color:#1e2c3f;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;text-align:center;font-size:1.5rem}.container{max-width:600px}.highlight{color:#ff5300;font-weight:700}a{text-decoration:none;font-weight:700}a:hover{text-decoration:underline}</style></head><body><div class="container"><p>Cellebrite <span class="highlight">SiX</span> has moved to a new Domain. Try out <a href="https://six.ai.aws.cellebrite.local">https://six.ai.aws.cellebrite.local</a></p></div></body></html>',
+            '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cellebrite Titan Moved</title><style>body{background-color:#fff;color:#1e2c3f;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;text-align:center;font-size:1.5rem}.container{max-width:600px}.highlight{color:#ff5300;font-weight:700}a{text-decoration:none;font-weight:700}a:hover{text-decoration:underline}</style></head><body><div class="container"><p>Cellebrite <span class="highlight">Titan</span> has moved to a new Domain. Try out <a href="https://titan.ai.aws.cellebrite.local">https://titan.ai.aws.cellebrite.local</a></p></div></body></html>',
         }),
       });
     }
@@ -145,7 +145,7 @@ export class internalAlbStack extends NestedStack {
       "r53Bucket",
       r53BucketName,
     );
-    const record = s3deploy.Source.jsonData(`six${env}.json`, {
+    const record = s3deploy.Source.jsonData(`titan${env}.json`, {
       Changes: [
         {
           Action: "UPSERT",
@@ -166,7 +166,7 @@ export class internalAlbStack extends NestedStack {
     // Deploy the file to the S3 bucket - This will trigger a lambda to update the Route53 records
     const deployment = new s3deploy.BucketDeployment(
       this,
-      `DeploySix${env}Record`,
+      `DeployTitan${env}Record`,
       {
         sources: [record],
         destinationBucket: r53Bucket,

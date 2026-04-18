@@ -36,7 +36,7 @@ sms_thread_planning_agent = Agent(
 # Story generation agent
 sms_story_generation_agent = Agent(
     name="sms_story_generation_agent",
-    model=get_model("six/story-model"),
+    model=get_model("titan/story-model"),
     output_type=InstantMessageStoryData,
     instructions=_GENERATION_INSTRUCTIONS,
 )

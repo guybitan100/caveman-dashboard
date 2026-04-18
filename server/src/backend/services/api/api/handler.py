@@ -1,7 +1,7 @@
 from mangum import Mangum
 
 from api.app import app
-from six_db.jobs.models import create_tables, delete_tables
+from titan_db.jobs.models import create_tables, delete_tables
 
 app_handler = Mangum(app)
 

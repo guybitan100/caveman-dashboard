@@ -3,7 +3,7 @@
  * Provides functions to call each pipeline stage endpoint.
  */
 
-import { SIX_AI_GENERATOR_BASE_URL } from "./config.ts";
+import { TITAN_AI_GENERATOR_BASE_URL } from "./config.ts";
 
 import {
   StoryExpansion,
@@ -21,7 +21,7 @@ import {
   SubmitJobRequest,
 } from "../types/pipeline.ts";
 
-const API_BASE_URL = SIX_AI_GENERATOR_BASE_URL;
+const API_BASE_URL = TITAN_AI_GENERATOR_BASE_URL;
 
 class ApiError extends Error {
   constructor(

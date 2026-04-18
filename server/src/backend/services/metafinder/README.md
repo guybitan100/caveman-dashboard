@@ -1,6 +1,6 @@
 # Metafinder
 
-Metafinder is a service that holds metadata of various data types, to let SiX query and retrieve data for the generation of simulated extractions.
+Metafinder is a service that holds metadata of various data types, to let Titan query and retrieve data for the generation of simulated extractions.
 
 The metadata is stored in an OpenSearch cluster, wnd for file data types (Images, Videos, Audios, and Documents), the files are stored in an S3 bucket.
 

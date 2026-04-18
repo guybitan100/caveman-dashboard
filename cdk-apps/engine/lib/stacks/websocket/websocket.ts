@@ -3,7 +3,7 @@ import * as appsync from "aws-cdk-lib/aws-appsync";
 import { Construct } from "constructs";
 
 interface WebsocketProps extends cdk.StackProps {
-  sixEnvironment: string;
+  titanEnvironment: string;
 }
 
 export class WebsocketStack extends cdk.NestedStack {
@@ -12,14 +12,14 @@ export class WebsocketStack extends cdk.NestedStack {
   constructor(scope: Construct, id: string, props: WebsocketProps) {
     super(scope, id, props);
 
-    const { sixEnvironment } = props;
+    const { titanEnvironment } = props;
 
     const apiKeyProvider: appsync.AppSyncAuthProvider = {
       authorizationType: appsync.AppSyncAuthorizationType.API_KEY,
     };
 
     const api = new appsync.EventApi(this, "EventsAPI", {
-      apiName: sixEnvironment,
+      apiName: titanEnvironment,
       authorizationConfig: {
         authProviders: [apiKeyProvider],
         connectionAuthModeTypes: [appsync.AppSyncAuthorizationType.API_KEY],

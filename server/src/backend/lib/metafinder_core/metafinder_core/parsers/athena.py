@@ -1,4 +1,4 @@
-from core.six_logger import logger
+from core.titan_logger import logger
 from metafinder_core.models import MetafinderModel
 from metafinder_core.parsers.base import BaseMetafinderQueryResponseParser
 

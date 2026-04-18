@@ -10,7 +10,7 @@ authors = [ "Yitzchak Siegel-Bareket <yitzchak.siegel-bareket@cellebrite.com>", 
 
 [[tool.poetry.source]]
 name = "artifact"
-url = "https://cellebrite-983918838720.d.codeartifact.us-east-1.amazonaws.com/pypi/six/"
+url = "https://cellebrite-983918838720.d.codeartifact.us-east-1.amazonaws.com/pypi/titan/"
 priority = "explicit"
 
 [tool.poetry.dependencies]

@@ -5,7 +5,7 @@ import * as s3 from "aws-cdk-lib/aws-s3";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import { Construct } from "constructs";
-import { SixEnvironmentVariables } from "../../types";
+import { TitanEnvironmentVariables } from "../../types";
 
 export interface MetafinderStackProps extends cdk.StackProps {
   vpc: ec2.IVpc;
@@ -14,14 +14,14 @@ export interface MetafinderStackProps extends cdk.StackProps {
   athenaFullAccess: iam.IManagedPolicy;
   metafinderBucketName: string;
   metafinderMetadataBucketName: string;
-  environment: SixEnvironmentVariables;
+  environment: TitanEnvironmentVariables;
   vpcEndpointId: string;
 }
 
 export class MetafinderStack extends cdk.NestedStack {
   public dataBucket: s3.IBucket;
   public metadataBucket: s3.IBucket;
-  public environmentVariables: SixEnvironmentVariables;
+  public environmentVariables: TitanEnvironmentVariables;
   public function: lambda.DockerImageFunction;
   private apigateway: apigateway.LambdaRestApi;
   public url: string;
@@ -61,7 +61,7 @@ export class MetafinderStack extends cdk.NestedStack {
       vpcSubnets: {
         subnets,
       },
-      // @ts-expect-error - SixEnvironmentVariables not compatible with Lambda function environment
+      // @ts-expect-error - TitanEnvironmentVariables not compatible with Lambda function environment
       environment,
       timeout: cdk.Duration.minutes(15),
       memorySize: 10240,
@@ -118,6 +118,6 @@ export class MetafinderStack extends cdk.NestedStack {
     );
 
     this.url = `https://${this.apigateway.restApiId}-${vpcEndpointId}.execute-api.${cdk.Aws.REGION}.${cdk.Aws.URL_SUFFIX}/${this.apigateway.deploymentStage.stageName}`;
-    this.environmentVariables.SIX_METAFINDER_HOST = this.url;
+    this.environmentVariables.TITAN_METAFINDER_HOST = this.url;
   }
 }

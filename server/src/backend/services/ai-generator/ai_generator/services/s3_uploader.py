@@ -59,7 +59,7 @@ class S3Uploader:
         Args:
             bucket_name: S3 bucket name. Defaults to settings.S3_BUCKET_NAME
         """
-        self.bucket = bucket_name or SETTINGS.S3_SIX_BUCKET_NAME
+        self.bucket = bucket_name or SETTINGS.S3_TITAN_BUCKET_NAME
         self._session = aioboto3.Session()
         self._config = Config(
             retries={"max_attempts": 3, "mode": "adaptive"},

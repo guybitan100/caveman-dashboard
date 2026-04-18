@@ -9,26 +9,26 @@ RUN apt-get update \
 RUN pip install poetry==$POETRY_VERSION --no-cache-dir && \
   poetry config virtualenvs.create false
 
-WORKDIR /six
+WORKDIR /titan
 
 # Download RDS CA bundle (needed by core library)
 RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
-ENV SIX_DB_DOCUMENT_DB_CERT_PATH=/six/global-bundle.pem
+ENV TITAN_DB_DOCUMENT_DB_CERT_PATH=/titan/global-bundle.pem
 
 # Copy local dependencies first
-COPY src/backend/lib /six/src/backend/lib
+COPY src/backend/lib /titan/src/backend/lib
 
 # Copy pyproject.toml and poetry.lock for caching
-COPY src/backend/services/ai-generator/pyproject.toml /six/src/backend/services/ai-generator/
-COPY src/backend/services/ai-generator/poetry.lock /six/src/backend/services/ai-generator/
+COPY src/backend/services/ai-generator/pyproject.toml /titan/src/backend/services/ai-generator/
+COPY src/backend/services/ai-generator/poetry.lock /titan/src/backend/services/ai-generator/
 
-WORKDIR /six/src/backend/services/ai-generator
+WORKDIR /titan/src/backend/services/ai-generator
 
 # Install dependencies
 RUN poetry install --no-interaction --no-root
 
 # Copy the application code
-COPY src/backend/services/ai-generator /six/src/backend/services/ai-generator
+COPY src/backend/services/ai-generator /titan/src/backend/services/ai-generator
 
 # Install the app itself
 RUN poetry install --no-interaction

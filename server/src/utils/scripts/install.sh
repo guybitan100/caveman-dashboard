@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ROOT=/Users/orshemtov/Projects/six
+ROOT=/Users/orshemtov/Projects/titan
 
 # Install and publish libraries
 
@@ -12,7 +12,7 @@ cd $ROOT/lib/model || exit
 poetry install
 poetry build
 
-cd $ROOT/lib/six_client || exit
+cd $ROOT/lib/titan_client || exit
 poetry install
 poetry build
 

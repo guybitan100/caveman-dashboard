@@ -17,7 +17,7 @@ from model.utils import AbstractData, AutoUID
 
 class StoryType(StrEnum):
     """
-    Enum representing SiX supported stories.
+    Enum representing Titan supported stories.
     """
 
     LOCATION = 'location'

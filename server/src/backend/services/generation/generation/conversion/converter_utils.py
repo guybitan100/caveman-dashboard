@@ -5,16 +5,16 @@ from queue import Empty, Queue
 from typing import Iterator
 
 from core.config import SETTINGS
-from core.s3_client import SixS3Client
-from core.six_logger import logger
+from core.s3_client import TitanS3Client
+from core.titan_logger import logger
 from generation.conversion.report import ExtraInfo, NodeInfo, SourceInfo, NodeInfos, ProjectConfigurations, \
     TimeZoneConfigurations, SourceExtractions, ExtractionInfo, CaseInformation, InfoField, Metadata, Item
 from model.types import DeviceInfo, FileData
 from model.utils import str_uuid
 
-_SIX_TABLE_NAME = 'SIX'
-_SIX_OFFSET = '0'
-_SIX_NODE_INFO_ID = '00000000-0000-0000-0000-000000000001'
+_TITAN_TABLE_NAME = 'TITAN'
+_TITAN_OFFSET = '0'
+_TITAN_NODE_INFO_ID = '00000000-0000-0000-0000-000000000001'
 
 
 def create_source_extractions() -> SourceExtractions:
@@ -25,8 +25,8 @@ def create_source_extractions() -> SourceExtractions:
                 name='Physical',
                 is_custom_name='False',
                 type='Physical',
-                device_name='SiX Device',
-                full_name='SiX Device',
+                device_name='Titan Device',
+                full_name='Titan Device',
                 index=0,
                 is_partial_data='False'
             )
@@ -44,7 +44,7 @@ def create_case_information() -> CaseInformation:
                 is_required=True,
                 field_type='ExaminerName',
                 multiple_lines=False,
-                value='SiX',
+                value='Titan',
             )
         ]
     )
@@ -74,9 +74,9 @@ def get_model_extra_info(model_id: str) -> ExtraInfo:
             node_infos=NodeInfos(
                 node_infos=[
                     NodeInfo(
-                        id=_SIX_NODE_INFO_ID,
-                        table_name=_SIX_TABLE_NAME,
-                        offset=_SIX_OFFSET
+                        id=_TITAN_NODE_INFO_ID,
+                        table_name=_TITAN_TABLE_NAME,
+                        offset=_TITAN_OFFSET
                     )])
         )
     )
@@ -90,7 +90,7 @@ def get_file_extra_info(file_id: str) -> ExtraInfo:
             node_info=NodeInfo(
                 id=file_id,
                 table_name="",
-                offset=_SIX_OFFSET
+                offset=_TITAN_OFFSET
             )
         )
     )
@@ -203,7 +203,7 @@ class FileDataDownloaderWorker(threading.Thread):
         self._inbox = inbox
         self._outbox = outbox
         self._dir_path = dir_path
-        self._s3_client = SixS3Client()
+        self._s3_client = TitanS3Client()
         self._stop_event = threading.Event()
         super().__init__()
 

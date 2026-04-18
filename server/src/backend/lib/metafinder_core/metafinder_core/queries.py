@@ -5,7 +5,7 @@ from typing import Any, ClassVar, TYPE_CHECKING, Literal, Callable, Union
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 from core.config import SETTINGS
-from core.six_logger import logger
+from core.titan_logger import logger
 from metafinder_core.models import ImageModel, VideoModel, AudioModel, FileModel, ChatModel, MetafinderModel, \
     EntityModel, ReportModelField, AppModel, CellTowerModel, UrlModel, LocalizedNameModel, CryptoModel, TextModel
 from model.metafinder.data_types import DataType

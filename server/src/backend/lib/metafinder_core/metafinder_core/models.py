@@ -2,11 +2,11 @@ from pydantic import BaseModel, Field, field_validator, ValidationInfo, model_va
 from pydantic.types import confloat
 
 from core.config import SETTINGS
-from core.s3_client import SixS3Client
+from core.s3_client import TitanS3Client
 from model.job import ReportModelFieldType
 from model.utils import str_uuid
 
-s3_client = SixS3Client()
+s3_client = TitanS3Client()
 
 def IdField(**kwargs):
 	return Field(alias="id", **kwargs)

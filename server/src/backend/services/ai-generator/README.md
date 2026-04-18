@@ -333,7 +333,7 @@ updated_stories = await media_service.generate_media_for_stories(stories, entity
 **Input**: `list[SelectedPhone]`, `list[PhoneStoryMapping]`, `list[Entity]`  
 **Output**: `JobGenerationResult`
 
-Assembles `GenerationJob` objects ready for the SiX generation service.
+Assembles `GenerationJob` objects ready for the Titan generation service.
 
 ```python
 from ai_generator.agents import JobAssemblyAgent
@@ -657,25 +657,25 @@ pipeline_sessions/
 
 ### Environment Variables
 
-All settings use the `SIX_` prefix and are defined in `settings.py`:
+All settings use the `TITAN_` prefix and are defined in `settings.py`:
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `SIX_LITELLM_API_KEY` | Yes | - | API key for LiteLLM gateway |
-| `SIX_LITELLM_BASE_URL` | Yes | - | Base URL for LiteLLM gateway |
-| `SIX_MEDIA_GENERATION_ENABLED` | No | `true` | Enable media generation |
-| `SIX_MEDIA_GENERATION_BATCH_SIZE` | No | `3` | Concurrent media generations |
-| `SIX_MEDIA_GENERATION_RETRY_ATTEMPTS` | No | `1` | Retries before removing story |
-| `SIX_AWS_REGION` | No | `eu-central-1` | AWS region for general services |
-| `SIX_BEDROCK_REGION` | No | `us-east-1` | AWS region for Bedrock |
-| `SIX_BEDROCK_IMAGE_MODEL` | No | `amazon.nova-canvas-v1:0` | Image model ID |
-| `SIX_BEDROCK_VIDEO_MODEL` | No | `amazon.nova-reel-v1:0` | Video model ID |
-| `SIX_BEDROCK_AUDIO_MODEL` | No | `amazon.nova-sonic-v1:0` | Audio model ID |
-| `SIX_S3_SIX_BUCKET_NAME` | No | - | S3 bucket for media |
-| `SIX_S3_UPLOADS_PREFIX` | No | `uploads` | S3 prefix for uploads |
-| `SIX_S3_GENERATED_MEDIA_PREFIX` | No | `generated-media` | S3 prefix for video output |
-| `SIX_VIDEO_GENERATION_POLL_INTERVAL` | No | `10` | Video polling interval (seconds) |
-| `SIX_VIDEO_GENERATION_TIMEOUT` | No | `300` | Video generation timeout (seconds) |
+| `TITAN_LITELLM_API_KEY` | Yes | - | API key for LiteLLM gateway |
+| `TITAN_LITELLM_BASE_URL` | Yes | - | Base URL for LiteLLM gateway |
+| `TITAN_MEDIA_GENERATION_ENABLED` | No | `true` | Enable media generation |
+| `TITAN_MEDIA_GENERATION_BATCH_SIZE` | No | `3` | Concurrent media generations |
+| `TITAN_MEDIA_GENERATION_RETRY_ATTEMPTS` | No | `1` | Retries before removing story |
+| `TITAN_AWS_REGION` | No | `eu-central-1` | AWS region for general services |
+| `TITAN_BEDROCK_REGION` | No | `us-east-1` | AWS region for Bedrock |
+| `TITAN_BEDROCK_IMAGE_MODEL` | No | `amazon.nova-canvas-v1:0` | Image model ID |
+| `TITAN_BEDROCK_VIDEO_MODEL` | No | `amazon.nova-reel-v1:0` | Video model ID |
+| `TITAN_BEDROCK_AUDIO_MODEL` | No | `amazon.nova-sonic-v1:0` | Audio model ID |
+| `TITAN_S3_TITAN_BUCKET_NAME` | No | - | S3 bucket for media |
+| `TITAN_S3_UPLOADS_PREFIX` | No | `uploads` | S3 prefix for uploads |
+| `TITAN_S3_GENERATED_MEDIA_PREFIX` | No | `generated-media` | S3 prefix for video output |
+| `TITAN_VIDEO_GENERATION_POLL_INTERVAL` | No | `10` | Video polling interval (seconds) |
+| `TITAN_VIDEO_GENERATION_TIMEOUT` | No | `300` | Video generation timeout (seconds) |
 
 ### Settings Access
 
@@ -836,8 +836,8 @@ poetry install
 poetry run pytest tests/test_pipeline.py -v
 
 # Run integration tests (requires API key)
-export SIX_LITELLM_API_KEY="your-api-key"
-export SIX_LITELLM_BASE_URL="https://your-litellm-instance"
+export TITAN_LITELLM_API_KEY="your-api-key"
+export TITAN_LITELLM_BASE_URL="https://your-litellm-instance"
 poetry run pytest tests/test_integration.py -v -s
 
 # Run E2E tests (requires API key)
@@ -945,12 +945,12 @@ poetry show pydantic-ai
 
 ```bash
 # Verify credentials
-echo $SIX_LITELLM_API_KEY
-echo $SIX_LITELLM_BASE_URL
+echo $TITAN_LITELLM_API_KEY
+echo $TITAN_LITELLM_BASE_URL
 
 # Test connection
-curl -H "Authorization: Bearer $SIX_LITELLM_API_KEY" \
-     $SIX_LITELLM_BASE_URL/v1/models
+curl -H "Authorization: Bearer $TITAN_LITELLM_API_KEY" \
+     $TITAN_LITELLM_BASE_URL/v1/models
 ```
 
 #### Invalid JSON from LLM
@@ -1046,7 +1046,7 @@ When adding new features:
 
 - Use type hints throughout
 - Follow existing Pydantic patterns
-- Use `core.six_logger.logger` for logging
+- Use `core.titan_logger.logger` for logging
 - Async functions where appropriate
 
 

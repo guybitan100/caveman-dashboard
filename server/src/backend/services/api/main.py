@@ -1,7 +1,7 @@
 import typer
-from core.six_logger import logger
+from core.titan_logger import logger
 
-from six_db.jobs.models import create_tables, delete_tables
+from titan_db.jobs.models import create_tables, delete_tables
 from api.app import run_manager_server
 
 cli = typer.Typer()

@@ -1,6 +1,6 @@
 # UFDR Runtime
 
-This service is not implemented in the imported SiX backend snapshot, but the web app already expects it as a standalone backend service.
+This service is not implemented in the imported Titan backend snapshot, but the web app already expects it as a standalone backend service.
 
 ## Expected HTTP Contract
 

@@ -1,6 +1,6 @@
 # Server
 
-This directory now contains the backend logic imported from the SiX snapshot that previously lived under `tmp/SiX`.
+This directory now contains the backend logic imported from the Titan snapshot that previously lived under `tmp/Titan`.
 
 ## Layout
 
@@ -8,7 +8,7 @@ This directory now contains the backend logic imported from the SiX snapshot tha
 - `src/backend/services/` deployable services and server-side handlers
 - `src/backend/services/ufdr-runtime/` placeholder contract for the missing runtime service
 - `src/clients/` local Python client packages referenced by backend services
-- `src/utils/` standalone backend-adjacent utilities recovered from the SiX snapshot
+- `src/utils/` standalone backend-adjacent utilities recovered from the Titan snapshot
 - `docker/` Dockerfiles for backend deployments
 - `scripts/validate-connectivity/` backend connectivity validation tooling
 - `example.env` example backend environment configuration
@@ -56,5 +56,5 @@ Logs are written to `server/logs/`.
 - Copy `server/example.env` to `server/.env` and fill the backend-specific values before starting services.
 - `server/scripts/start-dev.sh` pins the local development URLs used by the web app and by the backend service-to-service calls.
 - The imported backend tree preserves the original relative paths used by the service `pyproject.toml` files.
-- The separate UFDR runtime server used by `web/src/api/ufdrRuntimeApi.ts` was not present in the SiX snapshot and is still not implemented inside this repository.
+- The separate UFDR runtime server used by `web/src/api/ufdrRuntimeApi.ts` was not present in the Titan snapshot and is still not implemented inside this repository.
 - The missing runtime contract is documented in `server/src/backend/services/ufdr-runtime/README.md`.

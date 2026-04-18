@@ -7,7 +7,7 @@ import * as ssm from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
 import { Stack, StackProps } from "aws-cdk-lib";
 import { Datadog } from "./constructs/datadog";
-import { SixEnvironmentVariables } from "./types";
+import { TitanEnvironmentVariables } from "./types";
 import * as path from "path";
 import { GenerationStack } from "./stacks/generation/generation";
 import { MetafinderStack } from "./stacks/metafinder/metafinder";
@@ -43,7 +43,7 @@ export class EngineStack extends Stack {
       domainName,
       certificateArn,
     } = props;
-    const sixEnvironment = props.environment;
+    const titanEnvironment = props.environment;
 
     const vpc = ec2.Vpc.fromLookup(this, "Vpc", {
       vpcId,
@@ -101,32 +101,32 @@ export class EngineStack extends Stack {
       outputs.documentDBCredentialsSecretArn,
     );
 
-    const environment: SixEnvironmentVariables = {
-      SERVICE: "six",
-      SIX_S3_SIX_BUCKET_NAME: jobsBucket.bucketName,
-      SIX_DEPLOYMENT: "aws",
-      SIX_ENVIRONMENT: sixEnvironment,
-      SIX_AWS_REGION: this.region,
-      SIX_DB_DOCUMENT_DB_USER: docDbSecret
+    const environment: TitanEnvironmentVariables = {
+      SERVICE: "titan",
+      TITAN_S3_TITAN_BUCKET_NAME: jobsBucket.bucketName,
+      TITAN_DEPLOYMENT: "aws",
+      TITAN_ENVIRONMENT: titanEnvironment,
+      TITAN_AWS_REGION: this.region,
+      TITAN_DB_DOCUMENT_DB_USER: docDbSecret
         .secretValueFromJson("username")
         .unsafeUnwrap()
         .toString(),
-      SIX_DB_DOCUMENT_DB_PASSWORD: docDbSecret
+      TITAN_DB_DOCUMENT_DB_PASSWORD: docDbSecret
         .secretValueFromJson("password")
         .unsafeUnwrap()
         .toString(),
-      SIX_METAFINDER_S3_BUCKET_NAME: metafinderBucketName,
-      SIX_JOB_EXPIRY_DAYS: jobsExpirationInDays.toString(),
+      TITAN_METAFINDER_S3_BUCKET_NAME: metafinderBucketName,
+      TITAN_JOB_EXPIRY_DAYS: jobsExpirationInDays.toString(),
     };
 
     const dockerfile = path.join(__dirname, "../../..");
 
     const webSocketStack = new WebsocketStack(this, "WebsocketStack", {
-      sixEnvironment,
+      titanEnvironment,
     });
 
-    environment.SIX_WEBSOCKET_ENDPOINT = webSocketStack.endpoint;
-    environment.SIX_WEBSOCKET_API_KEY = webSocketStack.apiKey.attrApiKey;
+    environment.TITAN_WEBSOCKET_ENDPOINT = webSocketStack.endpoint;
+    environment.TITAN_WEBSOCKET_API_KEY = webSocketStack.apiKey.attrApiKey;
 
     const metafinderStack = new MetafinderStack(this, "MetafinderStack", {
       vpc,
@@ -185,11 +185,11 @@ export class EngineStack extends Stack {
       dockerFilePath: dockerfile,
       dynamodbPolicy,
       environment: apiStack.environmentVariables,
-      sixEnvironment,
+      titanEnvironment,
     });
 
     new Datadog(this, "Datadog", {
-      service: "six",
+      service: "titan",
       functions: [
         dynamoTablesStack.createFn,
         dynamoTablesStack.deleteFn,
@@ -202,7 +202,7 @@ export class EngineStack extends Stack {
         generationStack.logGroup,
         generationStack.genertaeLocationThumbnailFn.logGroup,
       ],
-      environment: sixEnvironment,
+      environment: titanEnvironment,
       version,
       datadogApiKeySecretArn,
       datadogForwarderArn,
@@ -235,9 +235,9 @@ export class EngineStack extends Stack {
 
     // Push the combined values into a single SSM parameter
     new ssm.StringParameter(this, "EngineStackOutputs", {
-      parameterName: `${engineSSMParameter}/${sixEnvironment}`,
+      parameterName: `${engineSSMParameter}/${titanEnvironment}`,
       stringValue: JSON.stringify(combinedEngineOutputs),
-      description: `Combined outputs from the engine stack for ${sixEnvironment}`,
+      description: `Combined outputs from the engine stack for ${titanEnvironment}`,
     });
   }
 }

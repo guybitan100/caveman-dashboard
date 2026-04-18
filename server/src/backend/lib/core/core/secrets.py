@@ -32,7 +32,7 @@ def get_secret(config_name: str, secret_prefix: str) -> str | None:
     return func(secret)
 
 
-class SixSecretsManagerError(Exception):
+class TitanSecretsManagerError(Exception):
     pass
 
 
@@ -50,7 +50,7 @@ def _get_secret(secret_key: str) -> dict | bytes:
                 get_secret_value_response = client.get_secret_value(SecretId=secret_key)
                 #TODO (during draft refactor) should this be returned
             except ClientError as e:
-                raise SixSecretsManagerError from e
+                raise TitanSecretsManagerError from e
     else:
         # Decrypts secret using the associated KMS key.
         # Depending on whether the secret is a string or binary, one of these fields will be populated.
@@ -72,8 +72,8 @@ def _default_get_secret(secret: dict | bytes) -> str | bytes:
     return secret["value"]
 
 
-_config_name_to_secret_function = {"SIX_DB_ENGINE": _get_postgres_connection_string}
+_config_name_to_secret_function = {"TITAN_DB_ENGINE": _get_postgres_connection_string}
 
 _config_name_to_secret_name = {
-    "SIX_DB_ENGINE": "six/postgres/1",
+    "TITAN_DB_ENGINE": "titan/postgres/1",
 }

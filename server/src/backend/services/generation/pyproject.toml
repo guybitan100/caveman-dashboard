@@ -4,7 +4,7 @@ requires = ["poetry-core>=1.0.0", ]
 
 [tool.poetry]
 authors = ["Yitzchak Siegel-Bareket <yitzchak.siegel-bareket@cellebrite.com>", "Daniel Hurwitz <daniel.hurwitz@cellebrite.com>", ]
-description = "SiX Generation service"
+description = "Titan Generation service"
 name = "generation"
 version = "0.0.0"
 
@@ -16,7 +16,7 @@ xsdata = { version = "^21.11", optional = true}
 smart-open = { version = "^7.1.0", extras = ["s3"], optional = true}
 model = { path = "../../lib/model", develop = true }
 core = { path = "../../lib/core", develop = true }
-six_db = { path = "../../lib/six_db", develop = true, optional = true}
+titan_db = { path = "../../lib/titan_db", develop = true, optional = true}
 metafinder_core = { path = "../../lib/metafinder_core", develop = true, optional = true, extras=["athena"]}
 simulation_utils = { path = "../../lib/simulation_utils", develop = true }
 geopy = { version = "^2.2.0", optional = true}
@@ -27,7 +27,7 @@ aioboto3 = "^13.4.0"
 types-aioboto3 = {version = "^13.4.0", extras = ["lambda"]}
 
 [tool.poetry.extras]
-generate_job = ["Faker", "numpy", "xsdata", "smart-open", "six_db", "metafinder_core", "geopy", "aiohttp", "tzdata"]
+generate_job = ["Faker", "numpy", "xsdata", "smart-open", "titan_db", "metafinder_core", "geopy", "aiohttp", "tzdata"]
 generate_entities = ["Faker", "aws-lambda-powertools", "metafinder_core"]
 random_job = ["numpy", "aws-lambda-powertools"]
 
@@ -49,21 +49,21 @@ pytest-env = "^1.1.5"
 pythonpath = "."
 
 [tool.pytest_env]
-SIX_VERSION="2.0.9"
-SIX_AWS_REGION="eu-central-1"
-SIX_DEPLOYMENT="local"
-SIX_S3_SIX_BUCKET_NAME="six-bucket-test"
-SIX_METAFINDER_S3_BUCKET_NAME="metafinder-bucket-test"
-SIX_METAFINDER_OPENSEARCH_PASSWORD="password"
-SIX_METAFINDER_OPENSEARCH_USER="user"
-SIX_METAFINDER_OPENSEARCH_CA_CERTS="path/to/cert.pem"
-SIX_JOB_EXPIRY_DAYS="30"
-SIX_ENVIRONMENT="test"
-SIX_DB_DOCUMENT_DB_USER="user"
-SIX_DB_DOCUMENT_DB_PASSWORD="password"
-SIX_DB_DOCUMENT_DB_CERT_PATH="path/to/cert.pem"
-SIX_WEBSOCKET_ENDPOINT="https://app_id.appsync-api.eu-central-1.amazonaws.com/event"
-SIX_WEBSOCKET_API_KEY="da2-123"
+TITAN_VERSION="2.0.9"
+TITAN_AWS_REGION="eu-central-1"
+TITAN_DEPLOYMENT="local"
+TITAN_S3_TITAN_BUCKET_NAME="titan-bucket-test"
+TITAN_METAFINDER_S3_BUCKET_NAME="metafinder-bucket-test"
+TITAN_METAFINDER_OPENSEARCH_PASSWORD="password"
+TITAN_METAFINDER_OPENSEARCH_USER="user"
+TITAN_METAFINDER_OPENSEARCH_CA_CERTS="path/to/cert.pem"
+TITAN_JOB_EXPIRY_DAYS="30"
+TITAN_ENVIRONMENT="test"
+TITAN_DB_DOCUMENT_DB_USER="user"
+TITAN_DB_DOCUMENT_DB_PASSWORD="password"
+TITAN_DB_DOCUMENT_DB_CERT_PATH="path/to/cert.pem"
+TITAN_WEBSOCKET_ENDPOINT="https://app_id.appsync-api.eu-central-1.amazonaws.com/event"
+TITAN_WEBSOCKET_API_KEY="da2-123"
 
 [tool.ruff.lint]
 select = ["NPY201"]

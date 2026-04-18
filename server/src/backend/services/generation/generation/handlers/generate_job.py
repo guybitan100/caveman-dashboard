@@ -2,12 +2,12 @@ import os
 import signal
 
 from core.appsync_client import AppsyncClient
-from core.six_logger import logger
+from core.titan_logger import logger
 from generation import engine
 from generation.conversion import converter
 from model.status import JobStatus
-from six_db.jobs import db_job_utils
-from six_db.events import db
+from titan_db.jobs import db_job_utils
+from titan_db.events import db
 
 appsync_client = AppsyncClient()
 

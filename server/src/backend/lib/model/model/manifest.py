@@ -16,9 +16,9 @@ class ManifestEvent(BaseModel):
 
 class Manifest(BaseModel):
     """
-    Manifest object of SiX job.
+    Manifest object of Titan job.
 
-    Representing all model names and count of model at SiX generated extraction.
+    Representing all model names and count of model at Titan generated extraction.
 
     Attributes:
         id:        Id of the job.

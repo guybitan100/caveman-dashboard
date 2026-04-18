@@ -19,7 +19,7 @@ from model.status import ValidationStatus, JobStatus
 from model.stories import StoryData
 from model.types import Entity, DeviceInfoEntry, EventType, OwnerEntity
 from simulation_utils.entities import generate_entity
-from six_db.jobs import db_job_utils, db_task_utils, db_story_utils
+from titan_db.jobs import db_job_utils, db_task_utils, db_story_utils
 
 
 def create_job(request: CreateDraftJobRequest) -> GenerationJob:

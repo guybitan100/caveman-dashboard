@@ -39,7 +39,7 @@ vi.mock("../../../types/pipeline", () => ({
 }));
 
 // Mock logo
-vi.mock("../../../assets/six-logo.svg", () => ({ default: "logo.svg" }));
+vi.mock("../../../assets/titan-logo.svg", () => ({ default: "logo.svg" }));
 
 // Mock GoButton
 vi.mock("../../shared/GoButton", () => ({

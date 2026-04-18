@@ -1,8 +1,8 @@
 import axios from "axios";
-import { SIX_API_UFDR_BASE_URL } from "./config.ts";
+import { TITAN_API_UFDR_BASE_URL } from "./config.ts";
 
 const apiClient = axios.create({
-  baseURL: SIX_API_UFDR_BASE_URL,
+  baseURL: TITAN_API_UFDR_BASE_URL,
   timeout: 30000,
 });
 

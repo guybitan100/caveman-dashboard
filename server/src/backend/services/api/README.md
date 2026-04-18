@@ -1,6 +1,6 @@
 # API
 
-SiX API service
+Titan API service
 
 ## Development
 

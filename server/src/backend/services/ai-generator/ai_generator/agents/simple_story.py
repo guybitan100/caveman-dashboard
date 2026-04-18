@@ -121,7 +121,7 @@ async def generate_simple_story(
     # Create agent with specific output type
     agent = Agent(
         name=f"{story_type.value.replace(' ', '_')}_generation_agent",
-        model=get_model("six/story-model"),
+        model=get_model("titan/story-model"),
         output_type=output_type,
         instructions=_GENERATION_INSTRUCTIONS,
     )

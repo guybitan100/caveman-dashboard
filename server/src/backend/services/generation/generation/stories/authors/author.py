@@ -28,7 +28,7 @@ class Author[SD: StoryData, ED: EventData](ABC):
             filename=story_data.file.file_name if is_upload else None,
             md5=s3_key.stem,
             format=s3_key.suffix[1:],
-            s3_bucket=SETTINGS.S3_SIX_BUCKET_NAME if is_upload else SETTINGS.METAFINDER_S3_BUCKET_NAME,
+            s3_bucket=SETTINGS.S3_TITAN_BUCKET_NAME if is_upload else SETTINGS.METAFINDER_S3_BUCKET_NAME,
             size=story_data.file.size
         )
 

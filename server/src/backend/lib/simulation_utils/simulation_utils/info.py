@@ -6,7 +6,7 @@ import warnings
 from faker import Faker
 from faker.config import AVAILABLE_LOCALES
 
-from core.six_logger import logger
+from core.titan_logger import logger
 from metafinder_core.queries import NameQueryParams, MetaFinderQueryError
 from model.country_info import CountryInfo
 from metafinder_core.models import LocalizedNameModel

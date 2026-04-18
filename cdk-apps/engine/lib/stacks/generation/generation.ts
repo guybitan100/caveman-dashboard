@@ -7,13 +7,13 @@ import * as s3 from "aws-cdk-lib/aws-s3";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as lambdanodejs from "aws-cdk-lib/aws-lambda-nodejs";
 import { Construct } from "constructs";
-import { SixEnvironmentVariables } from "../../types";
+import { TitanEnvironmentVariables } from "../../types";
 
 export interface GenerationStackProps extends cdk.StackProps {
   vpc: ec2.IVpc;
   subnets: ec2.ISubnet[];
   dynamodbPolicy: iam.PolicyStatement;
-  environment: SixEnvironmentVariables;
+  environment: TitanEnvironmentVariables;
   dockerFilePath: string;
   athenaFullAccess: iam.IManagedPolicy;
   metafinderMetadataBucket: s3.IBucket;
@@ -33,7 +33,7 @@ export class GenerationStack extends cdk.NestedStack {
   public readonly createRandomJobFn: lambda.DockerImageFunction;
   public readonly generateEntitiesFn: lambda.DockerImageFunction;
   public readonly genertaeLocationThumbnailFn: lambdanodejs.NodejsFunction;
-  public readonly environmentVariables: SixEnvironmentVariables;
+  public readonly environmentVariables: TitanEnvironmentVariables;
 
   constructor(scope: Construct, id: string, props: GenerationStackProps) {
     super(scope, id);
@@ -63,7 +63,7 @@ export class GenerationStack extends cdk.NestedStack {
         vpcSubnets: {
           subnets,
         },
-        // @ts-expect-error - SixEnvironmentVariables not compatible with Lambda function environment
+        // @ts-expect-error - TitanEnvironmentVariables not compatible with Lambda function environment
         environment: this.environmentVariables,
         timeout: cdk.Duration.minutes(15),
         memorySize: 10240,
@@ -82,7 +82,7 @@ export class GenerationStack extends cdk.NestedStack {
         vpcSubnets: {
           subnets,
         },
-        // @ts-expect-error - SixEnvironmentVariables not compatible with Lambda function environment
+        // @ts-expect-error - TitanEnvironmentVariables not compatible with Lambda function environment
         environment: this.environmentVariables,
         timeout: cdk.Duration.minutes(15),
         memorySize: 10240,
@@ -112,7 +112,7 @@ export class GenerationStack extends cdk.NestedStack {
 
     jobsBucket.grantReadWrite(this.genertaeLocationThumbnailFn);
 
-    this.environmentVariables.SIX_GENERATE_LOCATION_THUMBNAIL_LAMBDA_NAME =
+    this.environmentVariables.TITAN_GENERATE_LOCATION_THUMBNAIL_LAMBDA_NAME =
       this.genertaeLocationThumbnailFn.functionName;
 
     this.cluster = new ecs.Cluster(this, "Cluster", {
@@ -162,7 +162,7 @@ export class GenerationStack extends cdk.NestedStack {
         streamPrefix: "Generation",
         logGroup: this.logGroup,
       }),
-      // @ts-expect-error - SixEnvironmentVariables not compatible with ContainerDefinition environment
+      // @ts-expect-error - TitanEnvironmentVariables not compatible with ContainerDefinition environment
       environment: this.environmentVariables,
     });
 
@@ -174,19 +174,19 @@ export class GenerationStack extends cdk.NestedStack {
     metafinderDataBucket.grantRead(this.taskDefinition.taskRole);
     this.genertaeLocationThumbnailFn.grantInvoke(this.taskDefinition.taskRole);
 
-    this.environmentVariables.SIX_GENERATE_ENTITIES_LAMBDA_NAME =
+    this.environmentVariables.TITAN_GENERATE_ENTITIES_LAMBDA_NAME =
       this.generateEntitiesFn.functionName;
-    this.environmentVariables.SIX_RANDOM_JOB_LAMBDA_NAME =
+    this.environmentVariables.TITAN_RANDOM_JOB_LAMBDA_NAME =
       this.createRandomJobFn.functionName;
-    this.environmentVariables.SIX_GENERATION_JOB_FARGATE_ARN =
+    this.environmentVariables.TITAN_GENERATION_JOB_FARGATE_ARN =
       this.taskDefinition.taskDefinitionArn;
-    this.environmentVariables.SIX_GENERATION_JOB_FARGATE_CLUSTER =
+    this.environmentVariables.TITAN_GENERATION_JOB_FARGATE_CLUSTER =
       this.cluster.clusterName;
-    this.environmentVariables.SIX_GENERATION_JOB_FARGATE_SUBNETS =
+    this.environmentVariables.TITAN_GENERATION_JOB_FARGATE_SUBNETS =
       JSON.stringify(subnets.map((subnet) => subnet.subnetId));
-    this.environmentVariables.SIX_GENERATION_JOB_FARGATE_CONTAINER_NAME =
+    this.environmentVariables.TITAN_GENERATION_JOB_FARGATE_CONTAINER_NAME =
       this.container.containerName;
-    this.environmentVariables.SIX_GENERATION_JOB_FARGATE_SECURITY_GROUP =
+    this.environmentVariables.TITAN_GENERATION_JOB_FARGATE_SECURITY_GROUP =
       this.securityGroup.securityGroupId;
   }
 }

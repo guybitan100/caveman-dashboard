@@ -1,8 +1,8 @@
 import axios from "axios";
-import { SIX_METAFINDER_BASE_URL } from "./config.ts";
+import { TITAN_METAFINDER_BASE_URL } from "./config.ts";
 
 const metafinderClient = axios.create({
-  baseURL: SIX_METAFINDER_BASE_URL,
+  baseURL: TITAN_METAFINDER_BASE_URL,
   timeout: 30000,
 });
 

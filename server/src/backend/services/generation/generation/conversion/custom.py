@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from core.six_logger import logger
+from core.titan_logger import logger
 from model.job import CustomEvent, CustomEventFieldValues, ReportModelFieldType, CustomEventFieldValue, \
     CustomEventMultiFieldValue, CustomEventModelFieldValue, CustomEventMultiModelFieldValue
 from model.utils import str_uuid

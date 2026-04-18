@@ -37,9 +37,9 @@ class FrontendStack extends Stack {
 
     let domainName = "";
     if (env === "prod") {
-      domainName = `six.${hostedZoneName}`;
+      domainName = `titan.${hostedZoneName}`;
     } else {
-      domainName = `six${env}.${hostedZoneName}`;
+      domainName = `titan${env}.${hostedZoneName}`;
     }
     console.log("Domain Name: ", domainName);
 

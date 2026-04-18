@@ -1,6 +1,6 @@
 from functools import wraps
 
-from core.six_logger import logger
+from core.titan_logger import logger
 from model.metafinder.data_types import DataType, KeywordTerms, RangeTerms
 from metafinder_core.models import MetafinderModel
 from metafinder_core.clients.base import BaseQueryClient

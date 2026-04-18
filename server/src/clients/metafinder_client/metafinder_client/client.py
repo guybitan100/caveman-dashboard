@@ -12,10 +12,10 @@ from urllib3 import Retry
 from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide
 
-from core.s3_client import SixS3Client
+from core.s3_client import TitanS3Client
 from core.config import SETTINGS
 from model.metafinder.queries import QueryOperator, ArrayQuery
-from core.six_logger import logger
+from core.titan_logger import logger
 from model.metafinder.data_types import DataType, KeywordTerms, RangeTerms, data_type_count_limit
 from metafinder_core.models import AppModel, AudioModel, ChatModel, DocumentModel, ImageModel, ReportModelField, \
     TextModel, VideoModel, CellTowerModel, UrlModel, LocalizedNameModel, CryptoModel, MetafinderModel
@@ -46,7 +46,7 @@ class Container(containers.DeclarativeContainer):
 
 	config = providers.Configuration()
 
-	s3_client = providers.Factory(SixS3Client)
+	s3_client = providers.Factory(TitanS3Client)
 
 
 class MetaFinderClient:
@@ -555,7 +555,7 @@ class MetaFinderClient:
 	def download_file(self,
 					  s3_key: str,
 					  filepath: Union[str, Path],
-					  s3_client: SixS3Client = Provide[Container.s3_client]
+					  s3_client: TitanS3Client = Provide[Container.s3_client]
 					  ):
 		s3_client.download_file(bucket_name=SETTINGS.BUCKET_NAME, s3_key=s3_key, file_name=str(filepath))
 

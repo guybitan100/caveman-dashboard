@@ -41,21 +41,21 @@ describe('userStorage - localStorage operations', () => {
     });
 
     it('should return null and clear corrupted JSON data', () => {
-      localStorage.setItem('six_user', 'invalid json{');
+      localStorage.setItem('titan_user', 'invalid json{');
       const retrieved = getStoredUser();
 
       expect(retrieved).toBeNull();
-      expect(localStorage.getItem('six_user')).toBeNull();
+      expect(localStorage.getItem('titan_user')).toBeNull();
     });
 
     it('should return null and clear incomplete user data', () => {
       const incomplete = { email: 'test@test.com' }; // Missing firstName and lastName
-      localStorage.setItem('six_user', JSON.stringify(incomplete));
+      localStorage.setItem('titan_user', JSON.stringify(incomplete));
 
       const retrieved = getStoredUser();
 
       expect(retrieved).toBeNull();
-      expect(localStorage.getItem('six_user')).toBeNull();
+      expect(localStorage.getItem('titan_user')).toBeNull();
     });
 
     it('should handle multiple save operations correctly', () => {

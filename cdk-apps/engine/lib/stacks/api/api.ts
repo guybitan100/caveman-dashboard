@@ -4,7 +4,7 @@ import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import { Construct } from "constructs";
-import { SixEnvironmentVariables } from "../../types";
+import { TitanEnvironmentVariables } from "../../types";
 
 export interface ApiStackProps extends cdk.StackProps {
   vpc: ec2.IVpc;
@@ -12,12 +12,12 @@ export interface ApiStackProps extends cdk.StackProps {
   dockerFilePath: string;
   dynamodbPolicy: iam.PolicyStatement;
   metafinderMetadataBucketName: string;
-  environment: SixEnvironmentVariables;
+  environment: TitanEnvironmentVariables;
   vpcEndpointId: string;
 }
 
 export class ApiStack extends cdk.NestedStack {
-  public environmentVariables: SixEnvironmentVariables;
+  public environmentVariables: TitanEnvironmentVariables;
   public function: lambda.DockerImageFunction;
   private apigateway: apigateway.LambdaRestApi;
   public url: string;
@@ -43,7 +43,7 @@ export class ApiStack extends cdk.NestedStack {
       vpcSubnets: {
         subnets,
       },
-      // @ts-expect-error - SixEnvironmentVariables not compatible with Lambda function environment
+      // @ts-expect-error - TitanEnvironmentVariables not compatible with Lambda function environment
       environment,
       timeout: cdk.Duration.minutes(15),
       memorySize: 10240,

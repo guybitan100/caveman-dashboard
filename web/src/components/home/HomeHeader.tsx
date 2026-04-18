@@ -138,7 +138,7 @@ export function HomeHeader() {
         <LogoWrapper size={30}>
           <SmallLogo />
         </LogoWrapper>
-        <LogoText fontSize={28}>Six</LogoText>
+        <LogoText fontSize={28}>Titan</LogoText>
       </LogoSection>
 
       {user && (

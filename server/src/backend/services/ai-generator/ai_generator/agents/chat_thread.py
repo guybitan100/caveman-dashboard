@@ -36,7 +36,7 @@ chat_thread_planning_agent = Agent(
 # Messages generation agent (generates list of chat messages)
 chat_messages_generation_agent = Agent(
     name="chat_messages_generation_agent",
-    model=get_model("six/story-model"),
+    model=get_model("titan/story-model"),
     output_type=list[ChatMessageStoryData],
     instructions=_GENERATION_INSTRUCTIONS,
 )

@@ -4,9 +4,9 @@
 
 The repository is split by ownership boundary:
 - `web/` contains the current React/Vite application and all frontend tests.
-- `server/` contains the imported SiX backend services, shared Python libraries, local backend clients, and Dockerfiles.
+- `server/` contains the imported Titan backend services, shared Python libraries, local backend clients, and Dockerfiles.
 
-The current repository now contains the web client plus the available SiX backend snapshot. The separate UFDR runtime server used by the web app is still missing; its expected contract is documented under `server/src/backend/services/ufdr-runtime/`.
+The current repository now contains the web client plus the available Titan backend snapshot. The separate UFDR runtime server used by the web app is still missing; its expected contract is documented under `server/src/backend/services/ufdr-runtime/`.
 
 ---
 
@@ -48,7 +48,7 @@ The current repository now contains the web client plus the available SiX backen
 
 ```
 titan/
-├── cdk-apps/                     # AWS CDK applications recovered from the SiX snapshot
+├── cdk-apps/                     # AWS CDK applications recovered from the Titan snapshot
 ├── web/
 │   ├── src/
 │   │   ├── api/                  # API client modules
@@ -72,15 +72,15 @@ titan/
 │   ├── playwright.config.ts      # Playwright config for the web app
 │   └── tsconfig.json             # TypeScript project refs for the web app
 ├── server/
-│   ├── src/backend/              # Imported SiX backend libs + services
+│   ├── src/backend/              # Imported Titan backend libs + services
 │   ├── src/clients/              # Local Python client packages used by backend services
-│   ├── src/utils/                # Utility scripts and UFDR helpers recovered from tmp/SiX
+│   ├── src/utils/                # Utility scripts and UFDR helpers recovered from tmp/Titan
 │   ├── docker/                   # Backend Dockerfiles
 │   ├── scripts/                  # Backend utility scripts
 │   ├── example.env               # Example backend environment variables
 │   └── README.md                 # Backend layout and run instructions
 ├── tools/
-│   └── six-cli/                  # Legacy SiX project-management CLI adapted to this repo layout
+│   └── titan-cli/                  # Legacy Titan project-management CLI adapted to this repo layout
 ├── package.json
 └── build.sh
 ```
@@ -155,8 +155,8 @@ npm run lint
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `VITE_SIX_API_URL` | Base URL for the Six UFDR generation API | `http://localhost:8000` |
-| `VITE_SIX_METAFINDER_URL` | Base URL for the MetaFinder backend | `http://localhost:8001` |
+| `VITE_TITAN_API_URL` | Base URL for the Titan UFDR generation API | `http://localhost:8000` |
+| `VITE_TITAN_METAFINDER_URL` | Base URL for the MetaFinder backend | `http://localhost:8001` |
 | `VITE_AI_GENERATOR_URL` | Base URL for the AI generation pipeline service | `http://localhost:8002` |
 | `VITE_UFDR_RUNTIME_URL` | Base URL for the UFDR runtime server | `http://localhost:8081` |
 
@@ -184,17 +184,17 @@ Each backend domain has its own API module built on **Axios**:
 - `ufdrRuntimeApi` — UFDR runtime server (health, files, run, cancel, summary)
 
 ### In-Repo Backend
-The `server/` directory contains the imported SiX backend snapshot with:
+The `server/` directory contains the imported Titan backend snapshot with:
 - shared libraries under `server/src/backend/lib`
 - services under `server/src/backend/services`
 - local Python client packages under `server/src/clients`
 - standalone helpers under `server/src/utils`
 
-This backend tree covers the SiX generation/API side. The UFDR runtime server consumed by `ufdrRuntimeApi` was not present in the source snapshot; the missing contract is documented in `server/src/backend/services/ufdr-runtime/README.md`.
+This backend tree covers the Titan generation/API side. The UFDR runtime server consumed by `ufdrRuntimeApi` was not present in the source snapshot; the missing contract is documented in `server/src/backend/services/ufdr-runtime/README.md`.
 
-Additional snapshot logic recovered from `tmp/SiX` now lives at the repo root:
+Additional snapshot logic recovered from `tmp/Titan` now lives at the repo root:
 - `cdk-apps/` for AWS CDK infrastructure/application stacks
-- `tools/six-cli/` for the legacy repo-management CLI
+- `tools/titan-cli/` for the legacy repo-management CLI
 
 ### Testing Strategy
 - **Unit tests** with Vitest + Testing Library (440+ tests)

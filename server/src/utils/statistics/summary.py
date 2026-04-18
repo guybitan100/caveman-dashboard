@@ -181,7 +181,7 @@ def get_audio_duration(ufdr_path: Path, file: File) -> Optional[float]:
     try:
         with ZipFile(ufdr_path) as z:
             local_path = next(item.value for item in file.metadata_file.items if item.name == 'Local Path')
-            with z.open(PurePath(local_path).as_posix()) as rz:
+            with z.open(PurePath(local_path).as_potitan()) as rz:
                 tmpfile.write(rz.read())
             tmpfile.close()
 

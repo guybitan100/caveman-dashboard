@@ -1,6 +1,6 @@
 /**
  * API client for UFDR job submission and status polling.
- * Submits jobs to the main SiX API service.
+ * Submits jobs to the main Titan API service.
  */
 
 import { JobStatus } from "@/types/job.ts";
@@ -9,9 +9,9 @@ import {
   JobStatusResponse,
   SubmittedJob,
 } from "../types/pipeline.ts";
-import { SIX_API_UFDR_BASE_URL } from "./config.ts";
+import { TITAN_API_UFDR_BASE_URL } from "./config.ts";
 
-const API_BASE_URL = SIX_API_UFDR_BASE_URL;
+const API_BASE_URL = TITAN_API_UFDR_BASE_URL;
 
 /**
  * Generate a new UUID v4.

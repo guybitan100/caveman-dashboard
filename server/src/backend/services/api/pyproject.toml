@@ -4,7 +4,7 @@ requires = [ "poetry-core>=1.0.0",]
 
 [tool.poetry]
 authors = [ "Yitzchak Siegel-Bareket <yitzchak.siegel-bareket@cellebrite.com>", "Daniel Hurwitz <daniel.hurwitz@cellebrite.com>",]
-description = "Six Manager service"
+description = "Titan Manager service"
 name = "api"
 version = "0.0.0"
 
@@ -16,7 +16,7 @@ typer = "^0.15.1"
 langcodes = { version = "^3.3.0", extras = ["data"] }
 model = {path = "../../lib/model", develop = true}
 core = {path = "../../lib/core", develop = true}
-six_db = {path = "../../lib/six_db", develop = true}
+titan_db = {path = "../../lib/titan_db", develop = true}
 metafinder_client = { path = "../../../clients/metafinder_client", develop = true }
 simulation_utils = { path = "../../lib/simulation_utils", develop = true }
 generation = { path = "../generation", develop = true,  optional = true, extras = ["genertae_entities", "random_job"]}
@@ -43,19 +43,19 @@ pythonpath = "."
 addopts = "--ignore=api_tests/integration_tests"
 
 [tool.pytest_env]
-SIX_VERSION="2.0.9"
-SIX_AWS_REGION="eu-central-1"
-SIX_DEPLOYMENT="local"
-SIX_S3_SIX_BUCKET_NAME="six-bucket-test"
-SIX_METAFINDER_S3_BUCKET_NAME="metafinder-bucket-test"
-SIX_METAFINDER_OPENSEARCH_PASSWORD="password"
-SIX_METAFINDER_OPENSEARCH_USER="user"
-SIX_METAFINDER_OPENSEARCH_CA_CERTS="path/to/cert.pem"
-SIX_JOB_EXPIRY_DAYS="30"
-SIX_ENVIRONMENT="test"
-SIX_DB_DOCUMENT_DB_USER="user"
-SIX_DB_DOCUMENT_DB_PASSWORD="password"
-SIX_DB_DOCUMENT_DB_CERT_PATH="path/to/cert.pem"
+TITAN_VERSION="2.0.9"
+TITAN_AWS_REGION="eu-central-1"
+TITAN_DEPLOYMENT="local"
+TITAN_S3_TITAN_BUCKET_NAME="titan-bucket-test"
+TITAN_METAFINDER_S3_BUCKET_NAME="metafinder-bucket-test"
+TITAN_METAFINDER_OPENSEARCH_PASSWORD="password"
+TITAN_METAFINDER_OPENSEARCH_USER="user"
+TITAN_METAFINDER_OPENSEARCH_CA_CERTS="path/to/cert.pem"
+TITAN_JOB_EXPIRY_DAYS="30"
+TITAN_ENVIRONMENT="test"
+TITAN_DB_DOCUMENT_DB_USER="user"
+TITAN_DB_DOCUMENT_DB_PASSWORD="password"
+TITAN_DB_DOCUMENT_DB_CERT_PATH="path/to/cert.pem"
 
 [tool.poetry.extras]
 dev = ["generation"]

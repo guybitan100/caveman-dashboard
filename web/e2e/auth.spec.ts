@@ -18,7 +18,7 @@ test.describe('Authentication', () => {
       await page.goto('/');
 
       // Verify login page elements
-      await expect(page.getByText(/SiX/i)).toBeVisible();
+      await expect(page.getByText(/Titan/i)).toBeVisible();
       await expect(page.getByText(/Cellebrite AI/i)).toBeVisible();
       await expect(page.getByText(/Enter your Cellebrite email/i)).toBeVisible();
       await expect(page.getByPlaceholder(/your.name@cellebrite.com/i)).toBeVisible();
@@ -124,7 +124,7 @@ test.describe('Authentication', () => {
       await expect(page.getByText(/Let's generate a UFDR/i)).toBeVisible({ timeout: 10000 });
 
       // Check localStorage
-      const userData = await page.evaluate(() => localStorage.getItem('six_user'));
+      const userData = await page.evaluate(() => localStorage.getItem('titan_user'));
       expect(userData).toBeTruthy();
 
       // Verify user data structure
@@ -175,7 +175,7 @@ test.describe('Authentication', () => {
       await expect(page.getByText(/Let's generate a UFDR/i)).toBeVisible({ timeout: 10000 });
 
       // Check that stored email is trimmed
-      const userData = await page.evaluate(() => localStorage.getItem('six_user'));
+      const userData = await page.evaluate(() => localStorage.getItem('titan_user'));
       const user = JSON.parse(userData!);
       expect(user.email).toBe(TEST_USER.email);
       expect(user.email).not.toContain('  ');

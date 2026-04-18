@@ -3,7 +3,7 @@ from collections import defaultdict
 from datetime import date
 from typing import Callable, List, Dict
 
-from core.six_logger import logger
+from core.titan_logger import logger
 
 from ai_generator.agents import (
     expand_story,

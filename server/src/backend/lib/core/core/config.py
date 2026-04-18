@@ -15,7 +15,7 @@ def get_env_dotenv_file() -> str:
     return str(Path(ROOT_PATH, ".env").resolve())
 
 
-class SixSettings(BaseSettings):
+class TitanSettings(BaseSettings):
     VERSION: str
     AWS_REGION: str
     ENVIRONMENT: str
@@ -27,7 +27,7 @@ class SixSettings(BaseSettings):
     DB_DOCUMENT_DB_PASSWORD: str
     DB_DOCUMENT_DB_CERT_PATH: str
     
-    S3_SIX_BUCKET_NAME: str
+    S3_TITAN_BUCKET_NAME: str
     S3_BUCKET_JOBS_PREFIX: str = "jobs"
     S3_BUCKET_DYNAMO_PREFIX: str = "dynamodb"
     S3_BUCKET_UPLOADS_PREFIX: str = "uploads"
@@ -42,9 +42,9 @@ class SixSettings(BaseSettings):
     METAFINDER_OPENSEARCH_USER: str = "deprecated"
     METAFINDER_OPENSEARCH_PASSWORD: str = "deprecated"
     
-    METAFINDER_S3_METADATA_BUCKET_NAME: str = "six-metafidner-metadata-bucket"
+    METAFINDER_S3_METADATA_BUCKET_NAME: str = "titan-metafidner-metadata-bucket"
     METAFINDER_S3_METADATA_BUCKET_PREFIX: str = "indexes"
-    METAFINDER_ATHENA_OUTPUT_LOCATION: str = 's3://six-metafidner-metadata-bucket/athena-output'
+    METAFINDER_ATHENA_OUTPUT_LOCATION: str = 's3://titan-metafidner-metadata-bucket/athena-output'
     METAFINDER_ATHENA_DATABASE_NAME: str = "metafinder"
 
 
@@ -91,18 +91,18 @@ class SixSettings(BaseSettings):
     
     
     model_config = SettingsConfigDict(
-        env_prefix='six_',
+        env_prefix='titan_',
         env_file=get_env_dotenv_file(),
         extra='ignore'
     )
 
     CLIENT_INFO_FILE: str
 
-    model_config = SettingsConfigDict(env_prefix="six_", env_file=get_env_dotenv_file(), extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="titan_", env_file=get_env_dotenv_file(), extra="ignore")
 
 
     @field_validator("JOB_EXPIRY_DAYS", mode="before")
     def validate_timedelta(cls, jobmanager_job_expiry_days) -> timedelta:
         return timedelta(days=int(jobmanager_job_expiry_days))
 
-SETTINGS = SixSettings()
+SETTINGS = TitanSettings()

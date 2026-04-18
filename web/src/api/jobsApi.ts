@@ -6,11 +6,11 @@ import {
 } from "../types/job.ts";
 import { TaskProgressResponse } from "../types/taskProgress.ts";
 import { GenerationJob } from "../types/cart.ts";
-import { SIX_API_UFDR_BASE_URL } from "./config.ts";
+import { TITAN_API_UFDR_BASE_URL } from "./config.ts";
 
-// Axios instance with baseURL from VITE_SIX_API_URL
+// Axios instance with baseURL from VITE_TITAN_API_URL
 export const apiClient = axios.create({
-  baseURL: SIX_API_UFDR_BASE_URL,
+  baseURL: TITAN_API_UFDR_BASE_URL,
   timeout: 30000,
 });
 

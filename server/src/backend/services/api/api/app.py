@@ -23,7 +23,7 @@ app.include_router(draft_router)
 
 @app.get("/")
 def get_index():
-    return "Hello, welcome to Six!"
+    return "Hello, welcome to Titan!"
 
 
 def run_manager_server():

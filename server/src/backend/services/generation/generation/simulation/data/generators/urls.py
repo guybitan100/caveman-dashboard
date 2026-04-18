@@ -3,7 +3,7 @@ from typing import Iterator
 
 import numpy as np
 
-from core.six_logger import logger
+from core.titan_logger import logger
 from simulation_utils.generator import DataGenerator
 from metafinder_core.queries import UrlQueryParams, MetaFinderQueryError
 from model.metafinder.queries import ArrayQuery

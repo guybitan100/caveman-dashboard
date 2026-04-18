@@ -109,7 +109,7 @@ _faker = Faker()
 ssl_ctx = ssl.create_default_context()
 ssl_ctx.check_hostname = False
 ssl_ctx.verify_mode = ssl.CERT_NONE
-_geolocator = geopy.Nominatim(user_agent='SiX', ssl_context=ssl_ctx)
+_geolocator = geopy.Nominatim(user_agent='Titan', ssl_context=ssl_ctx)
 
 
 @register_contractor(EventType.CALENDAR_ENTRY, dependencies=CALENDAR_ENTRY_DEPENDENCIES)

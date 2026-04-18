@@ -7,12 +7,12 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { Construct } from "constructs";
 import { LiteLlm } from "./litellm";
-import { SixEnvironmentVariables } from "../../types";
+import { TitanEnvironmentVariables } from "../../types";
 
 export interface AiGenerationStackProps extends cdk.StackProps {
   readonly vpc: ec2.IVpc;
   readonly subnets: ec2.ISubnet[];
-  readonly environment: SixEnvironmentVariables;
+  readonly environment: TitanEnvironmentVariables;
   readonly dockerFilePath: string;
   domainName: string;
   certificateArn: string;
@@ -20,7 +20,7 @@ export interface AiGenerationStackProps extends cdk.StackProps {
 
 export class AiGenerationStack extends cdk.NestedStack {
   public readonly baseUrl: string;
-  public readonly environmentVariables: SixEnvironmentVariables;
+  public readonly environmentVariables: TitanEnvironmentVariables;
 
   constructor(scope: Construct, id: string, props: AiGenerationStackProps) {
     super(scope, id);
@@ -37,7 +37,7 @@ export class AiGenerationStack extends cdk.NestedStack {
 
     const cluster = new ecs.Cluster(this, "AiGenerationCluster", {
       vpc,
-      clusterName: "six-ai-generation-cluster",
+      clusterName: "titan-ai-generation-cluster",
     });
 
     const litellm = new LiteLlm(this, "LiteLlm", {
@@ -74,16 +74,16 @@ export class AiGenerationStack extends cdk.NestedStack {
         file: "./docker/ai_generation.ecs.Dockerfile",
       }),
       environment: {
-        SIX_LITELLM_BASE_URL: litellm.baseUrl,
-        SIX_LITELLM_API_KEY: litellm.apiKey,
-        SIX_MEDIA_GENERATION_BATCH_SIZE: "5",
-        SIX_MEDIA_GENERATION_ENABLED: true.toString(),
-        SIX_MEDIA_GENERATION_RETRY_ATTEMPTS: "3",
-        SIX_VERSION: "1.0.0",
+        TITAN_LITELLM_BASE_URL: litellm.baseUrl,
+        TITAN_LITELLM_API_KEY: litellm.apiKey,
+        TITAN_MEDIA_GENERATION_BATCH_SIZE: "5",
+        TITAN_MEDIA_GENERATION_ENABLED: true.toString(),
+        TITAN_MEDIA_GENERATION_RETRY_ATTEMPTS: "3",
+        TITAN_VERSION: "1.0.0",
         ...this.environmentVariables,
       },
       logging: ecs.LogDrivers.awsLogs({
-        streamPrefix: "six-genai",
+        streamPrefix: "titan-genai",
         logRetention: logs.RetentionDays.ONE_MONTH,
       }),
       portMappings: [
@@ -116,7 +116,7 @@ export class AiGenerationStack extends cdk.NestedStack {
     );
 
     const loadBalancer = new elbv2.ApplicationLoadBalancer(this, "ALB", {
-      loadBalancerName: "six-ai-generation-alb",
+      loadBalancerName: "titan-ai-generation-alb",
       vpc,
       internetFacing: false,
       vpcSubnets: { subnets },
@@ -164,7 +164,7 @@ export class AiGenerationStack extends cdk.NestedStack {
 
     // Create Fargate service directly (without the pattern that creates its own listener)
     const service = new ecs.FargateService(this, "Service", {
-      serviceName: "six-ai-generation-service",
+      serviceName: "titan-ai-generation-service",
       cluster,
       taskDefinition,
       vpcSubnets: { subnets },
@@ -186,7 +186,7 @@ export class AiGenerationStack extends cdk.NestedStack {
 
     const originalBaseUrl = "http://" + loadBalancer.loadBalancerDnsName;
 
-    this.baseUrl = "https://" + domainName; // https://sixai-backend.ai.aws.cellebrite.local
+    this.baseUrl = "https://" + domainName; // https://titanai-backend.ai.aws.cellebrite.local
 
     new cdk.CfnOutput(this, "OriginalBaseUrl", {
       value: originalBaseUrl,

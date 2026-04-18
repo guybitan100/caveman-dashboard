@@ -1,6 +1,6 @@
 /**
  * TypeScript types for the Jobs panel.
- * These types mirror the backend models from model/status.py and six_db/jobs/models.py
+ * These types mirror the backend models from model/status.py and titan_db/jobs/models.py
  */
 
 import { Theme } from "@mui/material/styles";

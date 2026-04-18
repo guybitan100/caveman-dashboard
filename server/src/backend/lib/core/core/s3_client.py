@@ -7,7 +7,7 @@ from mypy_boto3_s3 import S3Client
 from botocore.exceptions import ClientError
 
 from core.config import SETTINGS
-from core.six_logger import logger
+from core.titan_logger import logger
 
 _FILE_DL_UL_EXPIRES_SECONDS = 60 * 60 * 24   # 24 hours
 
@@ -34,7 +34,7 @@ def _handle_s3_client_errors(func: Callable) -> Callable:
     return wrapper
 
 
-class SixS3Client:
+class TitanS3Client:
     def __init__(self, validate_connection: bool = False):
         if validate_connection:
             self.check_connection()
@@ -47,7 +47,7 @@ class SixS3Client:
 
     def check_connection(self):
         try:
-            self._client.head_bucket(Bucket=SETTINGS.S3_SIX_BUCKET_NAME)
+            self._client.head_bucket(Bucket=SETTINGS.S3_TITAN_BUCKET_NAME)
         except ClientError as e:
             logger.error('Connection to AWS S3 failed', error=e)
             raise S3ClientError(e)

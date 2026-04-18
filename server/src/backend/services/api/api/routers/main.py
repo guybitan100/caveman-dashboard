@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from api.models import JobsListResponse, TaskProgressResponse, GenerateEntityRequest
 from core import routes
-from core.six_logger import logger
-from core.s3_client import SixS3Client
+from core.titan_logger import logger
+from core.s3_client import TitanS3Client
 from api import operations, uploads
 from api.dispatcher import Dispatcher
 from model.device_models import DeviceModel, DEVICE_MODELS
@@ -20,17 +20,17 @@ router = APIRouter(
 
 
 @router.get(f'{routes.DOWNLOAD}{routes.JOB_ID}')
-async def download(job_id, s3_client: SixS3Client = Depends(SixS3Client)):
+async def download(job_id, s3_client: TitanS3Client = Depends(TitanS3Client)):
     return operations.download_ufdr(job_id=job_id, s3_client=s3_client)
 
 
 @router.post(f'{routes.UPLOAD_FILE}{routes.FILE_NAME}')
-def upload_file(file_name: str, s3_client: SixS3Client = Depends(SixS3Client)):
+def upload_file(file_name: str, s3_client: TitanS3Client = Depends(TitanS3Client)):
     return operations.get_upload_presigned_url(file_name=file_name, s3_client=s3_client)
 
 
 @router.get(f'{routes.UPLOAD_FILE}{routes.FILE_MD5}')
-def does_uploaded_file_exists(file_md5: str, s3_client: SixS3Client = Depends(SixS3Client)):
+def does_uploaded_file_exists(file_md5: str, s3_client: TitanS3Client = Depends(TitanS3Client)):
     return operations.does_uploaded_file_exists(file_md5=file_md5, s3_client=s3_client)
 
 

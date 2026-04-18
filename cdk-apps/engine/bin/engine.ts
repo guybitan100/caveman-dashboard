@@ -28,7 +28,7 @@ new EngineEnv(app, `${cdkApp}Env-${env}`, {
 });
 
 Tags.of(app).add("Owner", "lior.dux@cellebrite.com");
-Tags.of(app).add("Project", "Six");
+Tags.of(app).add("Project", "Titan");
 Tags.of(app).add("Team", "PlatformAI");
 Tags.of(app).add("Environment", env);
 Tags.of(app).add("Region", region);

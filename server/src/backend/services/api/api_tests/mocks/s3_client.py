@@ -1,7 +1,7 @@
-from core.s3_client import SixS3Client
+from core.s3_client import TitanS3Client
 
 
-class MockS3Client(SixS3Client):
+class MockS3Client(TitanS3Client):
 
     def __init__(self):
         pass

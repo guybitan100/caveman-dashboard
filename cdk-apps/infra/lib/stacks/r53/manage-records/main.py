@@ -14,7 +14,7 @@ def lambda_handler(event, context):
 
     assume_role_arn = os.environ.get("ROLE_ARN")
     hosted_zone_id = os.environ.get("HOSTED_ZONE_ID")
-    assume_role_session_name = "six-r53-recrods-mgmt"
+    assume_role_session_name = "titan-r53-recrods-mgmt"
 
     if not assume_role_arn or not hosted_zone_id:
         raise ValueError("Missing required environment variables")

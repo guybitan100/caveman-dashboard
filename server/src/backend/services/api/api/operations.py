@@ -1,11 +1,11 @@
 from core.config import SETTINGS
-from core.s3_client import SixS3Client
-from core.six_logger import logger
+from core.s3_client import TitanS3Client
+from core.titan_logger import logger
 from api.dispatcher import Dispatcher
 from api.uploads import verify_uploaded_files_exist_or_fail
 from model.uploads import UploadedFilePresignedUrl
-from six_db.jobs import db_job_utils, db_task_utils
-from six_db.events import db as events_db
+from titan_db.jobs import db_job_utils, db_task_utils
+from titan_db.events import db as events_db
 from model.common import JobSummary
 from model.job import GenerationJob
 from model.status import JobStatus, GenerationTaskStatus
@@ -122,12 +122,12 @@ def _delete_job(job_id: str) -> None:
     db_job_utils.delete_job(job_id=job_id)
 
 
-def download_ufdr(job_id: str, s3_client: SixS3Client) -> dict:
+def download_ufdr(job_id: str, s3_client: TitanS3Client) -> dict:
     logger.info(f'Request to download UFDR for job', job_id=job_id)
     job = get_job(job_id=job_id)
     ufdr_path = f'{SETTINGS.S3_BUCKET_JOBS_PREFIX}/{job_id}/{job.name}.ufdr'
-    presigned_url = s3_client.get_download_presigned_url(bucket_name=SETTINGS.S3_SIX_BUCKET_NAME, file_name=ufdr_path)
-    file_size = s3_client.get_file_size(bucket_name=SETTINGS.S3_SIX_BUCKET_NAME, file_name=ufdr_path)
+    presigned_url = s3_client.get_download_presigned_url(bucket_name=SETTINGS.S3_TITAN_BUCKET_NAME, file_name=ufdr_path)
+    file_size = s3_client.get_file_size(bucket_name=SETTINGS.S3_TITAN_BUCKET_NAME, file_name=ufdr_path)
     return {
         "url": presigned_url,
         "file_size": file_size,
@@ -139,12 +139,12 @@ def _construct_uploaded_file_path(file_name: str) -> str:
     return f'{SETTINGS.S3_BUCKET_UPLOADS_PREFIX}/{file_name}'
 
 
-def does_uploaded_file_exists(file_md5: str, s3_client: SixS3Client) -> bool:
+def does_uploaded_file_exists(file_md5: str, s3_client: TitanS3Client) -> bool:
     prefix = _construct_uploaded_file_path(file_name=file_md5)
-    return s3_client.does_prefix_exist(prefix=prefix, bucket_name=SETTINGS.S3_SIX_BUCKET_NAME)
+    return s3_client.does_prefix_exist(prefix=prefix, bucket_name=SETTINGS.S3_TITAN_BUCKET_NAME)
 
 
-def get_upload_presigned_url(file_name: str, s3_client: SixS3Client) -> UploadedFilePresignedUrl:
+def get_upload_presigned_url(file_name: str, s3_client: TitanS3Client) -> UploadedFilePresignedUrl:
     file_name = _construct_uploaded_file_path(file_name=file_name)
-    result = s3_client.get_upload_presigned_url(file_name=file_name, bucket_name=SETTINGS.S3_SIX_BUCKET_NAME)
+    result = s3_client.get_upload_presigned_url(file_name=file_name, bucket_name=SETTINGS.S3_TITAN_BUCKET_NAME)
     return result

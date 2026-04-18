@@ -7,7 +7,7 @@ import aioboto3
 from types_aiobotocore_lambda import LambdaClient
 
 from core.config import SETTINGS
-from core.six_logger import logger
+from core.titan_logger import logger
 from simulation_utils.generator import DataGenerator
 from generation.utils import invoke_function, LambdaException
 

@@ -49,7 +49,7 @@ class TestTaskGenerationHub(unittest.TestCase):
         assert len(filtered_calls) == 1
 
     @patch('threading.Lock')
-    @patch('six_db.events.db.read_events')
+    @patch('titan_db.events.db.read_events')
     def test_get_task_events(self, mock_db, mock_lock):
         # Set up the mock db object to return a list of events when read_events is called
         mock_db.return_value = [

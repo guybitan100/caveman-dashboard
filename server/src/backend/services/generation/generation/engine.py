@@ -1,12 +1,12 @@
 from core.config import SETTINGS
-from core.s3_client import SixS3Client
-from core.six_logger import logger
+from core.s3_client import TitanS3Client
+from core.titan_logger import logger
 from model.tasks import EventTask
-from model.phase import SixPhase
+from model.phase import TitanPhase
 from model.types import EventType, DeviceInfo
 from model.job import GenerationJob
-from six_db.events import db
-from generation.utils import six_phase
+from titan_db.events import db
+from generation.utils import titan_phase
 from generation import social_db
 from generation.simulation.social import initialize_social_context
 from generation.simulation.hub import TaskGenerationHub
@@ -14,7 +14,7 @@ from generation.stories import publisher
 from generation import foreman
 
 
-@six_phase(phase=SixPhase.Initialization)
+@titan_phase(phase=TitanPhase.Initialization)
 def initialize(job: GenerationJob):
     db.initialize_job_collection(job_id=job.job_id)
 
@@ -30,7 +30,7 @@ def initialize(job: GenerationJob):
     social_db.write_social_context(job_id=job.job_id, social_context=context)
 
 
-@six_phase(phase=SixPhase.Generation)
+@titan_phase(phase=TitanPhase.Generation)
 def generate(job: GenerationJob):
     if job.stories.nodes:
         logger.info("Generating stories...", job_id=job.job_id)
@@ -50,12 +50,12 @@ def generate(job: GenerationJob):
     logger.info("Generated events", job_id=job.job_id)
 
 
-@six_phase(phase=SixPhase.Finalization)
+@titan_phase(phase=TitanPhase.Finalization)
 def finalize(job: GenerationJob) -> int:
     logger.info('Deleting generated data from DB', job_id=job.job_id)
     ufdr_path = f'{SETTINGS.S3_BUCKET_JOBS_PREFIX}/{job.job_id}/{job.name}.ufdr'
-    s3_client = SixS3Client()
-    extraction_size = s3_client.get_file_size(bucket_name=SETTINGS.S3_SIX_BUCKET_NAME, file_name=ufdr_path)
+    s3_client = TitanS3Client()
+    extraction_size = s3_client.get_file_size(bucket_name=SETTINGS.S3_TITAN_BUCKET_NAME, file_name=ufdr_path)
     db.delete_job(job_id=job.job_id)
     logger.info(f'Deleted generated data from DB ({extraction_size=})', job_id=job.job_id)
     return extraction_size

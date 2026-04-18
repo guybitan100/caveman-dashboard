@@ -1,5 +1,5 @@
 /**
- * User object structure for SiX authentication
+ * User object structure for Titan authentication
  */
 export interface User {
   email: string;
@@ -10,4 +10,4 @@ export interface User {
 /**
  * Storage key for user data in localStorage
  */
-export const USER_STORAGE_KEY = "six_user";
+export const USER_STORAGE_KEY = "titan_user";

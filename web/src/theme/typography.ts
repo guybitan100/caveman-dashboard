@@ -1,7 +1,7 @@
 // =============================================================================
-// SiX TYPOGRAPHY
+// Titan TYPOGRAPHY
 // =============================================================================
-// Typography configuration for the SiX application.
+// Typography configuration for the Titan application.
 // =============================================================================
 
 import { TypographyOptions } from "@mui/material/styles/createTypography";

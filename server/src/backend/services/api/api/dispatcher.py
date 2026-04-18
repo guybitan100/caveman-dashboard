@@ -7,7 +7,7 @@ from mypy_boto3_lambda import LambdaClient
 from mypy_boto3_ecs import ECSClient
 
 from core.config import SETTINGS
-from core.six_logger import logger
+from core.titan_logger import logger
 
 lambda_client: LambdaClient = boto3.client('lambda', region_name=SETTINGS.AWS_REGION)
 ecs_client: ECSClient = boto3.client('ecs', region_name=SETTINGS.AWS_REGION)

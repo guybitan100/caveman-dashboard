@@ -2,7 +2,7 @@ infra:
   vpcId: &vpcId vpc-095bbaa0f382b3d0e
   subnetCidrRegex: &subnetCidrRegex ^10\.160\.125\.\d+/\d+$
   securityGroupName: OfficeToAWS
-  ssmOutputsParameterName: &ssmOutputsParameterName /six/infra/outputs
+  ssmOutputsParameterName: &ssmOutputsParameterName /titan/infra/outputs
 
   # r53 Stack
   r53RoleArn: &r53RoleArn arn:aws:iam::896328128646:role/role-rnd-platform-ai-route-53-private-hz-rw
@@ -12,7 +12,7 @@ infra:
   openSearchDomainName: opensearch.ai.aws.cellebrite.local
   domainCertificateArn: &domainCertificateArn arn:aws:acm:eu-central-1:339712891490:certificate/2235f2e8-5098-40d8-aae0-baadd97a78ee
   bucketName: nestedstack-opensearchs3s-opensearchsnapshotbucket
-  metafinderMetadataBucketName: &metafinderMetadataBucketName six-metafidner-metadata-bucket
+  metafinderMetadataBucketName: &metafinderMetadataBucketName titan-metafidner-metadata-bucket
 
 ############################################################################################################
 engine:
@@ -26,9 +26,9 @@ engine:
   datadogApiKeySecretArn: arn:aws:secretsmanager:us-east-1:339712891490:secret:DdApiKeySecret-P54Cm5Mm9pkr-QPsD7C
   datadogForwarderArn: arn:aws:lambda:us-east-1:339712891490:function:DatadogIntegration-ForwarderStack-SZYP0W-Forwarder-NM3vggdOGzVq
   infraSSMParameter: *ssmOutputsParameterName
-  engineSSMParameter: &engineSSMParameter /six/engine/outputs
+  engineSSMParameter: &engineSSMParameter /titan/engine/outputs
   metafinderMetadataBucketName: *metafinderMetadataBucketName
-  domainName: sixai-backend.ai.aws.cellebrite.local
+  domainName: titanai-backend.ai.aws.cellebrite.local
   certificateArn: *domainCertificateArn
 
 ############################################################################################################

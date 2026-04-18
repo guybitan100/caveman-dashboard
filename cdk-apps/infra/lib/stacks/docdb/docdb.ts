@@ -28,7 +28,7 @@ export class docDB extends cdk.NestedStack {
       this,
       "docDbMasterUserSecret",
       {
-        secretName: "/six/docdb/masteruser",
+        secretName: "/titan/docdb/masteruser",
         generateSecretString: {
           secretStringTemplate: JSON.stringify({
             username: "myAdmin",

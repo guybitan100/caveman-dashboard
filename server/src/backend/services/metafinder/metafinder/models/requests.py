@@ -1,7 +1,7 @@
 from pydantic import BaseModel, PositiveInt, Field, model_validator
 
 from core.config import SETTINGS
-from core.six_logger import logger
+from core.titan_logger import logger
 from model.metafinder.data_types import DataType, data_type_count_limit
 from metafinder_core.queries import QueryParamsUnion
 

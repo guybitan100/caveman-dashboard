@@ -14,7 +14,7 @@ class FileDataDownloaderTestCase(unittest.TestCase):
 
     def setUp(self):
         self.client = boto3.client('s3')
-        self.client.create_bucket(Bucket=SETTINGS.S3_SIX_BUCKET_NAME)
+        self.client.create_bucket(Bucket=SETTINGS.S3_TITAN_BUCKET_NAME)
         self.file_datas = [
             Image(
                 uid="1",

@@ -14,7 +14,7 @@ from model.types import GeneratedData, EventData, FileData, EventType, Location,
 
 class Contractor[GT: GenerationTask, GD: GeneratedData](ABC):
     """
-    Abstract class for all SiX contractors.
+    Abstract class for all Titan contractors.
 
     Attributes:
         hub:        Job hub, if not passed then the job arg is required

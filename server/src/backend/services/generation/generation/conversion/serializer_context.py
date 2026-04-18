@@ -1,7 +1,7 @@
 import itertools
 from typing import NamedTuple, Iterable
 
-from core.six_logger import logger
+from core.titan_logger import logger
 from generation.simulation.social import SocialContext
 from model.types import InstalledApplication, GeneratedData
 

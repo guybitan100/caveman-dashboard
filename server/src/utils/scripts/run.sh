@@ -1,8 +1,8 @@
 #!/bin/bash
 
-ROOT=/Users/orshemtov/Projects/six
+ROOT=/Users/orshemtov/Projects/titan
 
-cd $ROOT/Docker/six-dev || exit
+cd $ROOT/Docker/titan-dev || exit
 docker compose up
 
 cd $ROOT/manager || exit

@@ -9,11 +9,11 @@ import random
 from typing import Iterator, Iterable
 
 from core.appsync_client import AppsyncClient
-from six_db.jobs import db_task_utils
-from six_db.events import db
-from six_db.events.db import GeneratedTaskData
+from titan_db.jobs import db_task_utils
+from titan_db.events import db
+from titan_db.events.db import GeneratedTaskData
 from core.config import SETTINGS
-from core.six_logger import logger
+from core.titan_logger import logger
 from model.status import GenerationTaskStatus
 from generation.simulation.social import SocialContext
 from model.job import GenerationJob
