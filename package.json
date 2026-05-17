@@ -1,23 +1,79 @@
 {
-  "name": "titan",
-  "private": true,
-  "version": "0.0.1",
-  "workspaces": [
-    "web"
+  "name": "tokenlint-vscode",
+  "displayName": "TokenLint",
+  "description": "Compiler-style prompt, AI skill, MCP, and cognitive security linter for VS Code",
+  "version": "0.2.0",
+  "publisher": "tokenlint",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Linters", "Programming Languages", "Other"],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:tokenlint.scanCurrentFile",
+    "onCommand:tokenlint.scanWorkspace",
+    "onCommand:tokenlint.generateReport",
+    "onCommand:tokenlint.showIR"
   ],
+  "main": "./out/extension/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "tokenlint.scanCurrentFile",
+        "title": "TokenLint: Scan Current File"
+      },
+      {
+        "command": "tokenlint.scanWorkspace",
+        "title": "TokenLint: Scan Workspace"
+      },
+      {
+        "command": "tokenlint.generateReport",
+        "title": "TokenLint: Generate Report"
+      },
+      {
+        "command": "tokenlint.showIR",
+        "title": "TokenLint: Show IR"
+      }
+    ],
+    "configuration": {
+      "title": "TokenLint",
+      "properties": {
+        "tokenlint.maxPromptTokens": {
+          "type": "number",
+          "default": 4000,
+          "description": "Token threshold for large prompt warning"
+        },
+        "tokenlint.criticalPromptTokens": {
+          "type": "number",
+          "default": 8000,
+          "description": "Token threshold for critical prompt warning"
+        },
+        "tokenlint.maxTopK": {
+          "type": "number",
+          "default": 10,
+          "description": "Retrieval top_k threshold"
+        },
+        "tokenlint.enableSecurityScanner": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable AI skill and prompt security scanner"
+        }
+      }
+    }
+  },
   "scripts": {
-    "dev": "npm run dev -w web",
-    "build": "npm run build -w web",
-    "lint": "npm run lint -w web",
-    "preview": "npm run preview -w web",
-    "server:start": "bash server/scripts/start-dev.sh",
-    "server:stop": "bash server/scripts/stop-dev.sh",
-    "test": "npm test -w web",
-    "test:ui": "npm run test:ui -w web",
-    "test:run": "npm run test:run -w web",
-    "test:coverage": "npm run test:coverage -w web",
-    "test:e2e": "npm run test:e2e -w web",
-    "test:e2e:ui": "npm run test:e2e:ui -w web",
-    "test:e2e:debug": "npm run test:e2e:debug -w web"
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "gpt-tokenizer": "^2.1.0",
+    "yaml": "^2.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.4.0",
+    "@vscode/vsce": "^2.15.0"
   }
 }
