@@ -105,7 +105,8 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "vsce package"
+    "package": "vsce package",
+    "release:local": "node ./scripts/release-local-extension.mjs"
   },
   "dependencies": {
     "gpt-tokenizer": "^2.1.0",
