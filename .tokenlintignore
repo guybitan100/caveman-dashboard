@@ -1,7 +1,10 @@
 # TokenLint self-hosting exclusions for this repository
 .github/**
+package-lock.json
+package.json
 README.md
 src/core/**
 src/extension/**
 src/reporting/**
 src/test-fixtures/**
+tsconfig.json
