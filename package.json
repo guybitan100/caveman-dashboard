@@ -7,13 +7,13 @@
   "engines": {
     "vscode": "^1.90.0"
   },
-  "categories": ["Linters", "Programming Languages", "Other"],
+  "categories": [
+    "Linters",
+    "Programming Languages",
+    "Other"
+  ],
   "activationEvents": [
-    "onStartupFinished",
-    "onCommand:tokenlint.scanCurrentFile",
-    "onCommand:tokenlint.scanWorkspace",
-    "onCommand:tokenlint.generateReport",
-    "onCommand:tokenlint.showIR"
+    "onStartupFinished"
   ],
   "main": "./out/extension/extension.js",
   "contributes": {
