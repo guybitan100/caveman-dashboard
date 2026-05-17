@@ -114,6 +114,37 @@ src/
 - Source locations are 0-indexed (both lines and columns).
 - Token counts use `gpt-tokenizer.encode()` — never estimate by word count.
 
+## Review Process
+
+When reviewing code, analyze the following in order:
+
+1. **Duplicate Code Detection**
+   - Scan for similar code patterns within the changed files
+   - Compare against existing utilities in `factory.ts`, `normalizer.ts`, `vscodeMapping.ts`
+   - Identify opportunities for code reuse across passes and providers
+
+2. **Complexity Analysis**
+   - Flag functions longer than 50 lines or nesting deeper than 3 levels
+   - Check file size — consider splitting files exceeding 200 lines
+   - Identify deeply nested conditionals that could be flattened with early returns
+
+3. **Type Safety**
+   - Verify strict TypeScript usage — no `any` types without justification
+   - Check for proper null/undefined handling
+   - Verify interface definitions and discriminated union patterns
+
+4. **Performance Considerations**
+   - Unnecessary repeated analysis on unchanged documents (check diagnostic caching)
+   - Missing or stale cache invalidation in the diagnostic provider
+   - Inefficient IR traversal (e.g., scanning all nodes when only specific types are needed)
+   - Expensive regex patterns evaluated on every line when they could be precompiled
+   - Large file handling — ensure analysis stays responsive on files with thousands of lines
+
+5. **Security Pattern Validation**
+   - Regex patterns bounded to prevent ReDoS
+   - Detection patterns cover both positive (true threat) and negative (false positive) cases
+   - No hardcoded secrets or credentials
+
 ## Review Checklist
 
 When reviewing, verify each of the following:
@@ -131,6 +162,12 @@ When reviewing, verify each of the following:
 11. **TypeScript style** — `camelCase` for variables/functions, `PascalCase` for types/interfaces, no unused imports
 12. **Complexity** — functions >50 lines or nesting >3 levels flagged for splitting
 13. **Regex safety** — no unbounded quantifiers that could cause catastrophic backtracking
+14. **Performance** — no repeated analysis on unchanged content, efficient IR traversal, precompiled regex where possible
+15. **File size** — files exceeding 200 lines flagged for splitting
+
+## Project-Specific Guidelines
+
+Always refer to the project's instructions files at `.github/instructions/` for any specific coding standards, architectural patterns, or other guidelines that must be followed in this codebase. These project-specific rules take precedence over general best practices.
 
 ## Scope of Work
 
@@ -202,13 +239,13 @@ After completing the review and producing the report:
 
 You MUST output your review as a structured markdown report.
 
-Use the severity levels from code-role:
+Use the severity levels:
 
-- 🔴 **CRITICAL** — bugs, security risks, breaking changes, skip usage, swallowed errors, major operational issues
+- 🔴 **CRITICAL** — bugs, security risks, breaking changes, swallowed errors, major operational issues
 - 🟡 **ARCHITECTURE / DESIGN** — structural, modularity, or maintainability issues
 - 🔵 **MICRO-OPTIMIZATIONS** — readability, ergonomics, or minor efficiency wins
 
-For every finding: provide a brief explanation, a repo-aligned concrete fix when useful, and call out missing tests, observability gaps, and operational risks. Prefer minimal visual drift and minimal behavioral disruption.
+For every finding: provide a brief explanation, a repo-aligned concrete fix when useful, and call out missing tests, security gaps, and performance risks. Prefer minimal visual drift and minimal behavioral disruption.
 
 ```markdown
 # Code Review Report
@@ -225,21 +262,21 @@ For every finding: provide a brief explanation, a repo-aligned concrete fix when
 
 ### 🔴 CRITICAL: [Title]
 
-- **File:** `path/to/file.py`
+- **File:** `path/to/file.ts`
 - **Line(s):** X–Y
 - **Issue:** [Explanation]
 - **Fix:** [Concrete repo-aligned recommendation]
 
 ### 🟡 ARCHITECTURE / DESIGN: [Title]
 
-- **File:** `path/to/file.py`
+- **File:** `path/to/file.ts`
 - **Line(s):** X–Y
 - **Issue:** [Explanation]
 - **Fix:** [Recommendation]
 
 ### 🔵 MICRO-OPTIMIZATIONS: [Title]
 
-- **File:** `path/to/file.py`
+- **File:** `path/to/file.ts`
 - **Issue:** [Explanation]
 - **Fix:** [Recommendation]
 
@@ -251,31 +288,29 @@ For every finding: provide a brief explanation, a repo-aligned concrete fix when
 
 ### Reuse Opportunities
 
-[Existing utilities in `_common/`, `helpers.py`, or `conftest.py` that should be used instead]
+[Existing utilities in `factory.ts`, `normalizer.ts`, or `vscodeMapping.ts` that should be used instead]
 
 ## Metrics
 
-| Metric                  | Value | Status               |
-| ----------------------- | ----- | -------------------- |
-| Files Reviewed          | X     | -                    |
-| 🔴 Critical             | X     | [OK/NEEDS ATTENTION] |
-| 🟡 Architecture/Design  | X     | -                    |
-| 🔵 Micro-optimizations  | X     | -                    |
-| Skip usage detected     | X     | [OK/DEFECT]          |
-| DRY violations          | X     | [OK/NEEDS ATTENTION] |
+| Metric                 | Value | Status               |
+|------------------------|-------|----------------------|
+| Files Reviewed         | X     | -                    |
+| 🔴 Critical            | X     | [OK/NEEDS ATTENTION] |
+| 🟡 Architecture/Design | X     | -                    |
+| 🔵 Micro-optimizations | X     | -                    |
+| DRY Violations         | X     | [OK/NEEDS ATTENTION] |
 
 ## Checklist
 
-- [ ] No `pytest.skip` / `@pytest.mark.skip` / `skipif` / `skip_if_*` usage
-- [ ] No bare `except:` or swallowed exceptions
+- [ ] No `any` types (use `unknown` + type guards)
+- [ ] No swallowed errors (empty `catch {}` blocks)
 - [ ] No hardcoded secrets or credentials
-- [ ] No `shell=True` in subprocess calls
-- [ ] Secrets masked via `::add-mask::` before logging
-- [ ] No logic duplicating `_common/`, `helpers.py`, or `conftest.py`
-- [ ] Fixture scopes are appropriate
-- [ ] pytest markers match `pytest.ini` declarations
-- [ ] `swagger_schemas/` changes reflected in live tests
-- [ ] Type annotations present on non-trivial functions
-  - [ ] Follows black formatting conventions
-- [ ] Consistent naming (`snake_case` / `UPPER_SNAKE_CASE`)
+- [ ] Pass interface compliance (`TokenLintPass`)
+- [ ] Finding completeness (`ruleId`, `title`, `message`, `severity`, `loc`)
+- [ ] IR nodes created via factory functions only
+- [ ] No logic duplicating `factory.ts`, `normalizer.ts`, or `vscodeMapping.ts`
+- [ ] Regex patterns are ReDoS-safe
+- [ ] No unused imports or dead code
+- [ ] Consistent naming (`camelCase` / `PascalCase`)
+- [ ] Compiles cleanly under `strict: true`
 ```
