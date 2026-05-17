@@ -16,24 +16,28 @@ TokenLint v0.2.0 is a compiler-style VS Code extension that lints AI prompts, sk
 ### 2. Security Scanning (4 Passes)
 
 #### Prompt Injection Detection (`security.promptInjection`)
+
 - **Severity**: ERROR
 - **Detects**: 8 injection patterns including "ignore previous instructions", "override system prompt", "reveal hidden prompt", "disable safety", "bypass policy", "act as developer mode"
 - **Scans**: InstructionNode, UnknownNode, SkillTestNode
 - **Matching**: Case-insensitive substring
 
 #### Encoded Payload Detection (`security.encodedPayload`)
+
 - **Severity**: WARNING
 - **Detects**: Base64 payloads ≥160 chars, hex payloads ≥200 chars
 - **Patterns**: `/[A-Za-z0-9+/]{160,}={0,2}/` and `/(?:0x)?[a-fA-F0-9]{200,}/`
 - **Scans**: All node types
 
 #### External Endpoint Detection (`security.externalEndpoint`)
+
 - **Severity**: WARNING (normal URLs), ERROR (suspicious URLs)
 - **Detects**: HTTP/HTTPS URLs in prompt content
 - **Suspicious keywords**: `webhook`, `ngrok`, `pastebin`, `discord`, `telegram`, `requestbin`
 - **Provides**: URL metadata for each finding
 
 #### Unsafe Permission Combinations (`security.unsafePermissions`)
+
 - **Severity**: ERROR
 - **Detects**: 6 high-risk permission pairs:
   - `filesystem.read` + `gmail.send` (file → email exfiltration)
@@ -46,6 +50,7 @@ TokenLint v0.2.0 is a compiler-style VS Code extension that lints AI prompts, sk
 ### 3. Optimization Scanning (3 Passes)
 
 #### Duplicate Instruction Detection (`optimization.duplicateInstruction`)
+
 - **Severity**: WARNING
 - **Detects**: Semantically duplicate instructions using normalized text comparison
 - **Normalization**: Lowercased, punctuation removed, whitespace collapsed
@@ -54,11 +59,13 @@ TokenLint v0.2.0 is a compiler-style VS Code extension that lints AI prompts, sk
 - **Metadata**: `duplicateOf` node ID, `wastedTokens` count
 
 #### Prompt Size Warning (`optimization.promptSize`)
+
 - **Severity**: WARNING (>4000 tokens), ERROR (>8000 tokens)
 - **Thresholds**: Configurable via `tokenlint.maxPromptTokens` and `tokenlint.criticalPromptTokens`
 - **Token counting**: GPT-3 tokenizer via `gpt-tokenizer` package
 
 #### Oversized Example Detection (`optimization.oversizedExample`)
+
 - **Severity**: WARNING
 - **Threshold**: 500 tokens per example (hardcoded)
 - **Detects**: Few-shot examples that consume excessive context
@@ -66,11 +73,13 @@ TokenLint v0.2.0 is a compiler-style VS Code extension that lints AI prompts, sk
 ### 4. Retrieval Risk Scanning (2 Passes)
 
 #### Retrieval top_k Risk (`retrieval.topKRisk`)
+
 - **Severity**: WARNING (top_k > 10), ERROR (top_k > 20)
 - **Quick Fix**: Reduce top_k to 6 (for warning-level findings)
 - **Threshold**: Configurable via `tokenlint.maxTopK` (default: 10)
 
 #### Context Amplification Risk (`retrieval.contextAmplification`)
+
 - **Severity**: WARNING
 - **Triggers**: When estimated context amplification ≥ 8x
 - **Calculation**: `(baseTokens + (topK * 750)) / baseTokens`
@@ -79,8 +88,9 @@ TokenLint v0.2.0 is a compiler-style VS Code extension that lints AI prompts, sk
 ### 5. Skill Security Scanning (1 Pass)
 
 #### Malicious Skill Test Detection (`skills.maliciousSkillTest`)
+
 - **Severity**: ERROR
-- **Detects**: 13 suspicious behavior patterns: `download and execute`, `curl `, `wget `, `powershell`, `chmod +x`, `eval(`, `exec(`, `send all files`, `upload conversation`, `exfiltrate`, `steal`, `persist`, `autorun`
+- **Detects**: 13 suspicious behavior patterns: `download and execute`, `curl`, `wget`, `powershell`, `chmod +x`, `eval(`, `exec(`, `send all files`, `upload conversation`, `exfiltrate`, `steal`, `persist`, `autorun`
 - **Scans**: SkillTestNode, SkillNode, UnknownNode
 
 ## VS Code Extension Features
