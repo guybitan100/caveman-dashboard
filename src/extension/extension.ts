@@ -11,6 +11,7 @@ import { scanWorkspace } from './commands/scanWorkspace';
 import { generateReport } from './commands/generateReport';
 import { showIR } from './commands/showIR';
 import { applyAllSafeFixes } from './commands/applyAllSafeFixes';
+import { scanOrFix } from './commands/scanOrFix';
 
 export function activate(context: vscode.ExtensionContext) {
   const diagnostics = new TokenLintDiagnosticProvider();
@@ -47,6 +48,10 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand('tokenlint.scanWorkspace', async () => {
       await scanWorkspace(diagnostics);
+    }),
+
+    vscode.commands.registerCommand('tokenlint.scanOrFix', async () => {
+      await scanOrFix();
     }),
 
     vscode.commands.registerCommand('tokenlint.generateReport', async () => {

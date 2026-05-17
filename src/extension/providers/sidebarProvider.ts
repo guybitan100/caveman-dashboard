@@ -14,6 +14,10 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.onDidReceiveMessage(async message => {
       switch (message.command) {
+        case 'scanOrFix':
+          await vscode.commands.executeCommand('tokenlint.scanOrFix');
+          break;
+
         case 'scanCurrentFile':
           await vscode.commands.executeCommand('tokenlint.scanCurrentFile');
           break;
@@ -112,6 +116,7 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
   </div>
 
   <div class="section">Scan</div>
+  <button class="secondary" onclick="send('scanOrFix')">Scan / Fix...</button>
   <button onclick="send('scanCurrentFile')">Scan Current File</button>
   <button onclick="send('scanWorkspace')">Scan Workspace</button>
 

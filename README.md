@@ -28,6 +28,7 @@ TokenLint now adds a dedicated Activity Bar icon in VS Code.
 
 The sidebar includes:
 
+- Scan / Fix... quick action
 - Scan Current File
 - Scan Workspace
 - Generate Report
@@ -52,6 +53,7 @@ TokenLint includes a safe fix engine.
 
 ## Commands
 
+- `TokenLint: Scan / Fix...`
 - `TokenLint: Scan Current File`
 - `TokenLint: Scan Workspace`
 - `TokenLint: Generate Report`

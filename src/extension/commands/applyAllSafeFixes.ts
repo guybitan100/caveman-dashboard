@@ -2,7 +2,12 @@ import * as vscode from 'vscode';
 
 export async function applyAllSafeFixes() {
   const editor = vscode.window.activeTextEditor;
-  if (!editor) return;
+  if (!editor) {
+    vscode.window.showInformationMessage(
+      'TokenLint: Open a file in the editor to apply safe fixes.'
+    );
+    return;
+  }
 
   const document = editor.document;
   const diagnostics = vscode.languages

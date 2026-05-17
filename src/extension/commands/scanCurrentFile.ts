@@ -4,7 +4,12 @@ import { getSkipReason, shouldAnalyzeFile } from '../utils/scanFilter';
 
 export async function scanCurrentFile(provider: TokenLintDiagnosticProvider) {
   const editor = vscode.window.activeTextEditor;
-  if (!editor) return;
+  if (!editor) {
+    vscode.window.showInformationMessage(
+      'TokenLint: Open a file in the editor to scan it.'
+    );
+    return;
+  }
 
   if (!shouldAnalyzeFile(editor.document.fileName)) {
     vscode.window.showInformationMessage(

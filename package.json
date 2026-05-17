@@ -27,6 +27,10 @@
         "title": "TokenLint: Scan Workspace"
       },
       {
+        "command": "tokenlint.scanOrFix",
+        "title": "TokenLint: Scan / Fix..."
+      },
+      {
         "command": "tokenlint.generateReport",
         "title": "TokenLint: Generate Report"
       },
@@ -85,19 +89,9 @@
     "menus": {
       "view/title": [
         {
-          "command": "tokenlint.scanCurrentFile",
+          "command": "tokenlint.scanOrFix",
           "when": "view == tokenlint.sidebar",
           "group": "tokenlint@1"
-        },
-        {
-          "command": "tokenlint.scanWorkspace",
-          "when": "view == tokenlint.sidebar",
-          "group": "tokenlint@2"
-        },
-        {
-          "command": "tokenlint.applyAllSafeFixes",
-          "when": "view == tokenlint.sidebar",
-          "group": "tokenlint@3"
         }
       ]
     }

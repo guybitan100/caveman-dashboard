@@ -44,4 +44,4 @@ test-results
 **/tmp.*
 **/*.tmp
 *.vsix
-/out
+/out/
