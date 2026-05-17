@@ -6,7 +6,7 @@ TokenLint is a compiler-style cognitive security linter that treats AI prompts, 
 
 ## Compiler Architecture
 
-```
+```text
 Source File (.md/.yaml/.json/.ts/.py/.prompt)
     ↓
 Language Detector
@@ -46,14 +46,14 @@ IRNode = PromptNode | InstructionNode | PolicyNode | ExampleNode
 
 Every node extends:
 
-| Field      | Type                        | Description                          |
-|------------|-----------------------------|--------------------------------------|
-| `id`       | `string`                    | Unique identifier (e.g., `instruction_1`) |
-| `type`     | `string`                    | Discriminator field                  |
-| `raw`      | `string`                    | Original source text                 |
-| `tokens`   | `number`                    | GPT token count (via `gpt-tokenizer`) |
-| `loc`      | `SourceLocation`            | Line/column source span              |
-| `metadata` | `Record<string, unknown>?`  | Optional pass-specific data          |
+| Field      | Type                        | Description                                       |
+|------------|-----------------------------|---------------------------------------------------|
+| `id`       | `string`                    | Unique identifier (e.g., `instruction_1`)         |
+| `type`     | `string`                    | Discriminator field                               |
+| `raw`      | `string`                    | Original source text                              |
+| `tokens`   | `number`                    | GPT token count (via `gpt-tokenizer`)             |
+| `loc`      | `SourceLocation`            | Line/column source span                           |
+| `metadata` | `Record<string, unknown>?`  | Optional pass-specific data                       |
 
 ### Source Location
 
@@ -68,18 +68,18 @@ interface SourceLocation {
 
 ### Node Types
 
-| Node Type         | Key Fields                                  | Purpose                                  |
-|-------------------|---------------------------------------------|------------------------------------------|
-| **PromptNode**    | `children: IRNode[]`                        | Root container for all content           |
-| **InstructionNode** | `content`, `normalized`                   | System instructions (with normalization) |
-| **PolicyNode**    | `content`                                   | Rules, constraints, safety policies      |
-| **ExampleNode**   | `content`                                   | Few-shot examples, conversation samples  |
-| **RetrievalNode** | `topK?`, `source?`                          | RAG/vector retrieval configurations      |
-| **MemoryNode**    | `content`                                   | Conversation history, context modules    |
-| **ToolNode**      | `name`, `permissions: string[]`             | Tool definitions with capabilities       |
-| **SkillNode**     | `name`, `tools[]`, `instructions[]`, `tests[]` | AI skill definition (container)      |
-| **SkillTestNode** | `name`, `content`                           | Skill test cases/scenarios               |
-| **UnknownNode**   | `content`                                   | Unclassified content                     |
+| Node Type           | Key Fields                                        | Purpose                                  |
+|---------------------|---------------------------------------------------|------------------------------------------|
+| **PromptNode**      | `children: IRNode[]`                              | Root container for all content           |
+| **InstructionNode** | `content`, `normalized`                           | System instructions (with normalization) |
+| **PolicyNode**      | `content`                                         | Rules, constraints, safety policies      |
+| **ExampleNode**     | `content`                                         | Few-shot examples, conversation samples  |
+| **RetrievalNode**   | `topK?`, `source?`                                | RAG/vector retrieval configurations      |
+| **MemoryNode**      | `content`                                         | Conversation history, context modules    |
+| **ToolNode**        | `name`, `permissions: string[]`                   | Tool definitions with capabilities       |
+| **SkillNode**       | `name`, `tools[]`, `instructions[]`, `tests[]`    | AI skill definition (container)          |
+| **SkillTestNode**   | `name`, `content`                                 | Skill test cases/scenarios               |
+| **UnknownNode**     | `content`                                         | Unclassified content                     |
 
 ### IR Factory
 
@@ -125,7 +125,7 @@ Applied to `InstructionNode.normalized`:
 
 A line is classified as an instruction if:
 
-- Starts with: `- `, `* `, `always `, `never `, `do not `, `dont `, `you must `, `you are `
+- Starts with: `-`, `*`, `always`, `never`, `do not`, `dont`, `you must`, `you are` (each followed by a space)
 - Contains: `instruction`, `system prompt`
 - Minimum length: 8 characters
 
