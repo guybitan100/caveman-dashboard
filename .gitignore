@@ -43,3 +43,4 @@ test-results
 **/tmp
 **/tmp.*
 **/*.tmp
+*.vsix
