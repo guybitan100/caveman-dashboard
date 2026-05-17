@@ -1,4 +1,5 @@
-# TokenLint self-hosting exclusions for this repository
+# TokenLint self-hosting exclusions
+
 .github/**
 package-lock.json
 package.json

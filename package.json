@@ -2,7 +2,7 @@
   "name": "tokenlint-vscode",
   "displayName": "TokenLint",
   "description": "Compiler-style prompt, AI skill, MCP, and cognitive security linter for VS Code",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "publisher": "tokenlint",
   "engines": {
     "vscode": "^1.90.0"
@@ -79,6 +79,25 @@
           "id": "tokenlint.sidebar",
           "name": "TokenLint",
           "icon": "media/tokenlint.svg"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "tokenlint.scanCurrentFile",
+          "when": "view == tokenlint.sidebar",
+          "group": "tokenlint@1"
+        },
+        {
+          "command": "tokenlint.scanWorkspace",
+          "when": "view == tokenlint.sidebar",
+          "group": "tokenlint@2"
+        },
+        {
+          "command": "tokenlint.applyAllSafeFixes",
+          "when": "view == tokenlint.sidebar",
+          "group": "tokenlint@3"
         }
       ]
     }
