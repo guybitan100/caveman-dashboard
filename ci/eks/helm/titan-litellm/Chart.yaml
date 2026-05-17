@@ -1,5 +1,0 @@
-apiVersion: v2
-name: titan-litellm
-description: LiteLLM gateway on EKS for Titan AI generation
-version: 0.1.0
-appVersion: "1.75.8"

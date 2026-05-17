@@ -1,5 +1,0 @@
-apiVersion: v2
-name: titan-generation
-description: Titan generation job (batch) on EKS
-version: 0.1.0
-appVersion: "2.0.9"
