@@ -13,13 +13,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished",
-    "onCommand:tokenlint.scanCurrentFile",
-    "onCommand:tokenlint.scanWorkspace",
-    "onCommand:tokenlint.generateReport",
-    "onCommand:tokenlint.showIR",
-    "onCommand:tokenlint.applyAllSafeFixes",
-    "onView:tokenlint.sidebar"
+    "onStartupFinished"
   ],
   "main": "./out/extension/extension.js",
   "contributes": {
@@ -83,7 +77,8 @@
       "tokenlint": [
         {
           "id": "tokenlint.sidebar",
-          "name": "TokenLint"
+          "name": "TokenLint",
+          "icon": "media/tokenlint.svg"
         }
       ]
     }

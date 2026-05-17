@@ -1,8 +1,25 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.normalizeFileName = normalizeFileName;
+exports.isGeneratedDependencyFile = isGeneratedDependencyFile;
 exports.detectKind = detectKind;
+const generatedDependencyFiles = new Set([
+    'bun.lockb',
+    'package-lock.json',
+    'pnpm-lock.yaml',
+    'pnpm-lock.yml',
+    'yarn.lock'
+]);
+function normalizeFileName(fileName) {
+    return fileName.replace(/\\/g, '/').toLowerCase();
+}
+function isGeneratedDependencyFile(fileName) {
+    const normalized = normalizeFileName(fileName);
+    const baseName = normalized.split('/').pop() ?? normalized;
+    return generatedDependencyFiles.has(baseName);
+}
 function detectKind(fileName) {
-    const lower = fileName.toLowerCase();
+    const lower = normalizeFileName(fileName);
     if (lower.endsWith('.md'))
         return 'markdown';
     if (lower.endsWith('.prompt'))

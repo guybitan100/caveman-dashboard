@@ -35,10 +35,15 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.scanCurrentFile = scanCurrentFile;
 const vscode = __importStar(require("vscode"));
+const scanFilter_1 = require("../utils/scanFilter");
 async function scanCurrentFile(provider) {
     const editor = vscode.window.activeTextEditor;
     if (!editor)
         return;
+    if (!(0, scanFilter_1.shouldAnalyzeFile)(editor.document.fileName)) {
+        vscode.window.showInformationMessage(`TokenLint skipped ${(0, scanFilter_1.getSkipReason)(editor.document.fileName)}`);
+        return;
+    }
     const result = provider.scan(editor.document);
     vscode.window.showInformationMessage(`TokenLint: ${result.metrics.findingCount} findings, ${result.metrics.totalTokens} tokens`);
 }

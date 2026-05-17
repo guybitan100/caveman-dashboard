@@ -36,13 +36,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TokenLintDiagnosticProvider = void 0;
 const vscode = __importStar(require("vscode"));
 const engine_1 = require("../../core/engine/engine");
+const scanFilter_1 = require("../utils/scanFilter");
 const vscodeMapping_1 = require("../utils/vscodeMapping");
+const emptyResult = (0, engine_1.analyze)('', 'unknown');
 class TokenLintDiagnosticProvider {
     constructor() {
         this.cache = new Map();
         this.collection = vscode.languages.createDiagnosticCollection('tokenlint');
     }
     scan(document) {
+        if (!(0, scanFilter_1.shouldAnalyzeFile)(document.fileName)) {
+            this.collection.delete(document.uri);
+            this.cache.delete(document.uri.toString());
+            return emptyResult;
+        }
         const result = (0, engine_1.analyze)(document.getText(), document.fileName);
         const diagnostics = result.findings.map(vscodeMapping_1.toDiagnostic);
         this.collection.set(document.uri, diagnostics);

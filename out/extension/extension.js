@@ -40,6 +40,7 @@ const diagnosticProvider_1 = require("./providers/diagnosticProvider");
 const hoverProvider_1 = require("./providers/hoverProvider");
 const codeActionProvider_1 = require("./providers/codeActionProvider");
 const sidebarProvider_1 = require("./providers/sidebarProvider");
+const scanFilter_1 = require("./utils/scanFilter");
 const scanCurrentFile_1 = require("./commands/scanCurrentFile");
 const scanWorkspace_1 = require("./commands/scanWorkspace");
 const generateReport_1 = require("./commands/generateReport");
@@ -80,11 +81,12 @@ function activate(context) {
         providedCodeActionKinds: codeActionProvider_1.TokenLintCodeActionProvider.providedCodeActionKinds
     }), diagnostics, statusBar);
     vscode.workspace.onDidSaveTextDocument(document => {
-        const file = document.fileName.toLowerCase();
-        if (file.endsWith('.md') || file.endsWith('.prompt') || file.endsWith('.yaml') || file.endsWith('.yml') || file.endsWith('.json')) {
-            const result = diagnostics.scan(document);
-            statusBar.text = `TokenLint: ${result.metrics.findingCount} findings | ${result.metrics.totalTokens} tokens`;
+        if (!(0, scanFilter_1.shouldAnalyzeFile)(document.fileName)) {
+            diagnostics.scan(document);
+            return;
         }
+        const result = diagnostics.scan(document);
+        statusBar.text = `TokenLint: ${result.metrics.findingCount} findings | ${result.metrics.totalTokens} tokens`;
     });
 }
 function deactivate() { }

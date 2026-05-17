@@ -1,9 +1,17 @@
 import * as vscode from 'vscode';
 import { TokenLintDiagnosticProvider } from '../providers/diagnosticProvider';
+import { getSkipReason, shouldAnalyzeFile } from '../utils/scanFilter';
 
 export async function scanCurrentFile(provider: TokenLintDiagnosticProvider) {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return;
+
+  if (!shouldAnalyzeFile(editor.document.fileName)) {
+    vscode.window.showInformationMessage(
+      `TokenLint skipped ${getSkipReason(editor.document.fileName)}`
+    );
+    return;
+  }
 
   const result = provider.scan(editor.document);
 

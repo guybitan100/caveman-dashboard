@@ -35,16 +35,19 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.scanWorkspace = scanWorkspace;
 const vscode = __importStar(require("vscode"));
+const scanFilter_1 = require("../utils/scanFilter");
 async function scanWorkspace(provider) {
     const files = await vscode.workspace.findFiles('**/*.{md,prompt,yaml,yml,json,ts,tsx,py}', '**/node_modules/**');
+    const analyzableFiles = files.filter(file => (0, scanFilter_1.shouldAnalyzeFile)(file.fsPath));
+    const skippedFiles = files.length - analyzableFiles.length;
     let findingCount = 0;
     let tokenCount = 0;
-    for (const file of files) {
+    for (const file of analyzableFiles) {
         const document = await vscode.workspace.openTextDocument(file);
         const result = provider.scan(document);
         findingCount += result.metrics.findingCount;
         tokenCount += result.metrics.totalTokens;
     }
-    vscode.window.showInformationMessage(`TokenLint workspace scan complete: ${files.length} files, ${findingCount} findings, ${tokenCount} tokens`);
+    vscode.window.showInformationMessage(`TokenLint workspace scan complete: ${analyzableFiles.length} files, ${findingCount} findings, ${tokenCount} tokens${skippedFiles > 0 ? `, ${skippedFiles} ignored` : ''}`);
 }
 //# sourceMappingURL=scanWorkspace.js.map

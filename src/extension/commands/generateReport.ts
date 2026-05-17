@@ -1,16 +1,18 @@
 import * as vscode from 'vscode';
 import { analyze } from '../../core/engine/engine';
 import { buildMarkdownReport } from '../../reporting/markdownReport';
+import { shouldAnalyzeFile } from '../utils/scanFilter';
 
 export async function generateReport() {
   const files = await vscode.workspace.findFiles(
     '**/*.{md,prompt,yaml,yml,json,ts,tsx,py}',
     '**/node_modules/**'
   );
+  const analyzableFiles = files.filter(file => shouldAnalyzeFile(file.fsPath));
 
   const results = [];
 
-  for (const file of files) {
+  for (const file of analyzableFiles) {
     const document = await vscode.workspace.openTextDocument(file);
     results.push({
       fileName: vscode.workspace.asRelativePath(file),

@@ -4,6 +4,7 @@ import { TokenLintDiagnosticProvider } from './providers/diagnosticProvider';
 import { createHoverProvider } from './providers/hoverProvider';
 import { TokenLintCodeActionProvider } from './providers/codeActionProvider';
 import { TokenLintSidebarProvider } from './providers/sidebarProvider';
+import { shouldAnalyzeFile } from './utils/scanFilter';
 
 import { scanCurrentFile } from './commands/scanCurrentFile';
 import { scanWorkspace } from './commands/scanWorkspace';
@@ -75,11 +76,13 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   vscode.workspace.onDidSaveTextDocument(document => {
-    const file = document.fileName.toLowerCase();
-    if (file.endsWith('.md') || file.endsWith('.prompt') || file.endsWith('.yaml') || file.endsWith('.yml') || file.endsWith('.json')) {
-      const result = diagnostics.scan(document);
-      statusBar.text = `TokenLint: ${result.metrics.findingCount} findings | ${result.metrics.totalTokens} tokens`;
+    if (!shouldAnalyzeFile(document.fileName)) {
+      diagnostics.scan(document);
+      return;
     }
+
+    const result = diagnostics.scan(document);
+    statusBar.text = `TokenLint: ${result.metrics.findingCount} findings | ${result.metrics.totalTokens} tokens`;
   });
 }
 

@@ -1,0 +1,7 @@
+# TokenLint self-hosting exclusions for this repository
+.github/**
+README.md
+src/core/**
+src/extension/**
+src/reporting/**
+src/test-fixtures/**
