@@ -74,13 +74,13 @@ TokenLint aims to become the industry-standard linter for AI-generated and AI-co
 
 ### Current Architecture
 
-```
+```text
 File → Parser → IR → Sequential Passes → Findings → VS Code UI
 ```
 
 ### Target Architecture
 
-```
+```text
 File(s) → Parser(s) → IR Forest
                          ↓
                Pass Scheduler (parallel-capable)
