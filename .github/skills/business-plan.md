@@ -111,7 +111,7 @@ TokenLint provides:
 
 ## Key Metrics
 
-| Metric                  | Target (Year 1) |
+| Metric                  | Target (Year 1)  |
 |-------------------------|------------------|
 | VS Code installs        | 10,000+          |
 | GitHub stars            | 1,000+           |
@@ -140,8 +140,8 @@ TokenLint provides:
 
 ## Risk Mitigation
 
-| Risk                          | Mitigation                                    |
-|-------------------------------|-----------------------------------------------|
+| Risk                          | Mitigation                                     |
+|-------------------------------|------------------------------------------------|
 | Low initial adoption          | Free open-source tier, strong content strategy |
 | High false positive rate      | Continuous tuning, configurable thresholds     |
 | Rapid market change           | Extensible pass architecture, fast iteration   |
