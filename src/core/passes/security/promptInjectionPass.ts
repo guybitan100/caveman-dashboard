@@ -35,7 +35,11 @@ export const promptInjectionPass: TokenLintPass = {
             severity: 'error' as const,
             loc: node.loc,
             nodeId: node.id,
-            metadata: { pattern }
+            fix: {
+            title: 'Neutralize suspicious instruction',
+            replacement: node.raw.replace(new RegExp(pattern, 'i'), '[REMOVED: suspicious instruction override]')
+          },
+          metadata: { pattern }
           });
         }
       }

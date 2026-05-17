@@ -22,12 +22,41 @@ TokenLint is a compiler-style VS Code extension for prompts, AI skills, MCP work
 - Markdown report generator
 - Show IR command
 
+## Activity Bar Sidebar
+
+TokenLint now adds a dedicated Activity Bar icon in VS Code.
+
+The sidebar includes:
+
+- Scan Current File
+- Scan Workspace
+- Generate Report
+- Show IR
+- Apply All Safe Fixes
+
+## Fix Engine
+
+TokenLint includes a safe fix engine.
+
+### Safe automatic fixes
+
+- Remove exact duplicate instructions
+
+### Review-required fixes
+
+- Reduce `top_k`
+- Neutralize suspicious prompt-injection phrases
+- Comment external endpoints for review
+- Disable suspicious skill tests
+- Replace suspicious encoded payloads with a review marker
+
 ## Commands
 
 - `TokenLint: Scan Current File`
 - `TokenLint: Scan Workspace`
 - `TokenLint: Generate Report`
 - `TokenLint: Show IR`
+- `TokenLint: Apply All Safe Fixes`
 
 ## Development
 

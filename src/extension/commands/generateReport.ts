@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { analyze } from '../../core/engine/engine';
-import { shouldAnalyzeFile } from '../../core/parser/languageDetector';
 import { buildMarkdownReport } from '../../reporting/markdownReport';
 
 export async function generateReport() {
@@ -8,11 +7,10 @@ export async function generateReport() {
     '**/*.{md,prompt,yaml,yml,json,ts,tsx,py}',
     '**/node_modules/**'
   );
-  const analyzableFiles = files.filter(file => shouldAnalyzeFile(file.fsPath));
 
   const results = [];
 
-  for (const file of analyzableFiles) {
+  for (const file of files) {
     const document = await vscode.workspace.openTextDocument(file);
     results.push({
       fileName: vscode.workspace.asRelativePath(file),

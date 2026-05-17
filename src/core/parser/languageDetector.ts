@@ -7,25 +7,8 @@ export type SupportedKind =
   | 'prompt'
   | 'unknown';
 
-const generatedDependencyFiles = new Set([
-  'package-lock.json',
-  'pnpm-lock.yaml',
-  'pnpm-lock.yml'
-]);
-
-function normalizeFileName(fileName: string): string {
-  return fileName.replace(/\\/g, '/').toLowerCase();
-}
-
-export function isGeneratedDependencyFile(fileName: string): boolean {
-  const normalized = normalizeFileName(fileName);
-  const baseName = normalized.split('/').pop() ?? normalized;
-
-  return generatedDependencyFiles.has(baseName);
-}
-
 export function detectKind(fileName: string): SupportedKind {
-  const lower = normalizeFileName(fileName);
+  const lower = fileName.toLowerCase();
 
   if (lower.endsWith('.md')) return 'markdown';
   if (lower.endsWith('.prompt')) return 'prompt';
@@ -35,8 +18,4 @@ export function detectKind(fileName: string): SupportedKind {
   if (lower.endsWith('.py')) return 'python';
 
   return 'unknown';
-}
-
-export function shouldAnalyzeFile(fileName: string): boolean {
-  return !isGeneratedDependencyFile(fileName) && detectKind(fileName) !== 'unknown';
 }

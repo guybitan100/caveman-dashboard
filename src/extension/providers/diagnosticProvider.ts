@@ -1,9 +1,6 @@
 import * as vscode from 'vscode';
 import { analyze, AnalysisResult } from '../../core/engine/engine';
-import { shouldAnalyzeFile } from '../../core/parser/languageDetector';
 import { toDiagnostic } from '../utils/vscodeMapping';
-
-const EMPTY_RESULT: AnalysisResult = analyze('', 'unknown');
 
 export class TokenLintDiagnosticProvider {
   private collection: vscode.DiagnosticCollection;
@@ -14,12 +11,6 @@ export class TokenLintDiagnosticProvider {
   }
 
   scan(document: vscode.TextDocument): AnalysisResult {
-    if (!shouldAnalyzeFile(document.fileName)) {
-      this.collection.delete(document.uri);
-      this.cache.delete(document.uri.toString());
-      return EMPTY_RESULT;
-    }
-
     const result = analyze(document.getText(), document.fileName);
     const diagnostics = result.findings.map(toDiagnostic);
 

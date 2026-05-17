@@ -1,17 +1,19 @@
 import * as vscode from 'vscode';
-import { shouldAnalyzeFile } from '../core/parser/languageDetector';
 
 import { TokenLintDiagnosticProvider } from './providers/diagnosticProvider';
 import { createHoverProvider } from './providers/hoverProvider';
 import { TokenLintCodeActionProvider } from './providers/codeActionProvider';
+import { TokenLintSidebarProvider } from './providers/sidebarProvider';
 
 import { scanCurrentFile } from './commands/scanCurrentFile';
 import { scanWorkspace } from './commands/scanWorkspace';
 import { generateReport } from './commands/generateReport';
 import { showIR } from './commands/showIR';
+import { applyAllSafeFixes } from './commands/applyAllSafeFixes';
 
 export function activate(context: vscode.ExtensionContext) {
   const diagnostics = new TokenLintDiagnosticProvider();
+  const sidebarProvider = new TokenLintSidebarProvider(context.extensionUri);
 
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
   statusBar.text = 'TokenLint: Ready';
@@ -27,6 +29,10 @@ export function activate(context: vscode.ExtensionContext) {
   ];
 
   context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      TokenLintSidebarProvider.viewType,
+      sidebarProvider
+    ),
     vscode.commands.registerCommand('tokenlint.scanCurrentFile', async () => {
       await scanCurrentFile(diagnostics);
       const editor = vscode.window.activeTextEditor;
@@ -50,6 +56,10 @@ export function activate(context: vscode.ExtensionContext) {
       await showIR();
     }),
 
+    vscode.commands.registerCommand('tokenlint.applyAllSafeFixes', async () => {
+      await applyAllSafeFixes();
+    }),
+
     vscode.languages.registerHoverProvider(supportedSelectors, createHoverProvider()),
 
     vscode.languages.registerCodeActionsProvider(
@@ -65,13 +75,11 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   vscode.workspace.onDidSaveTextDocument(document => {
-    if (!shouldAnalyzeFile(document.fileName)) {
-      diagnostics.scan(document);
-      return;
+    const file = document.fileName.toLowerCase();
+    if (file.endsWith('.md') || file.endsWith('.prompt') || file.endsWith('.yaml') || file.endsWith('.yml') || file.endsWith('.json')) {
+      const result = diagnostics.scan(document);
+      statusBar.text = `TokenLint: ${result.metrics.findingCount} findings | ${result.metrics.totalTokens} tokens`;
     }
-
-    const result = diagnostics.scan(document);
-    statusBar.text = `TokenLint: ${result.metrics.findingCount} findings | ${result.metrics.totalTokens} tokens`;
   });
 }
 
