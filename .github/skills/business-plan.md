@@ -114,11 +114,11 @@ TokenLint provides:
 | Metric                  | Target (Year 1) |
 |-------------------------|------------------|
 | VS Code installs        | 10,000+          |
-| GitHub stars             | 1,000+           |
-| Enterprise pilots        | 10+              |
-| Detection rules          | 30+              |
-| Community contributions  | 20+ PRs          |
-| Monthly active users     | 2,000+           |
+| GitHub stars            | 1,000+           |
+| Enterprise pilots       | 10+              |
+| Detection rules         | 30+              |
+| Community contributions | 20+ PRs          |
+| Monthly active users    | 2,000+           |
 
 ## Technology Moat
 
@@ -130,13 +130,13 @@ TokenLint provides:
 
 ## Team Requirements
 
-| Role                       | Priority | Purpose                           |
-|----------------------------|----------|-----------------------------------|
-| Core compiler engineer     | High     | Parser/IR/Pass pipeline expansion |
-| Security researcher        | High     | New detection patterns and rules  |
-| VS Code extension developer| Medium   | Enhanced IDE features             |
-| DevRel / Developer advocate| Medium   | Community and adoption            |
-| Enterprise sales           | Later    | Enterprise tier GTM               |
+| Role                        | Priority | Purpose                           |
+|-----------------------------|----------|-----------------------------------|
+| Core compiler engineer      | High     | Parser/IR/Pass pipeline expansion |
+| Security researcher         | High     | New detection patterns and rules  |
+| VS Code extension developer | Medium   | Enhanced IDE features             |
+| DevRel / Developer advocate | Medium   | Community and adoption            |
+| Enterprise sales            | Later    | Enterprise tier GTM               |
 
 ## Risk Mitigation
 
