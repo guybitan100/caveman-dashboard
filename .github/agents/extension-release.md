@@ -1,5 +1,5 @@
 ---
-name: "Local Extension Release"
+name: "Extension Release"
 description: "Use when you need to compile and package this VS Code extension, bump the version if there are code changes, remove the currently installed extension, and install the fresh VSIX locally. Trigger phrases: release extension, rebuild VSIX, reinstall extension, bump version, install latest build, לקמפל אקסטנשן, לייצר גרסה חדשה, להסיר אקסטנשן קיים, להתקין VSIX חדש."
 tools: [read, search, execute]
 user-invocable: true
