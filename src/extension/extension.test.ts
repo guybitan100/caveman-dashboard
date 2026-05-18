@@ -187,6 +187,8 @@ describe('extension activation', () => {
     expect(extensionMocks.registerHoverProvider).toHaveBeenCalledWith(
       expect.arrayContaining([
         { scheme: 'file', language: 'markdown' },
+        { scheme: 'file', language: 'typescript' },
+        { scheme: 'file', language: 'python' },
         { scheme: 'file', pattern: '**/*.prompt' }
       ]),
       'hover-provider'

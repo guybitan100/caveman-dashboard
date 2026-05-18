@@ -14,7 +14,7 @@ const commandMocks = vi.hoisted(() => {
 
   return {
     state,
-    workspaceScanGlob: '**/*.{md,prompt,yaml,yml,json}',
+    workspaceScanGlob: '**/*.{md,prompt,yaml,yml,json,ts,tsx,py}',
     showInformationMessage: vi.fn(),
     showQuickPick: vi.fn(),
     showTextDocument: vi.fn(),

@@ -284,8 +284,8 @@ describe('applyAllSafeFixes', () => {
 
   it('skips unsupported files before scanning for fixes', async () => {
     const document: MockDocument = {
-      fileName: '/workspace/rewrite.py',
-      uri: 'file:///rewrite.py',
+      fileName: '/workspace/rewrite.txt',
+      uri: 'file:///rewrite.txt',
       lineAt: vi.fn(),
       save: vi.fn().mockResolvedValue(undefined)
     };

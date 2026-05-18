@@ -18,12 +18,19 @@ type CachedIgnoreFile = {
   patterns: IgnorePattern[];
 };
 
-type ScannableKind = 'markdown' | 'prompt' | 'yaml' | 'json';
+type ScannableKind = 'markdown' | 'prompt' | 'yaml' | 'json' | 'typescript' | 'python';
 
 const ignoreFileName = '.tokenlintignore';
-const workspaceScanGlob = '**/*.{md,prompt,yaml,yml,json}';
+const workspaceScanGlob = '**/*.{md,prompt,yaml,yml,json,ts,tsx,py}';
 const ignoreFileCache = new Map<string, CachedIgnoreFile>();
-const scannableKinds = new Set<ScannableKind>(['markdown', 'prompt', 'yaml', 'json']);
+const scannableKinds = new Set<ScannableKind>([
+  'markdown',
+  'prompt',
+  'yaml',
+  'json',
+  'typescript',
+  'python'
+]);
 
 const relevantBaseNameRegex = /(?:^|[._-])(agent|agents|skill|skills|mcp|prompt|prompts|instruction|instructions)(?:[._-]|$)/i;
 const relevantPathRegex =

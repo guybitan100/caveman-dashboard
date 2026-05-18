@@ -56,8 +56,10 @@ describe('scanFilter', () => {
     expect(getSkipReason('/workspace/file.exe')).toBe('unsupported file type');
 
     scanFilterMocks.detectKind.mockReturnValue('python');
-    expect(shouldAnalyzeFile('/workspace/mcp_server.py')).toBe(false);
-    expect(getSkipReason('/workspace/mcp_server.py')).toBe('unsupported file type');
+  expect(shouldAnalyzeFile('/workspace/mcp_server.py')).toBe(true);
+
+  scanFilterMocks.detectKind.mockReturnValue('typescript');
+  expect(shouldAnalyzeFile('/workspace/agents/release-agent.ts')).toBe(true);
 
     scanFilterMocks.detectKind.mockReturnValue('markdown');
     expect(shouldAnalyzeFile('/workspace/README.md')).toBe(false);
@@ -148,6 +150,10 @@ describe('scanFilter', () => {
     expect(shouldAnalyzeFile('/workspace/.github/agents/release.md')).toBe(true);
     expect(shouldAnalyzeFile('/workspace/docs/overview.md')).toBe(false);
 
-    expect(workspaceScanGlob).toBe('**/*.{md,prompt,yaml,yml,json}');
+    scanFilterMocks.detectKind.mockReturnValue('typescript');
+    expect(shouldAnalyzeFile('/workspace/mcp/server.ts')).toBe(true);
+    expect(shouldAnalyzeFile('/workspace/src/index.ts')).toBe(false);
+
+    expect(workspaceScanGlob).toBe('**/*.{md,prompt,yaml,yml,json,ts,tsx,py}');
   });
 });
