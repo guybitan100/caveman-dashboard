@@ -18,9 +18,12 @@ type CachedIgnoreFile = {
   patterns: IgnorePattern[];
 };
 
+type ScannableKind = 'markdown' | 'prompt' | 'yaml' | 'json';
+
 const ignoreFileName = '.tokenlintignore';
 const workspaceScanGlob = '**/*.{md,prompt,yaml,yml,json}';
 const ignoreFileCache = new Map<string, CachedIgnoreFile>();
+const scannableKinds = new Set<ScannableKind>(['markdown', 'prompt', 'yaml', 'json']);
 
 const relevantBaseNameRegex = /(?:^|[._-])(agent|agents|skill|skills|mcp|prompt|prompts|instruction|instructions)(?:[._-]|$)/i;
 const relevantPathRegex =
@@ -147,6 +150,10 @@ function isRelevantArtifact(fileName: string): boolean {
   return relevantPathRegex.test(normalized);
 }
 
+function isScannableKind(fileName: string): boolean {
+  return scannableKinds.has(detectKind(fileName) as ScannableKind);
+}
+
 function isIgnoredByWorkspace(fileName: string): boolean {
   const workspaceFolder = getWorkspaceFolder(fileName);
 
@@ -176,7 +183,7 @@ export function shouldAnalyzeFile(fileName: string): boolean {
     return false;
   }
 
-  if (detectKind(fileName) === 'unknown') {
+  if (!isScannableKind(fileName)) {
     return false;
   }
 
@@ -192,7 +199,7 @@ export function getSkipReason(fileName: string): string {
     return 'generated dependency lockfile';
   }
 
-  if (detectKind(fileName) === 'unknown') {
+  if (!isScannableKind(fileName)) {
     return 'unsupported file type';
   }
 

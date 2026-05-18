@@ -14,6 +14,7 @@ const commandMocks = vi.hoisted(() => {
 
   return {
     state,
+    workspaceScanGlob: '**/*.{md,prompt,yaml,yml,json}',
     showInformationMessage: vi.fn(),
     showQuickPick: vi.fn(),
     showTextDocument: vi.fn(),
@@ -52,6 +53,7 @@ vi.mock('vscode', () => ({
 }));
 
 vi.mock('../utils/scanFilter', () => ({
+  workspaceScanGlob: commandMocks.workspaceScanGlob,
   shouldAnalyzeFile: commandMocks.shouldAnalyzeFile,
   getSkipReason: commandMocks.getSkipReason
 }));
@@ -143,6 +145,10 @@ describe('extension commands', () => {
     commandMocks.shouldAnalyzeFile.mockImplementation((fileName: string) => fileName !== secondFile.fsPath);
 
     await scanWorkspace(firstProvider as never);
+    expect(commandMocks.findFiles).toHaveBeenLastCalledWith(
+      commandMocks.workspaceScanGlob,
+      '**/node_modules/**'
+    );
     expect(commandMocks.showInformationMessage).toHaveBeenLastCalledWith(
       'TokenLint workspace scan complete: 1 files, 1 findings, 10 tokens, 1 ignored'
     );
@@ -172,6 +178,10 @@ describe('extension commands', () => {
     await generateReport();
 
     expect(commandMocks.analyze).toHaveBeenCalledWith('first', firstFile.fsPath);
+    expect(commandMocks.findFiles).toHaveBeenLastCalledWith(
+      commandMocks.workspaceScanGlob,
+      '**/node_modules/**'
+    );
     expect(commandMocks.buildMarkdownReport).toHaveBeenCalledWith([
       {
         fileName: firstFile.fsPath,

@@ -55,6 +55,10 @@ describe('scanFilter', () => {
     expect(shouldAnalyzeFile('/workspace/file.exe')).toBe(false);
     expect(getSkipReason('/workspace/file.exe')).toBe('unsupported file type');
 
+    scanFilterMocks.detectKind.mockReturnValue('python');
+    expect(shouldAnalyzeFile('/workspace/mcp_server.py')).toBe(false);
+    expect(getSkipReason('/workspace/mcp_server.py')).toBe('unsupported file type');
+
     scanFilterMocks.detectKind.mockReturnValue('markdown');
     expect(shouldAnalyzeFile('/workspace/README.md')).toBe(false);
     expect(getSkipReason('/workspace/README.md')).toBe(
