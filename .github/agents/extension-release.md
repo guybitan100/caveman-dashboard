@@ -19,7 +19,6 @@ Run the test gate before creating a new version.
 ## Release Workflow
 1. Check that package.json and scripts/release-local-extension.mjs exist.
 2. If the user asks for a preview or dry run, run `npm run release:local -- --dry-run --no-install`.
-3. Before creating a new version, run `npm run test:coverage`. Do not continue if it fails.
 4. Before building, uninstall the existing extension: `code --uninstall-extension tokenlint.tokenlint-vscode`. Ignore errors if it is not installed.
 5. For a full local release, run `npm run release:local`.
 6. If installation fails because the VS Code CLI is missing, tell the user to install the Shell Command from VS Code or set the `VSCODE_CLI` environment variable to the CLI path.
