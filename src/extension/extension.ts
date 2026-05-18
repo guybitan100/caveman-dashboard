@@ -25,8 +25,6 @@ export function activate(context: vscode.ExtensionContext) {
     { scheme: 'file', language: 'markdown' },
     { scheme: 'file', language: 'yaml' },
     { scheme: 'file', language: 'json' },
-    { scheme: 'file', language: 'typescript' },
-    { scheme: 'file', language: 'python' },
     { scheme: 'file', pattern: '**/*.prompt' }
   ];
 

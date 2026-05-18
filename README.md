@@ -64,9 +64,10 @@ TokenLint includes a safe fix engine.
 
 ## Scan Scope
 
-TokenLint analyzes supported source files and skips known generated or ignored content.
+TokenLint analyzes prompt artifacts and skips known generated or ignored content.
 
-- Supported file types: `.md`, `.prompt`, `.yaml`, `.yml`, `.json`, `.ts`, `.tsx`, `.py`
+- Workspace scans consider `.md`, `.prompt`, `.yaml`, `.yml`, and `.json`
+- Files must also look like skill, agent, prompt, or MCP artifacts based on their path or file name, for example `AGENTS.md`, `copilot-instructions.md`, `.github/agents/**`, `skills/**`, or `mcp.json`
 - Generated dependency lockfiles are skipped automatically: `bun.lockb`, `package-lock.json`, `pnpm-lock.yaml`, `pnpm-lock.yml`, `yarn.lock`
 - Workspace exclusions are read from `.tokenlintignore`
 

@@ -19,7 +19,22 @@ type CachedIgnoreFile = {
 };
 
 const ignoreFileName = '.tokenlintignore';
+const workspaceScanGlob = '**/*.{md,prompt,yaml,yml,json}';
 const ignoreFileCache = new Map<string, CachedIgnoreFile>();
+
+const relevantBaseNameRegex = /(?:^|[._-])(agent|agents|skill|skills|mcp|prompt|prompts|instruction|instructions)(?:[._-]|$)/i;
+const relevantPathRegex =
+  /(^|\/)(\.github\/agents|\.vscode\/prompts|agents|skills|prompts|mcp)(\/|$)/i;
+const relevantSpecialFiles = new Set([
+  'agents.md',
+  'copilot-instructions.md',
+  'skill.md',
+  'skill.yaml',
+  'skill.yml',
+  'mcp.json',
+  'mcp.yaml',
+  'mcp.yml'
+]);
 
 function toPosix(value: string): string {
   return value.replace(/\\/g, '/');
@@ -109,6 +124,29 @@ function getWorkspaceFolder(fileName: string): vscode.WorkspaceFolder | undefine
   return vscode.workspace.getWorkspaceFolder(vscode.Uri.file(fileName));
 }
 
+function isRelevantArtifact(fileName: string): boolean {
+  const normalized = toPosix(fileName).toLowerCase();
+  const baseName = path.posix.basename(normalized);
+
+  if (baseName.endsWith('.prompt')) {
+    return true;
+  }
+
+  if (relevantSpecialFiles.has(baseName)) {
+    return true;
+  }
+
+  if (/(?:^|\.)(?:agent|instructions|prompt)\.md$/i.test(baseName)) {
+    return true;
+  }
+
+  if (relevantBaseNameRegex.test(baseName)) {
+    return true;
+  }
+
+  return relevantPathRegex.test(normalized);
+}
+
 function isIgnoredByWorkspace(fileName: string): boolean {
   const workspaceFolder = getWorkspaceFolder(fileName);
 
@@ -142,6 +180,10 @@ export function shouldAnalyzeFile(fileName: string): boolean {
     return false;
   }
 
+  if (!isRelevantArtifact(fileName)) {
+    return false;
+  }
+
   return !isIgnoredByWorkspace(fileName);
 }
 
@@ -152,6 +194,10 @@ export function getSkipReason(fileName: string): string {
 
   if (detectKind(fileName) === 'unknown') {
     return 'unsupported file type';
+  }
+
+  if (!isRelevantArtifact(fileName)) {
+    return 'not a skill, agent, prompt, or MCP artifact';
   }
 
   if (isIgnoredByWorkspace(fileName)) {
@@ -165,3 +211,5 @@ export function getSkipReason(fileName: string): string {
 
   return 'excluded file';
 }
+
+export { workspaceScanGlob };

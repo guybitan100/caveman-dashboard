@@ -54,6 +54,12 @@ describe('scanFilter', () => {
     scanFilterMocks.detectKind.mockReturnValue('unknown');
     expect(shouldAnalyzeFile('/workspace/file.exe')).toBe(false);
     expect(getSkipReason('/workspace/file.exe')).toBe('unsupported file type');
+
+    scanFilterMocks.detectKind.mockReturnValue('markdown');
+    expect(shouldAnalyzeFile('/workspace/README.md')).toBe(false);
+    expect(getSkipReason('/workspace/README.md')).toBe(
+      'not a skill, agent, prompt, or MCP artifact'
+    );
   });
 
   it('applies ignore patterns from the workspace root and reuses the cached ignore file', async () => {
@@ -64,11 +70,11 @@ describe('scanFilter', () => {
       uri: { fsPath: '/workspace' }
     });
     scanFilterMocks.statSync.mockReturnValue({ mtimeMs: 1000 });
-    scanFilterMocks.readFileSync.mockReturnValue('ignored.md\nlogs/\n');
+    scanFilterMocks.readFileSync.mockReturnValue('copilot-instructions.md\nlogs/\n');
 
-    expect(shouldAnalyzeFile('/workspace/ignored.md')).toBe(false);
-    expect(shouldAnalyzeFile('/workspace/logs/nested/file.md')).toBe(false);
-    expect(shouldAnalyzeFile('/workspace/kept.md')).toBe(true);
+    expect(shouldAnalyzeFile('/workspace/copilot-instructions.md')).toBe(false);
+    expect(shouldAnalyzeFile('/workspace/logs/nested/prompt.md')).toBe(false);
+    expect(shouldAnalyzeFile('/workspace/.github/agents/release.md')).toBe(true);
     expect(scanFilterMocks.readFileSync).toHaveBeenCalledTimes(1);
   });
 
@@ -80,17 +86,19 @@ describe('scanFilter', () => {
       uri: { fsPath: '/workspace' }
     });
     scanFilterMocks.statSync.mockReturnValue({ mtimeMs: 1 });
-    scanFilterMocks.readFileSync.mockReturnValue('notes/*.md\n');
+    scanFilterMocks.readFileSync.mockReturnValue('.github/agents/*.md\n');
 
-    expect(shouldAnalyzeFile('/workspace/notes/todo.md')).toBe(false);
-    expect(getSkipReason('/workspace/notes/todo.md')).toBe('ignored by .tokenlintignore: notes/todo.md');
+    expect(shouldAnalyzeFile('/workspace/.github/agents/todo.md')).toBe(false);
+    expect(getSkipReason('/workspace/.github/agents/todo.md')).toBe(
+      'ignored by .tokenlintignore: .github/agents/todo.md'
+    );
 
     scanFilterMocks.getWorkspaceFolder.mockReturnValue(undefined);
     scanFilterMocks.statSync.mockImplementation(() => {
       throw new Error('missing');
     });
-    expect(shouldAnalyzeFile('/other/place/prompt.md')).toBe(true);
-    expect(getSkipReason('/other/place/prompt.md')).toBe('excluded file');
+    expect(shouldAnalyzeFile('/other/place/AGENTS.md')).toBe(true);
+    expect(getSkipReason('/other/place/README.md')).toBe('not a skill, agent, prompt, or MCP artifact');
   });
 
   it('matches basename-only ignores and treats empty ignore files as no-op', async () => {
@@ -101,9 +109,9 @@ describe('scanFilter', () => {
       uri: { fsPath: '/workspace' }
     });
     scanFilterMocks.statSync.mockReturnValue({ mtimeMs: 2 });
-    scanFilterMocks.readFileSync.mockReturnValue('ignored.md\n');
+    scanFilterMocks.readFileSync.mockReturnValue('AGENTS.md\n');
 
-    expect(shouldAnalyzeFile('/workspace/nested/ignored.md')).toBe(false);
+    expect(shouldAnalyzeFile('/workspace/nested/AGENTS.md')).toBe(false);
 
     vi.resetModules();
     scanFilterMocks.isGeneratedDependencyFile.mockReturnValue(false);
@@ -115,6 +123,27 @@ describe('scanFilter', () => {
     scanFilterMocks.readFileSync.mockReturnValue('# only comments\n\n');
 
     const reloaded = await import('./scanFilter');
-    expect(reloaded.shouldAnalyzeFile('/workspace/nested/kept.md')).toBe(true);
+    expect(reloaded.shouldAnalyzeFile('/workspace/nested/copilot-instructions.md')).toBe(true);
+  });
+
+  it('only analyzes files that look like agent, skill, prompt, or MCP artifacts', async () => {
+    const { shouldAnalyzeFile, workspaceScanGlob } = await import('./scanFilter');
+    scanFilterMocks.isGeneratedDependencyFile.mockReturnValue(false);
+    scanFilterMocks.getWorkspaceFolder.mockReturnValue(undefined);
+    scanFilterMocks.statSync.mockImplementation(() => {
+      throw new Error('missing');
+    });
+
+    scanFilterMocks.detectKind.mockReturnValue('yaml');
+    expect(shouldAnalyzeFile('/workspace/skills/reviewer/skill.yaml')).toBe(true);
+
+    scanFilterMocks.detectKind.mockReturnValue('json');
+    expect(shouldAnalyzeFile('/workspace/config/mcp.json')).toBe(true);
+
+    scanFilterMocks.detectKind.mockReturnValue('markdown');
+    expect(shouldAnalyzeFile('/workspace/.github/agents/release.md')).toBe(true);
+    expect(shouldAnalyzeFile('/workspace/docs/overview.md')).toBe(false);
+
+    expect(workspaceScanGlob).toBe('**/*.{md,prompt,yaml,yml,json}');
   });
 });

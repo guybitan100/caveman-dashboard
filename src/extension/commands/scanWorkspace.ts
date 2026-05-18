@@ -1,12 +1,9 @@
 import * as vscode from 'vscode';
 import { TokenLintDiagnosticProvider } from '../providers/diagnosticProvider';
-import { shouldAnalyzeFile } from '../utils/scanFilter';
+import { shouldAnalyzeFile, workspaceScanGlob } from '../utils/scanFilter';
 
 export async function scanWorkspace(provider: TokenLintDiagnosticProvider) {
-  const files = await vscode.workspace.findFiles(
-    '**/*.{md,prompt,yaml,yml,json,ts,tsx,py}',
-    '**/node_modules/**'
-  );
+  const files = await vscode.workspace.findFiles(workspaceScanGlob, '**/node_modules/**');
   const analyzableFiles = files.filter(file => shouldAnalyzeFile(file.fsPath));
   const skippedFiles = files.length - analyzableFiles.length;
 
