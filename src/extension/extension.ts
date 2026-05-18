@@ -63,7 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
     }),
 
     vscode.commands.registerCommand('tokenlint.applyAllSafeFixes', async () => {
-      await applyAllSafeFixes();
+      await applyAllSafeFixes(diagnostics);
     }),
 
     vscode.languages.registerHoverProvider(supportedSelectors, createHoverProvider()),

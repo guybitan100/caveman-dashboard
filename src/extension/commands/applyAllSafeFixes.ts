@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
+import { TokenLintDiagnosticProvider } from '../providers/diagnosticProvider';
 
-export async function applyAllSafeFixes() {
+export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
     vscode.window.showInformationMessage(
@@ -10,9 +11,9 @@ export async function applyAllSafeFixes() {
   }
 
   const document = editor.document;
-  const diagnostics = vscode.languages
-    .getDiagnostics(document.uri)
-    .filter(d => d.source === 'TokenLint');
+  provider.scan(document);
+
+  const diagnostics = vscode.languages.getDiagnostics(document.uri).filter(d => d.source === 'TokenLint');
 
   const safeDiagnostics = diagnostics
     .filter(d => d.code === 'optimization.duplicateInstruction')
