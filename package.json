@@ -2,7 +2,7 @@
   "name": "tokenlint-vscode",
   "displayName": "TokenLint",
   "description": "Compiler-style prompt, AI skill, MCP, and cognitive security linter for VS Code",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "tokenlint",
   "engines": {
     "vscode": "^1.90.0"
@@ -125,6 +125,9 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "package": "vsce package",
     "release:local": "node ./scripts/release-local-extension.mjs"
   },
@@ -135,7 +138,9 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.90.0",
+    "@vitest/coverage-v8": "^4.1.6",
+    "@vscode/vsce": "^2.15.0",
     "typescript": "^5.4.0",
-    "@vscode/vsce": "^2.15.0"
+    "vitest": "^4.1.6"
   }
 }

@@ -116,16 +116,16 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
   </div>
 
   <div class="section">Scan</div>
-  <button class="secondary" onclick="send('scanOrFix')">Scan / Fix...</button>
-  <button onclick="send('scanCurrentFile')">Scan Current File</button>
-  <button onclick="send('scanWorkspace')">Scan Workspace</button>
+  <button class="secondary" data-command="scanOrFix">Scan / Fix...</button>
+  <button data-command="scanCurrentFile">Scan Current File</button>
+  <button data-command="scanWorkspace">Scan Workspace</button>
 
   <div class="section">Reports</div>
-  <button class="secondary" onclick="send('generateReport')">Generate Report</button>
-  <button class="secondary" onclick="send('showIR')">Show IR</button>
+  <button class="secondary" data-command="generateReport">Generate Report</button>
+  <button class="secondary" data-command="showIR">Show IR</button>
 
   <div class="section">Fixes</div>
-  <button onclick="send('applyAllSafeFixes')">Apply All Safe Fixes</button>
+  <button data-command="applyAllSafeFixes">Apply All Safe Fixes</button>
 
   <div class="note">
     Safe automatic fixes currently remove exact duplicate instructions.
@@ -135,9 +135,11 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
 
-    function send(command) {
-      vscode.postMessage({ command });
-    }
+    document.querySelectorAll('button[data-command]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        vscode.postMessage({ command: btn.dataset.command });
+      });
+    });
   </script>
 </body>
 </html>`;
