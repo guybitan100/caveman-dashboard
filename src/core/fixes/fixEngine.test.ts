@@ -53,6 +53,30 @@ describe('fixesFromFindings', () => {
     expect(fixesFromFindings(findings)[0].safety).toBe('review_required');
   });
 
+  it('builds explanations for the remaining known fix categories', () => {
+    const baseFinding = {
+      title: 'T',
+      message: 'M',
+      severity: 'warning' as const,
+      loc: { startLine: 3, startColumn: 0, endLine: 3, endColumn: 10 },
+      fix: { title: 'Fix' }
+    };
+
+    const fixes = fixesFromFindings([
+      { ...baseFinding, ruleId: 'security.externalEndpoint' },
+      { ...baseFinding, ruleId: 'security.encodedPayload' },
+      { ...baseFinding, ruleId: 'skills.maliciousSkillTest' },
+      { ...baseFinding, ruleId: 'custom.rule' }
+    ]);
+
+    expect(fixes[0].explanation).toContain('external endpoint');
+    expect(fixes[1].explanation).toContain('encoded payload');
+    expect(fixes[2].explanation).toContain('suspicious skill test');
+    expect(fixes[3].explanation).toBe('Review this change before applying.');
+    expect(fixes[3].safety).toBe('review_required');
+    expect(fixes[3].replacement).toBe('');
+  });
+
   it('generates correct fix id from ruleId and line', () => {
     const findings: TokenLintFinding[] = [{
       ruleId: 'test.rule',

@@ -75,4 +75,8 @@ describe('isGeneratedDependencyFile', () => {
   it('works with paths', () => {
     expect(isGeneratedDependencyFile('/project/package-lock.json')).toBe(true);
   });
+
+  it('handles empty file names without crashing', () => {
+    expect(isGeneratedDependencyFile('')).toBe(false);
+  });
 });

@@ -78,4 +78,19 @@ describe('parseToIR', () => {
     expect(ir.children[0].type).toBe('instruction');
     expect(ir.loc.endLine).toBe(3);
   });
+
+  it('parses standalone tests and tool declarations without an active skill', () => {
+    const ir = parseToIR('prompt test execution\ntool runner', 'prompt.md');
+
+    expect(ir.children.map(node => node.type)).toEqual(['skill_test', 'tool']);
+
+    const toolNode = ir.children[1];
+    expect(toolNode.type).toBe('tool');
+    if (toolNode.type !== 'tool') {
+      throw new Error('expected tool node');
+    }
+
+    expect(toolNode.permissions).toEqual([]);
+    expect(toolNode.name).toBe('tool');
+  });
 });

@@ -16,6 +16,12 @@ export default defineConfig({
         'src/core/ir/sourceLocation.ts',
         'src/test-utils/**'
       ],
+      thresholds: {
+        statements: 95,
+        branches: 95,
+        functions: 95,
+        lines: 95
+      },
       reporter: ['text', 'json-summary', 'html']
     }
   }

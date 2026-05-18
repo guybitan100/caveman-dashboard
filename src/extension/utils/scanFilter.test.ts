@@ -92,4 +92,29 @@ describe('scanFilter', () => {
     expect(shouldAnalyzeFile('/other/place/prompt.md')).toBe(true);
     expect(getSkipReason('/other/place/prompt.md')).toBe('excluded file');
   });
+
+  it('matches basename-only ignores and treats empty ignore files as no-op', async () => {
+    const { shouldAnalyzeFile } = await import('./scanFilter');
+    scanFilterMocks.isGeneratedDependencyFile.mockReturnValue(false);
+    scanFilterMocks.detectKind.mockReturnValue('markdown');
+    scanFilterMocks.getWorkspaceFolder.mockReturnValue({
+      uri: { fsPath: '/workspace' }
+    });
+    scanFilterMocks.statSync.mockReturnValue({ mtimeMs: 2 });
+    scanFilterMocks.readFileSync.mockReturnValue('ignored.md\n');
+
+    expect(shouldAnalyzeFile('/workspace/nested/ignored.md')).toBe(false);
+
+    vi.resetModules();
+    scanFilterMocks.isGeneratedDependencyFile.mockReturnValue(false);
+    scanFilterMocks.detectKind.mockReturnValue('markdown');
+    scanFilterMocks.getWorkspaceFolder.mockReturnValue({
+      uri: { fsPath: '/workspace' }
+    });
+    scanFilterMocks.statSync.mockReturnValue({ mtimeMs: 3 });
+    scanFilterMocks.readFileSync.mockReturnValue('# only comments\n\n');
+
+    const reloaded = await import('./scanFilter');
+    expect(reloaded.shouldAnalyzeFile('/workspace/nested/kept.md')).toBe(true);
+  });
 });

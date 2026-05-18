@@ -33,4 +33,12 @@ describe('tokenizer', () => {
     // Should still work after clearing
     expect(tokenCount('cached text')).toBeGreaterThan(0);
   });
+
+  it('evicts the oldest cached entries when the cache limit is reached', () => {
+    for (let index = 0; index < 2050; index += 1) {
+      expect(tokenCount(`text-${index}`)).toBeGreaterThan(0);
+    }
+
+    expect(tokenCount('text-0')).toBeGreaterThan(0);
+  });
 });

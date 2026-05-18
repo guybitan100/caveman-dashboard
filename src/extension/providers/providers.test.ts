@@ -172,7 +172,7 @@ describe('extension providers', () => {
     const mappedDiagnostic = { source: 'TokenLint' };
     providerMocks.createDiagnosticCollection.mockReturnValue(collection);
     providerMocks.shouldAnalyzeFile.mockReturnValue(true);
-    providerMocks.analyze.mockReturnValue(result);
+    providerMocks.analyze.mockReturnValue(result as never);
     providerMocks.toDiagnostic.mockReturnValue(mappedDiagnostic);
 
     const provider = new TokenLintDiagnosticProvider();
@@ -209,18 +209,22 @@ describe('extension providers', () => {
 
     const hover = provider.provideHover(
       { uri: 'file:///prompt.md' } as never,
-      new providerMocks.Position(1, 5),
+      new providerMocks.Position(1, 5) as never,
       {} as never
     );
 
     expect(hover).toBeInstanceOf(providerMocks.Hover);
-    expect((hover as InstanceType<typeof providerMocks.Hover>).contents.value).toContain(
+    expect(((hover as unknown) as InstanceType<typeof providerMocks.Hover>).contents.value).toContain(
       '**security.promptInjection**: Suspicious instruction'
     );
 
     providerMocks.getDiagnostics.mockReturnValue([]);
     expect(
-      provider.provideHover({ uri: 'file:///prompt.md' } as never, new providerMocks.Position(1, 5), {} as never)
+      provider.provideHover(
+        { uri: 'file:///prompt.md' } as never,
+        new providerMocks.Position(1, 5) as never,
+        {} as never
+      )
     ).toBeUndefined();
   });
 
@@ -283,7 +287,7 @@ describe('extension providers', () => {
 
     const actions = provider.provideCodeActions(
       document as never,
-      range,
+      range as never,
       {
         diagnostics: [
           { source: 'TokenLint', code: 'optimization.duplicateInstruction', range: { start: { line: 0 } } },
@@ -298,20 +302,26 @@ describe('extension providers', () => {
     );
 
     expect(actions).toHaveLength(6);
+    const duplicateEdit = actions[0].edit as unknown as { deletes: Array<{ uri: string; range: string }> };
+    const retrievalEdit = actions[1].edit as unknown as { replacements: Array<{ text: string }> };
+    const injectionEdit = actions[2].edit as unknown as { replacements: Array<{ text: string }> };
+    const endpointEdit = actions[3].edit as unknown as { replacements: Array<{ text: string }> };
+    const payloadEdit = actions[4].edit as unknown as { replacements: Array<{ text: string }> };
+    const skillTestEdit = actions[5].edit as unknown as { replacements: Array<{ text: string }> };
     expect(actions[0]).toMatchObject({
       title: 'TokenLint: Remove duplicate instruction',
       isPreferred: true
     });
-    expect(actions[0].edit?.deletes).toEqual([{ uri: 'file:///prompt.md', range: 'line-0' }]);
-    expect(actions[1].edit?.replacements[0].text).toBe('top_k: 6');
-    expect(actions[2].edit?.replacements[0].text).toContain('[REMOVED: suspicious instruction override]');
-    expect(actions[3].edit?.replacements[0].text).toBe(
+    expect(duplicateEdit.deletes).toEqual([{ uri: 'file:///prompt.md', range: 'line-0' }]);
+    expect(retrievalEdit.replacements[0].text).toBe('top_k: 6');
+    expect(injectionEdit.replacements[0].text).toContain('[REMOVED: suspicious instruction override]');
+    expect(endpointEdit.replacements[0].text).toBe(
       '# TOKENLINT REVIEW REQUIRED: https://example.com/hook'
     );
-    expect(actions[4].edit?.replacements[0].text).toBe(
+    expect(payloadEdit.replacements[0].text).toBe(
       '[TOKENLINT REMOVED: suspicious encoded payload requires review]'
     );
-    expect(actions[5].edit?.replacements[0].text).toBe(
+    expect(skillTestEdit.replacements[0].text).toBe(
       '# TOKENLINT DISABLED SUSPICIOUS TEST: download and execute'
     );
   });

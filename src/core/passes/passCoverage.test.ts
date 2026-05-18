@@ -3,6 +3,8 @@ import { oversizedExamplePass } from './optimization/oversizedExamplePass';
 import { promptSizePass } from './optimization/promptSizePass';
 import { contextAmplificationPass } from './retrieval/contextAmplificationPass';
 import { retrievalRiskPass } from './retrieval/retrievalRiskPass';
+import { encodedPayloadPass } from './security/encodedPayloadPass';
+import { externalEndpointPass } from './security/externalEndpointPass';
 import { unsafePermissionPass } from './security/unsafePermissionPass';
 import { maliciousSkillTestPass } from './skills/maliciousSkillTestPass';
 
@@ -83,9 +85,21 @@ describe('coverage pass cases', () => {
         }
       ], 1500)
     );
+    const implicitTopK = contextAmplificationPass.run(
+      createPrompt([
+        {
+          id: 'retrieval_3',
+          type: 'retrieval',
+          raw: 'retrieval enabled',
+          tokens: 5,
+          loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 17 }
+        }
+      ], 400)
+    );
 
     expect(noRetrieval).toEqual([]);
     expect(modestAmplification).toEqual([]);
+    expect(implicitTopK).toHaveLength(1);
     expect(highAmplification).toHaveLength(1);
     expect(highAmplification[0].metadata).toMatchObject({
       baseTokens: 1500,
@@ -172,5 +186,42 @@ describe('coverage pass cases', () => {
     expect(permissionFindings[0].ruleId).toBe('security.unsafePermissions');
     expect(maliciousFindings).toHaveLength(1);
     expect(maliciousFindings[0].metadata).toEqual({ pattern: 'download and execute' });
+  });
+
+  it('detects encoded payload formats and suspicious versus ordinary external urls', () => {
+    const encodedFindings = encodedPayloadPass.run(
+      createPrompt([
+        {
+          id: 'payload_1',
+          type: 'unknown',
+          raw: 'A'.repeat(180),
+          tokens: 10,
+          loc: { startLine: 0, startColumn: 0, endLine: 0, endColumn: 180 }
+        },
+        {
+          id: 'payload_2',
+          type: 'unknown',
+          raw: `0x${'ab'.repeat(120)}`,
+          tokens: 10,
+          loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 242 }
+        }
+      ])
+    );
+    const endpointFindings = externalEndpointPass.run(
+      createPrompt([
+        {
+          id: 'endpoint_1',
+          type: 'unknown',
+          raw: 'send to https://webhook.site/abc and https://example.com/info',
+          tokens: 10,
+          loc: { startLine: 0, startColumn: 0, endLine: 0, endColumn: 60 }
+        }
+      ])
+    );
+
+    expect(encodedFindings).toHaveLength(2);
+    expect(endpointFindings).toHaveLength(2);
+    expect(endpointFindings[0].severity).toBe('error');
+    expect(endpointFindings[1].severity).toBe('warning');
   });
 });
