@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { fixesFromFindings } from '../../core/fixes/fixEngine';
 import { TokenLintDiagnosticProvider } from '../providers/diagnosticProvider';
 
 export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
@@ -11,23 +12,33 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
   }
 
   const document = editor.document;
-  provider.scan(document);
+  const result = provider.scan(document);
+  const fixes = fixesFromFindings(result.findings);
 
-  const diagnostics = vscode.languages.getDiagnostics(document.uri).filter(d => d.source === 'TokenLint');
+  const safeFixes = fixes
+    .filter(fix => fix.safety === 'safe')
+    .sort((a, b) => b.loc.startLine - a.loc.startLine);
 
-  const safeDiagnostics = diagnostics
-    .filter(d => d.code === 'optimization.duplicateInstruction')
-    .sort((a, b) => b.range.start.line - a.range.start.line);
+  if (!safeFixes.length) {
+    const reviewRequiredFixes = fixes
+      .filter(fix => fix.safety === 'review_required');
 
-  if (!safeDiagnostics.length) {
+    if (reviewRequiredFixes.length) {
+      const suffix = reviewRequiredFixes.length === 1 ? '' : 'es';
+      vscode.window.showInformationMessage(
+        `TokenLint: No safe automatic fixes available. ${reviewRequiredFixes.length} review-required quick fix${suffix} available from Quick Fix.`
+      );
+      return;
+    }
+
     vscode.window.showInformationMessage('TokenLint: No safe automatic fixes available.');
     return;
   }
 
   const edit = new vscode.WorkspaceEdit();
 
-  for (const diagnostic of safeDiagnostics) {
-    const line = document.lineAt(diagnostic.range.start.line);
+  for (const fix of safeFixes) {
+    const line = document.lineAt(fix.loc.startLine);
     edit.delete(document.uri, line.rangeIncludingLineBreak);
   }
 
@@ -36,7 +47,7 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
   if (success) {
     await document.save();
     vscode.window.showInformationMessage(
-      `TokenLint applied ${safeDiagnostics.length} safe fixes.`
+      `TokenLint applied ${safeFixes.length} safe fixes.`
     );
   }
 }

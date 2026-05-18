@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AnalysisResult } from '../../core/engine/engine';
 
 const vscodeMock = vi.hoisted(() => {
   const state = {
@@ -55,6 +56,17 @@ type MockDocument = {
 };
 
 describe('applyAllSafeFixes', () => {
+  const emptyResult: AnalysisResult = {
+    ir: {} as AnalysisResult['ir'],
+    findings: [],
+    metrics: {
+      totalTokens: 0,
+      findingCount: 0,
+      errorCount: 0,
+      warningCount: 0
+    }
+  };
+
   beforeEach(() => {
     vscodeMock.state.activeTextEditor = undefined;
     vscodeMock.showInformationMessage.mockReset();
@@ -70,7 +82,7 @@ describe('applyAllSafeFixes', () => {
     );
   });
 
-  it('reports when the refreshed diagnostics still contain no safe fixes', async () => {
+  it('reports when only review-required quick fixes are available', async () => {
     const document: MockDocument = {
       uri: 'file:///prompt.md',
       lineAt: vi.fn(),
@@ -78,7 +90,29 @@ describe('applyAllSafeFixes', () => {
     };
 
     vscodeMock.state.activeTextEditor = { document };
-    const provider = { scan: vi.fn() };
+    const provider = {
+      scan: vi.fn(() => ({
+        ...emptyResult,
+        findings: [
+          {
+            ruleId: 'security.promptInjection',
+            title: 'Suspicious override',
+            message: 'Suspicious override',
+            severity: 'warning' as const,
+            loc: {
+              startLine: 1,
+              startColumn: 0,
+              endLine: 1,
+              endColumn: 10
+            },
+            fix: {
+              title: 'Neutralize suspicious instruction',
+              replacement: '[REMOVED]'
+            }
+          }
+        ]
+      }))
+    };
     vscodeMock.getDiagnostics.mockReturnValue([
       {
         source: 'TokenLint',
@@ -86,6 +120,26 @@ describe('applyAllSafeFixes', () => {
         range: { start: { line: 1 } }
       }
     ]);
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(provider.scan).toHaveBeenCalledWith(document);
+    expect(vscodeMock.applyEdit).not.toHaveBeenCalled();
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint: No safe automatic fixes available. 1 review-required quick fix available from Quick Fix.'
+    );
+  });
+
+  it('reports when the refreshed diagnostics contain no automatic fixes at all', async () => {
+    const document: MockDocument = {
+      uri: 'file:///prompt.md',
+      lineAt: vi.fn(),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document };
+    const provider = { scan: vi.fn(() => emptyResult) };
+    vscodeMock.getDiagnostics.mockReturnValue([]);
 
     await applyAllSafeFixes(provider as never);
 
@@ -119,6 +173,27 @@ describe('applyAllSafeFixes', () => {
             }
           }
         }];
+
+        return {
+          ...emptyResult,
+          findings: [
+            {
+              ruleId: 'optimization.duplicateInstruction',
+              title: 'Duplicate instruction',
+              message: 'Duplicate instruction',
+              severity: 'info' as const,
+              loc: {
+                startLine: 3,
+                startColumn: 0,
+                endLine: 3,
+                endColumn: 10
+              },
+              fix: {
+                title: 'Remove duplicate instruction'
+              }
+            }
+          ]
+        };
       })
     };
 
@@ -150,7 +225,28 @@ describe('applyAllSafeFixes', () => {
     };
 
     vscodeMock.state.activeTextEditor = { document };
-    const provider = { scan: vi.fn() };
+    const provider = {
+      scan: vi.fn(() => ({
+        ...emptyResult,
+        findings: [
+          {
+            ruleId: 'optimization.duplicateInstruction',
+            title: 'Duplicate instruction',
+            message: 'Duplicate instruction',
+            severity: 'info' as const,
+            loc: {
+              startLine: 4,
+              startColumn: 0,
+              endLine: 4,
+              endColumn: 10
+            },
+            fix: {
+              title: 'Remove duplicate instruction'
+            }
+          }
+        ]
+      }))
+    };
     vscodeMock.getDiagnostics.mockReturnValue([
       {
         source: 'TokenLint',
