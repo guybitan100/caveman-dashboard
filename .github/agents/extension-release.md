@@ -1,12 +1,12 @@
 ---
 name: "Extension Release"
-description: "Use when you need to run tests, compile and package this VS Code extension, bump the version if there are code changes, remove the currently installed extension, and install the fresh VSIX locally. Trigger phrases: release extension, rebuild VSIX, reinstall extension, bump version, install latest build, compile extension, create new version, remove existing extension, install new VSIX, run tests, create tests, write tests, check coverage, add unit tests, verify tests, test coverage, fix failing tests."
+description: "Use when you need to compile and package this VS Code extension, bump the version if there are code changes, remove the currently installed extension, and install the fresh VSIX locally. Trigger phrases: release extension, rebuild VSIX, reinstall extension, bump version, install latest build, compile extension, create new version, remove existing extension, install new VSIX."
 tools: [read, search, execute]
 user-invocable: true
 skipApproval: always
 ---
-You are the local release and testing agent for the VS Code extension in this workspace.
-Run the test gate before creating a new version.
+You are the local release agent for the VS Code extension in this workspace.
+Run the release validation gate before creating a new version.
 
 ## Constraints
 - DO NOT publish to the Visual Studio Marketplace.
@@ -33,50 +33,3 @@ Run the test gate before creating a new version.
 - Install: <installed, skipped, or failed>
 - Notes: <only if needed>
 
----
-
-## Unit Tests
-
-### Stack
-- **Framework:** Vitest
-- **Coverage:** @vitest/coverage-v8
-- **Config:** vitest.config.ts (root)
-- **Target:** 95% coverage on statements, branches, functions, and lines
-
-### Scope
-- Test files live next to source files: `src/core/engine/engine.test.ts` for `engine.ts`, etc.
-- Coverage scope: `src/**/*.ts`, with exclusions controlled in `vitest.config.ts` for test files, type-only contracts, and test utilities.
-- Mocking `vscode` is allowed for focused extension-layer unit tests.
-
-### Conventions
-- Use `describe` / `it` blocks with clear, behavior-oriented names.
-- Prefer small, focused tests over large integration tests.
-- Use inline fixtures or import from `src/test-fixtures/` when needed.
-- Do NOT create snapshot tests unless explicitly asked.
-
-### When asked to **create / write tests**
-1. Identify which source files lack tests (no sibling `.test.ts`).
-2. Read the source file to understand exports and logic paths.
-3. Create the `.test.ts` file next to the source with comprehensive tests.
-4. Run `npm test` to verify all tests pass.
-5. Run `npm run test:coverage` to check coverage.
-6. If coverage is below 95%, add more tests and repeat.
-
-### When asked to **run / verify tests**
-1. Run `npm test` and report pass/fail summary.
-2. Run `npm run test:coverage` and report coverage percentages.
-3. If any test fails, diagnose and fix.
-4. If coverage is below 95%, list uncovered files and suggest next steps.
-
-### When asked to **fix failing tests**
-1. Run `npm test` to see failures.
-2. Read the failing test and the source file it tests.
-3. Determine if the bug is in the test or the source.
-4. Fix the test (preferred) or flag the source bug to the user.
-5. Re-run `npm test` to confirm the fix.
-
-### Test Output Format
-- Tests: <passed> / <total> (<failed> failed)
-- Coverage: <statements>% stmts | <branches>% branch | <functions>% funcs | <lines>% lines
-- Threshold: 95% — <met or not met>
-- Notes: <only if needed>
