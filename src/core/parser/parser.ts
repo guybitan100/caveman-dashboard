@@ -9,12 +9,14 @@ import {
   skill,
   skillTest,
   unknown,
-  tokenCount
+  tokenCount,
+  resetIdCounter
 } from '../ir/factory';
 import { detectKind } from './languageDetector';
 import { looksLikeInstruction } from './normalizer';
 
 export function parseToIR(text: string, fileName = 'unknown'): PromptNode {
+  resetIdCounter();
   const kind = detectKind(fileName);
   const children: IRNode[] = [];
 

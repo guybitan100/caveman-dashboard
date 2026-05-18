@@ -1,4 +1,3 @@
-import { encode } from 'gpt-tokenizer';
 import { SourceLocation } from './sourceLocation';
 import {
   InstructionNode,
@@ -12,6 +11,9 @@ import {
   UnknownNode
 } from './nodes';
 import { normalizeInstruction } from '../parser/normalizer';
+import { tokenCount } from '../tokenizer/tokenizer';
+
+export { tokenCount };
 
 let counter = 0;
 
@@ -20,8 +22,8 @@ function nextId(prefix: string): string {
   return `${prefix}_${counter}`;
 }
 
-export function tokenCount(text: string): number {
-  return encode(text || '').length;
+export function resetIdCounter(): void {
+  counter = 0;
 }
 
 export function loc(line: number, text: string): SourceLocation {
