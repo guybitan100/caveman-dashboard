@@ -9,3 +9,4 @@ src/extension/**
 src/reporting/**
 src/test-fixtures/**
 tsconfig.json
+vitest.config.ts
