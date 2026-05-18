@@ -21,6 +21,11 @@ const vscodeMock = vi.hoisted(() => {
   };
 });
 
+const scanFilterMock = vi.hoisted(() => ({
+  shouldAnalyzeFile: vi.fn(),
+  getSkipReason: vi.fn()
+}));
+
 vi.mock('vscode', () => ({
   window: {
     get activeTextEditor() {
@@ -37,6 +42,11 @@ vi.mock('vscode', () => ({
   WorkspaceEdit: vscodeMock.WorkspaceEdit
 }));
 
+vi.mock('../utils/scanFilter', () => ({
+  shouldAnalyzeFile: scanFilterMock.shouldAnalyzeFile,
+  getSkipReason: scanFilterMock.getSkipReason
+}));
+
 import { applyAllSafeFixes } from './applyAllSafeFixes';
 
 type MockDiagnostic = {
@@ -50,6 +60,7 @@ type MockDiagnostic = {
 };
 
 type MockDocument = {
+  fileName: string;
   uri: string;
   lineAt: ReturnType<typeof vi.fn>;
   save: ReturnType<typeof vi.fn>;
@@ -72,6 +83,9 @@ describe('applyAllSafeFixes', () => {
     vscodeMock.showInformationMessage.mockReset();
     vscodeMock.applyEdit.mockReset();
     vscodeMock.getDiagnostics.mockReset();
+    scanFilterMock.shouldAnalyzeFile.mockReset();
+    scanFilterMock.getSkipReason.mockReset();
+    scanFilterMock.shouldAnalyzeFile.mockReturnValue(true);
   });
 
   it('shows a message when no editor is open', async () => {
@@ -84,6 +98,7 @@ describe('applyAllSafeFixes', () => {
 
   it('reports when only review-required quick fixes are available', async () => {
     const document: MockDocument = {
+      fileName: '/workspace/prompt.md',
       uri: 'file:///prompt.md',
       lineAt: vi.fn(),
       save: vi.fn().mockResolvedValue(undefined)
@@ -132,6 +147,7 @@ describe('applyAllSafeFixes', () => {
 
   it('reports when the refreshed diagnostics contain no automatic fixes at all', async () => {
     const document: MockDocument = {
+      fileName: '/workspace/prompt.md',
       uri: 'file:///prompt.md',
       lineAt: vi.fn(),
       save: vi.fn().mockResolvedValue(undefined)
@@ -153,6 +169,7 @@ describe('applyAllSafeFixes', () => {
   it('rescans the active document before deciding there are no safe fixes', async () => {
     let diagnostics: MockDiagnostic[] = [];
     const document: MockDocument = {
+      fileName: '/workspace/prompt.md',
       uri: 'file:///prompt.md',
       lineAt: vi.fn().mockReturnValue({
         rangeIncludingLineBreak: 'line-range'
@@ -217,6 +234,7 @@ describe('applyAllSafeFixes', () => {
 
   it('does not save or report success when the workspace edit fails', async () => {
     const document: MockDocument = {
+      fileName: '/workspace/prompt.md',
       uri: 'file:///prompt.md',
       lineAt: vi.fn().mockReturnValue({
         rangeIncludingLineBreak: 'line-range'
@@ -261,6 +279,28 @@ describe('applyAllSafeFixes', () => {
     expect(document.save).not.toHaveBeenCalled();
     expect(vscodeMock.showInformationMessage).not.toHaveBeenCalledWith(
       'TokenLint applied 1 safe fixes.'
+    );
+  });
+
+  it('skips unsupported files before scanning for fixes', async () => {
+    const document: MockDocument = {
+      fileName: '/workspace/rewrite.py',
+      uri: 'file:///rewrite.py',
+      lineAt: vi.fn(),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+    const provider = { scan: vi.fn(() => emptyResult) };
+
+    vscodeMock.state.activeTextEditor = { document };
+    scanFilterMock.shouldAnalyzeFile.mockReturnValue(false);
+    scanFilterMock.getSkipReason.mockReturnValue('unsupported file type');
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(provider.scan).not.toHaveBeenCalled();
+    expect(vscodeMock.applyEdit).not.toHaveBeenCalled();
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint skipped unsupported file type'
     );
   });
 });

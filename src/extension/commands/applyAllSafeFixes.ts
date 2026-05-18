@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { fixesFromFindings } from '../../core/fixes/fixEngine';
 import { TokenLintDiagnosticProvider } from '../providers/diagnosticProvider';
+import { getSkipReason, shouldAnalyzeFile } from '../utils/scanFilter';
 
 export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
   const editor = vscode.window.activeTextEditor;
@@ -12,6 +13,14 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
   }
 
   const document = editor.document;
+
+  if (!shouldAnalyzeFile(document.fileName)) {
+    vscode.window.showInformationMessage(
+      `TokenLint skipped ${getSkipReason(document.fileName)}`
+    );
+    return;
+  }
+
   const result = provider.scan(document);
   const fixes = fixesFromFindings(result.findings);
 
