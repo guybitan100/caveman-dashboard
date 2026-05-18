@@ -161,6 +161,7 @@ function main() {
   }
 
   ensureDependenciesInstalled();
+  runChecked(npmCommand(), ['run', 'test:coverage'], 'test:coverage');
 
   if (shouldBump) {
     runChecked(npmCommand(), ['version', 'patch', '--no-git-tag-version'], 'npm version patch');
