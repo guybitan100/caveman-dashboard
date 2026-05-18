@@ -62,6 +62,40 @@ describe('applyAllSafeFixes', () => {
     vscodeMock.getDiagnostics.mockReset();
   });
 
+  it('shows a message when no editor is open', async () => {
+    await applyAllSafeFixes({ scan: vi.fn() } as never);
+
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint: Open a file in the editor to apply safe fixes.'
+    );
+  });
+
+  it('reports when the refreshed diagnostics still contain no safe fixes', async () => {
+    const document: MockDocument = {
+      uri: 'file:///prompt.md',
+      lineAt: vi.fn(),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document };
+    const provider = { scan: vi.fn() };
+    vscodeMock.getDiagnostics.mockReturnValue([
+      {
+        source: 'TokenLint',
+        code: 'security.promptInjection',
+        range: { start: { line: 1 } }
+      }
+    ]);
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(provider.scan).toHaveBeenCalledWith(document);
+    expect(vscodeMock.applyEdit).not.toHaveBeenCalled();
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint: No safe automatic fixes available.'
+    );
+  });
+
   it('rescans the active document before deciding there are no safe fixes', async () => {
     let diagnostics: MockDiagnostic[] = [];
     const document: MockDocument = {
@@ -104,5 +138,33 @@ describe('applyAllSafeFixes', () => {
     ]);
     expect(document.save).toHaveBeenCalledTimes(1);
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith('TokenLint applied 1 safe fixes.');
+  });
+
+  it('does not save or report success when the workspace edit fails', async () => {
+    const document: MockDocument = {
+      uri: 'file:///prompt.md',
+      lineAt: vi.fn().mockReturnValue({
+        rangeIncludingLineBreak: 'line-range'
+      }),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document };
+    const provider = { scan: vi.fn() };
+    vscodeMock.getDiagnostics.mockReturnValue([
+      {
+        source: 'TokenLint',
+        code: 'optimization.duplicateInstruction',
+        range: { start: { line: 4 } }
+      }
+    ]);
+    vscodeMock.applyEdit.mockResolvedValue(false);
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(document.save).not.toHaveBeenCalled();
+    expect(vscodeMock.showInformationMessage).not.toHaveBeenCalledWith(
+      'TokenLint applied 1 safe fixes.'
+    );
   });
 });
