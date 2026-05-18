@@ -56,10 +56,10 @@ describe('scanFilter', () => {
     expect(getSkipReason('/workspace/file.exe')).toBe('unsupported file type');
 
     scanFilterMocks.detectKind.mockReturnValue('python');
-  expect(shouldAnalyzeFile('/workspace/mcp_server.py')).toBe(true);
+    expect(shouldAnalyzeFile('/workspace/mcp_server.py')).toBe(true);
 
-  scanFilterMocks.detectKind.mockReturnValue('typescript');
-  expect(shouldAnalyzeFile('/workspace/agents/release-agent.ts')).toBe(true);
+    scanFilterMocks.detectKind.mockReturnValue('typescript');
+    expect(shouldAnalyzeFile('/workspace/agents/release-agent.ts')).toBe(true);
 
     scanFilterMocks.detectKind.mockReturnValue('markdown');
     expect(shouldAnalyzeFile('/workspace/README.md')).toBe(false);
