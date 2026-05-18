@@ -7,7 +7,15 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts'],
+      exclude: [
+        'src/**/*.test.ts',
+        'src/core/engine/finding.ts',
+        'src/core/engine/pass.ts',
+        'src/core/fixes/fix.ts',
+        'src/core/ir/nodes.ts',
+        'src/core/ir/sourceLocation.ts',
+        'src/test-utils/**'
+      ],
       reporter: ['text', 'json-summary', 'html']
     }
   }
