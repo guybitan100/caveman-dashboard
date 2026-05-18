@@ -6,7 +6,7 @@ user-invocable: true
 skipApproval: always
 ---
 You are the local release agent for the VS Code extension in this workspace.
-Run the release validation gate before creating a new version.
+Run the test gate before creating a new version.
 
 ## Constraints
 - DO NOT publish to the Visual Studio Marketplace.
