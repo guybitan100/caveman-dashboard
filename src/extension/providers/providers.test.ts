@@ -97,7 +97,11 @@ const providerMocks = vi.hoisted(() => {
     getDiagnostics: vi.fn(),
     createDiagnosticCollection: vi.fn(),
     executeCommand: vi.fn(),
-    analyze: vi.fn(),
+    analyze: vi.fn(() => ({
+      findings: [],
+      metrics: { findingCount: 0, totalTokens: 0, errorCount: 0, warningCount: 0 },
+      ir: { type: 'prompt' }
+    })),
     shouldAnalyzeFile: vi.fn(),
     toDiagnostic: vi.fn()
   };

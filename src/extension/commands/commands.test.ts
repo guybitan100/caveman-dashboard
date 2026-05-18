@@ -122,7 +122,12 @@ describe('extension commands', () => {
     const secondFile = { fsPath: '/workspace/second.md' };
     const firstDoc = { fileName: firstFile.fsPath, getText: () => 'a' };
     const secondDoc = { fileName: secondFile.fsPath, getText: () => 'b' };
-    const provider = {
+    const firstProvider = {
+      scan: vi
+        .fn()
+        .mockReturnValueOnce({ metrics: { findingCount: 1, totalTokens: 10 } })
+    };
+    const secondProvider = {
       scan: vi
         .fn()
         .mockReturnValueOnce({ metrics: { findingCount: 1, totalTokens: 10 } })
@@ -135,20 +140,16 @@ describe('extension commands', () => {
       .mockResolvedValueOnce(secondDoc)
       .mockResolvedValueOnce(firstDoc)
       .mockResolvedValueOnce(secondDoc);
-    commandMocks.shouldAnalyzeFile
-      .mockImplementation((fileName: string) => fileName !== secondFile.fsPath)
-      .mockImplementationOnce((fileName: string) => fileName !== secondFile.fsPath)
-      .mockImplementationOnce((fileName: string) => fileName !== secondFile.fsPath)
-      .mockReturnValue(true);
+    commandMocks.shouldAnalyzeFile.mockImplementation((fileName: string) => fileName !== secondFile.fsPath);
 
-    await scanWorkspace(provider as never);
+    await scanWorkspace(firstProvider as never);
     expect(commandMocks.showInformationMessage).toHaveBeenLastCalledWith(
       'TokenLint workspace scan complete: 1 files, 1 findings, 10 tokens, 1 ignored'
     );
 
     commandMocks.showInformationMessage.mockReset();
     commandMocks.shouldAnalyzeFile.mockReturnValue(true);
-    await scanWorkspace(provider as never);
+    await scanWorkspace(secondProvider as never);
     expect(commandMocks.showInformationMessage).toHaveBeenLastCalledWith(
       'TokenLint workspace scan complete: 2 files, 3 findings, 30 tokens'
     );
