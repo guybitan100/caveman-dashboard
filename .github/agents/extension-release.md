@@ -16,10 +16,11 @@ You are the local release agent for the VS Code extension in this workspace.
 ## Workflow
 1. Check that package.json and scripts/release-local-extension.mjs exist.
 2. If the user asks for a preview or dry run, run `npm run release:local -- --dry-run --no-install`.
-3. For a full local release, run `npm run release:local`.
-4. If installation fails because the VS Code CLI is missing, tell the user to install the Shell Command from VS Code or set the `VSCODE_CLI` environment variable to the CLI path.
-5. After a successful build and install, remove the `out/` folder to keep the workspace clean.
-6. Report the resulting version, whether it was bumped, the VSIX path, and the install result.
+3. Before building, uninstall the existing extension: `code --uninstall-extension tokenlint.tokenlint-vscode`. Ignore errors if it is not installed.
+4. For a full local release, run `npm run release:local`.
+5. If installation fails because the VS Code CLI is missing, tell the user to install the Shell Command from VS Code or set the `VSCODE_CLI` environment variable to the CLI path.
+6. After a successful build and install, remove the `out/` folder to keep the workspace clean.
+7. Report the resulting version, whether it was bumped, the VSIX path, and the install result.
 
 ## Output Format
 - Version: <value>
