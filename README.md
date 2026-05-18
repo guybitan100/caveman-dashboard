@@ -43,6 +43,8 @@ TokenLint includes a safe fix engine.
 
 - Remove exact duplicate instructions
 
+`TokenLint: Apply All Safe Fixes` rescans the active editor before applying fixes, so duplicate-instruction removals work even if the file has not been scanned manually yet.
+
 ### Review-required fixes
 
 - Reduce `top_k`
@@ -59,6 +61,31 @@ TokenLint includes a safe fix engine.
 - `TokenLint: Generate Report`
 - `TokenLint: Show IR`
 - `TokenLint: Apply All Safe Fixes`
+
+## Scan Scope
+
+TokenLint analyzes supported source files and skips known generated or ignored content.
+
+- Supported file types: `.md`, `.prompt`, `.yaml`, `.yml`, `.json`, `.ts`, `.tsx`, `.py`
+- Generated dependency lockfiles are skipped automatically: `bun.lockb`, `package-lock.json`, `pnpm-lock.yaml`, `pnpm-lock.yml`, `yarn.lock`
+- Workspace exclusions are read from `.tokenlintignore`
+
+## Testing And Coverage
+
+TokenLint uses Vitest with V8 coverage.
+
+```bash
+npm test
+npm run test:coverage
+```
+
+Coverage is enforced at 95% for statements, branches, functions, and lines.
+
+The coverage run targets `src/**/*.ts` and excludes:
+
+- test files
+- type-only contracts such as IR and fix interfaces
+- test utilities under `src/test-utils/**`
 
 ## Development
 
@@ -108,3 +135,11 @@ You should see findings for:
 - retrieval amplification
 - malicious skill test behavior
 - external endpoint
+
+You can also run:
+
+```text
+TokenLint: Apply All Safe Fixes
+```
+
+to automatically remove exact duplicate instructions after the file is rescanned.
