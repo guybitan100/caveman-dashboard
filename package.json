@@ -89,9 +89,34 @@
     "menus": {
       "view/title": [
         {
-          "command": "tokenlint.scanOrFix",
+          "command": "tokenlint.scanCurrentFile",
           "when": "view == tokenlint.sidebar",
           "group": "tokenlint@1"
+        },
+        {
+          "command": "tokenlint.scanWorkspace",
+          "when": "view == tokenlint.sidebar",
+          "group": "tokenlint@2"
+        },
+        {
+          "command": "tokenlint.scanOrFix",
+          "when": "view == tokenlint.sidebar",
+          "group": "tokenlint@3"
+        },
+        {
+          "command": "tokenlint.applyAllSafeFixes",
+          "when": "view == tokenlint.sidebar",
+          "group": "tokenlint@4"
+        },
+        {
+          "command": "tokenlint.generateReport",
+          "when": "view == tokenlint.sidebar",
+          "group": "tokenlint@5"
+        },
+        {
+          "command": "tokenlint.showIR",
+          "when": "view == tokenlint.sidebar",
+          "group": "tokenlint@6"
         }
       ]
     }
