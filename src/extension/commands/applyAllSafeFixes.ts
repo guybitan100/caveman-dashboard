@@ -42,15 +42,72 @@ function getFixBuckets(result: ReturnType<TokenLintDiagnosticProvider['scan']>) 
   };
 }
 
+type DocumentFixPlan = {
+  document: vscode.TextDocument;
+  result: ReturnType<TokenLintDiagnosticProvider['scan']>;
+  fixes: ReturnType<typeof fixesFromFindings>;
+  safeFixes: ReturnType<typeof fixesFromFindings>;
+};
+
 function hasTokenLintDiagnostics(diagnostics: readonly vscode.Diagnostic[]): boolean {
   return diagnostics.some(diagnostic => diagnostic.source === 'TokenLint');
 }
 
-async function findDiagnosticDocumentWithSafeFixes(
+function getDiagnosticEntries(): ReadonlyArray<[vscode.Uri, readonly vscode.Diagnostic[]]> {
+  const diagnostics = vscode.languages.getDiagnostics();
+
+  if (!Array.isArray(diagnostics)) {
+    return [];
+  }
+
+  const entries: Array<[vscode.Uri, readonly vscode.Diagnostic[]]> = [];
+
+  for (const entry of diagnostics) {
+    if (
+      Array.isArray(entry)
+      && entry.length === 2
+      && typeof entry[0] === 'object'
+      && entry[0] !== null
+      && 'scheme' in entry[0]
+      && Array.isArray(entry[1])
+    ) {
+      entries.push([entry[0], entry[1]]);
+    }
+  }
+
+  return entries;
+}
+
+function getReviewRequiredFixes(plans: DocumentFixPlan[]) {
+  return plans.flatMap(plan => plan.fixes.filter(fix => fix.safety === 'review_required'));
+}
+
+async function scanDocumentForFixes(
   provider: TokenLintDiagnosticProvider,
+  document: vscode.TextDocument,
   seenDocuments: Set<string>
-) {
-  for (const [uri, entries] of vscode.languages.getDiagnostics()) {
+): Promise<DocumentFixPlan> {
+  rememberDocument(seenDocuments, document);
+
+  const result = provider.scan(document);
+  const { fixes, safeFixes } = getFixBuckets(result);
+
+  return {
+    document,
+    result,
+    fixes,
+    safeFixes
+  };
+}
+
+async function collectDiagnosticFixPlans(
+  provider: TokenLintDiagnosticProvider,
+  initialDocument: vscode.TextDocument
+): Promise<DocumentFixPlan[]> {
+  const seenDocuments = new Set<string>();
+  const plans = [await scanDocumentForFixes(provider, initialDocument, seenDocuments)];
+
+  for (const [uri, entries] of getDiagnosticEntries()) {
     const uriKey = getUriKey(uri);
 
     if (
@@ -65,19 +122,7 @@ async function findDiagnosticDocumentWithSafeFixes(
 
     try {
       const document = await vscode.workspace.openTextDocument(uri);
-      const result = provider.scan(document);
-      const { fixes, safeFixes } = getFixBuckets(result);
-
-      rememberDocument(seenDocuments, document);
-
-      if (safeFixes.length) {
-        return {
-          document,
-          result,
-          fixes,
-          safeFixes
-        };
-      }
+      plans.push(await scanDocumentForFixes(provider, document, seenDocuments));
     } catch {
       seenDocuments.add(uri.fsPath);
 
@@ -87,14 +132,10 @@ async function findDiagnosticDocumentWithSafeFixes(
     }
   }
 
-  return undefined;
+  return plans;
 }
 
 export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
-  const hasEditorContext = Boolean(
-    vscode.window.activeTextEditor
-    || vscode.window.visibleTextEditors.length
-  );
   let document = await resolveTargetDocument();
 
   if (!document) {
@@ -111,28 +152,11 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
     return;
   }
 
-  let result = provider.scan(document);
-  let { fixes, safeFixes } = getFixBuckets(result);
+  const plans = await collectDiagnosticFixPlans(provider, document);
+  const safePlans = plans.filter(plan => plan.safeFixes.length > 0);
 
-  if (!safeFixes.length && !hasEditorContext) {
-    const seenDocuments = new Set<string>();
-    rememberDocument(seenDocuments, document);
-
-    const safeFixCandidate = await findDiagnosticDocumentWithSafeFixes(provider, seenDocuments);
-
-    if (safeFixCandidate) {
-      document = safeFixCandidate.document;
-      result = safeFixCandidate.result;
-      fixes = safeFixCandidate.fixes;
-      safeFixes = safeFixCandidate.safeFixes;
-    }
-  }
-
-  const originalText = document.getText();
-
-  if (!safeFixes.length) {
-    const reviewRequiredFixes = fixes
-      .filter(fix => fix.safety === 'review_required');
+  if (!safePlans.length) {
+    const reviewRequiredFixes = getReviewRequiredFixes(plans);
 
     if (reviewRequiredFixes.length) {
       const suffix = reviewRequiredFixes.length === 1 ? '' : 'es';
@@ -146,28 +170,43 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
     return;
   }
 
-  const previewText = applySafeFixPreview(originalText, safeFixes);
+  const previewPlan = safePlans[0];
+  const originalText = previewPlan.document.getText();
+  const previewText = applySafeFixPreview(originalText, previewPlan.safeFixes);
   const edit = new vscode.WorkspaceEdit();
+  const totalSafeFixes = safePlans.reduce((total, plan) => total + plan.safeFixes.length, 0);
 
-  for (const fix of safeFixes) {
-    const line = document.lineAt(fix.loc.startLine);
-    edit.delete(document.uri, line.rangeIncludingLineBreak);
+  for (const plan of safePlans) {
+    for (const fix of plan.safeFixes) {
+      const line = plan.document.lineAt(fix.loc.startLine);
+      edit.delete(plan.document.uri, line.rangeIncludingLineBreak);
+    }
   }
 
   const success = await vscode.workspace.applyEdit(edit);
 
   if (success) {
-    await document.save();
-    vscode.window.showInformationMessage(
-      `TokenLint applied ${safeFixes.length} safe fixes.`
-    );
+    for (const plan of safePlans) {
+      await plan.document.save();
+    }
+
+    if (safePlans.length === 1) {
+      vscode.window.showInformationMessage(
+        `TokenLint applied ${totalSafeFixes} safe fixes.`
+      );
+    } else {
+      vscode.window.showInformationMessage(
+        `TokenLint applied ${totalSafeFixes} safe fixes across ${safePlans.length} files.`
+      );
+    }
+
     showFixGraphPreview({
-      fileName: document.fileName,
+      fileName: previewPlan.document.fileName,
       beforeText: originalText,
       afterText: previewText,
-      beforeResult: result,
-      allFixes: fixes,
-      safeFixes
+      beforeResult: previewPlan.result,
+      allFixes: previewPlan.fixes,
+      safeFixes: previewPlan.safeFixes
     });
   }
 }

@@ -89,7 +89,7 @@ export function parseToIR(text: string, fileName = 'unknown'): PromptNode {
     }
 
     if (kind === 'json' || kind === 'yaml') {
-      children.push(instruction(trimmed, index));
+      children.push(unknown(trimmed, index));
       return;
     }
 

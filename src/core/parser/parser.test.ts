@@ -61,12 +61,12 @@ describe('parseToIR', () => {
     expect(ir.tokens).toBeGreaterThan(0);
   });
 
-  it('treats yaml/json unknown lines as instructions and leaves markdown unknowns untouched', () => {
+  it('treats yaml/json fallback lines as unknown nodes and leaves markdown unknowns untouched', () => {
     const yamlIR = parseToIR('custom_field: surprising value', 'prompt.yaml');
     const markdownIR = parseToIR('mysterious blob', 'prompt.md');
 
     expect(yamlIR.children).toHaveLength(1);
-    expect(yamlIR.children[0].type).toBe('instruction');
+    expect(yamlIR.children[0].type).toBe('unknown');
     expect(markdownIR.children).toHaveLength(1);
     expect(markdownIR.children[0].type).toBe('unknown');
   });
