@@ -41,6 +41,10 @@
       {
         "command": "tokenlint.applyAllSafeFixes",
         "title": "TokenLint: Apply All Safe Fixes"
+      },
+      {
+        "command": "tokenlint.showFixGraph",
+        "title": "TokenLint: Show Before / After Graph"
       }
     ],
     "configuration": {
@@ -118,6 +122,11 @@
           "command": "tokenlint.showIR",
           "when": "view == tokenlint.sidebar",
           "group": "tokenlint@6"
+        },
+        {
+          "command": "tokenlint.showFixGraph",
+          "when": "view == tokenlint.sidebar",
+          "group": "tokenlint@7"
         }
       ]
     }

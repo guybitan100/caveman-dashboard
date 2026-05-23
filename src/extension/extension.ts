@@ -11,6 +11,7 @@ import { scanWorkspace } from './commands/scanWorkspace';
 import { generateReport } from './commands/generateReport';
 import { showIR } from './commands/showIR';
 import { applyAllSafeFixes } from './commands/applyAllSafeFixes';
+import { showFixGraph } from './commands/showFixGraph';
 import { scanOrFix } from './commands/scanOrFix';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -65,6 +66,10 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand('tokenlint.applyAllSafeFixes', async () => {
       await applyAllSafeFixes(diagnostics);
+    }),
+
+    vscode.commands.registerCommand('tokenlint.showFixGraph', async () => {
+      await showFixGraph();
     }),
 
     vscode.languages.registerHoverProvider(supportedSelectors, createHoverProvider()),

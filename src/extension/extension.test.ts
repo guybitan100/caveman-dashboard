@@ -61,6 +61,7 @@ const extensionMocks = vi.hoisted(() => {
     generateReport: vi.fn(),
     showIR: vi.fn(),
     applyAllSafeFixes: vi.fn(),
+    showFixGraph: vi.fn(),
     scanOrFix: vi.fn(),
     createHoverProvider: vi.fn(() => 'hover-provider'),
     shouldAnalyzeFile: vi.fn(),
@@ -132,6 +133,10 @@ vi.mock('./commands/applyAllSafeFixes', () => ({
   applyAllSafeFixes: extensionMocks.applyAllSafeFixes
 }));
 
+vi.mock('./commands/showFixGraph', () => ({
+  showFixGraph: extensionMocks.showFixGraph
+}));
+
 vi.mock('./commands/scanOrFix', () => ({
   scanOrFix: extensionMocks.scanOrFix
 }));
@@ -156,6 +161,7 @@ describe('extension activation', () => {
     extensionMocks.generateReport.mockReset();
     extensionMocks.showIR.mockReset();
     extensionMocks.applyAllSafeFixes.mockReset();
+    extensionMocks.showFixGraph.mockReset();
     extensionMocks.scanOrFix.mockReset();
     extensionMocks.createHoverProvider.mockClear();
     extensionMocks.shouldAnalyzeFile.mockReset();
@@ -183,7 +189,7 @@ describe('extension activation', () => {
       'tokenlint.sidebar',
       expect.any(extensionMocks.MockTokenLintSidebarProvider)
     );
-    expect(extensionMocks.registerCommand).toHaveBeenCalledTimes(6);
+    expect(extensionMocks.registerCommand).toHaveBeenCalledTimes(7);
     expect(extensionMocks.registerHoverProvider).toHaveBeenCalledWith(
       expect.arrayContaining([
         { scheme: 'file', language: 'markdown' },
@@ -221,7 +227,10 @@ describe('extension activation', () => {
     await extensionMocks.commandHandlers.get('tokenlint.applyAllSafeFixes')?.();
     expect(extensionMocks.applyAllSafeFixes).toHaveBeenCalledWith(extensionMocks.diagnosticsInstance);
 
-    expect(context.subscriptions.length).toBe(11);
+    await extensionMocks.commandHandlers.get('tokenlint.showFixGraph')?.();
+    expect(extensionMocks.showFixGraph).toHaveBeenCalled();
+
+    expect(context.subscriptions.length).toBe(12);
   });
 
   it('updates diagnostics on save for both ignored and analyzable files', () => {

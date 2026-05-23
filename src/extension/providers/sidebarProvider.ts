@@ -37,6 +37,10 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
         case 'applyAllSafeFixes':
           await vscode.commands.executeCommand('tokenlint.applyAllSafeFixes');
           break;
+
+        case 'showFixGraph':
+          await vscode.commands.executeCommand('tokenlint.showFixGraph');
+          break;
       }
     });
   }
@@ -126,10 +130,11 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
 
   <div class="section">Fixes</div>
   <button data-command="applyAllSafeFixes">Apply All Safe Fixes</button>
+  <button class="secondary" data-command="showFixGraph">Show Before / After Graph</button>
 
   <div class="note">
     Safe automatic fixes currently remove exact duplicate instructions.
-    Security-related fixes require review.
+    Use the graph preview to compare the current file against the projected safe-fix result.
   </div>
 
   <script nonce="${nonce}">

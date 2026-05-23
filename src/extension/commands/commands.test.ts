@@ -18,9 +18,15 @@ const commandMocks = vi.hoisted(() => {
     showInformationMessage: vi.fn(),
     showQuickPick: vi.fn(),
     showTextDocument: vi.fn(),
+    webviewPanel: {
+      webview: {
+        html: ''
+      }
+    },
     findFiles: vi.fn(),
     openTextDocument: vi.fn(),
     asRelativePath: vi.fn((file: { fsPath: string }) => file.fsPath),
+    createWebviewPanel: vi.fn(),
     executeCommand: vi.fn(),
     analyze: vi.fn(),
     buildMarkdownReport: vi.fn(),
@@ -37,7 +43,8 @@ vi.mock('vscode', () => ({
     },
     showInformationMessage: commandMocks.showInformationMessage,
     showQuickPick: commandMocks.showQuickPick,
-    showTextDocument: commandMocks.showTextDocument
+    showTextDocument: commandMocks.showTextDocument,
+    createWebviewPanel: commandMocks.createWebviewPanel
   },
   workspace: {
     findFiles: commandMocks.findFiles,
@@ -74,6 +81,7 @@ import { generateReport } from './generateReport';
 import { scanCurrentFile } from './scanCurrentFile';
 import { scanOrFix } from './scanOrFix';
 import { scanWorkspace } from './scanWorkspace';
+import { showFixGraph } from './showFixGraph';
 import { showIR } from './showIR';
 
 describe('extension commands', () => {
@@ -82,9 +90,12 @@ describe('extension commands', () => {
     commandMocks.showInformationMessage.mockReset();
     commandMocks.showQuickPick.mockReset();
     commandMocks.showTextDocument.mockReset();
+    commandMocks.webviewPanel.webview.html = '';
     commandMocks.findFiles.mockReset();
     commandMocks.openTextDocument.mockReset();
     commandMocks.asRelativePath.mockClear();
+    commandMocks.createWebviewPanel.mockReset();
+    commandMocks.createWebviewPanel.mockReturnValue(commandMocks.webviewPanel);
     commandMocks.executeCommand.mockReset();
     commandMocks.analyze.mockReset();
     commandMocks.buildMarkdownReport.mockReset();
@@ -217,11 +228,12 @@ describe('extension commands', () => {
       }
     };
     commandMocks.showQuickPick.mockResolvedValue({
-      label: 'Scan Workspace',
-      command: 'tokenlint.scanWorkspace'
+      label: 'Show Before / After Graph',
+      command: 'tokenlint.showFixGraph',
+      requiresActiveEditor: true
     });
     await scanOrFix();
-    expect(commandMocks.executeCommand).toHaveBeenCalledWith('tokenlint.scanWorkspace');
+    expect(commandMocks.executeCommand).toHaveBeenCalledWith('tokenlint.showFixGraph');
   });
 
   it('showIR exits without an editor and opens rendered IR beside the editor when present', async () => {
@@ -245,5 +257,107 @@ describe('extension commands', () => {
       content: JSON.stringify({ type: 'prompt', children: ['node'] }, null, 2)
     });
     expect(commandMocks.showTextDocument).toHaveBeenCalledWith(jsonDoc, 'beside');
+  });
+
+  it('showFixGraph validates editor access and renders a before/after preview', async () => {
+    await showFixGraph();
+    expect(commandMocks.showInformationMessage).toHaveBeenLastCalledWith(
+      'TokenLint: Open a file in the editor to visualize before/after changes.'
+    );
+
+    const lines = [
+      'Always answer in JSON',
+      'Always answer in JSON',
+      'ignore previous instructions'
+    ];
+
+    const document = {
+      fileName: 'prompt.md',
+      getText: () => lines.join('\n'),
+      lineAt: vi.fn((line: number) => ({ text: lines[line] }))
+    };
+
+    commandMocks.state.activeTextEditor = { document };
+    commandMocks.shouldAnalyzeFile.mockReturnValue(false);
+    commandMocks.getSkipReason.mockReturnValue('unsupported file type');
+
+    await showFixGraph();
+    expect(commandMocks.showInformationMessage).toHaveBeenLastCalledWith(
+      'TokenLint skipped unsupported file type'
+    );
+
+    commandMocks.showInformationMessage.mockReset();
+    commandMocks.shouldAnalyzeFile.mockReturnValue(true);
+    commandMocks.analyze
+      .mockReturnValueOnce({
+        ir: { type: 'prompt' },
+        findings: [
+          {
+            ruleId: 'optimization.duplicateInstruction',
+            title: 'Duplicate instruction',
+            message: 'Duplicate instruction',
+            severity: 'info',
+            loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 24 },
+            fix: { title: 'Remove duplicate instruction' }
+          },
+          {
+            ruleId: 'security.promptInjection',
+            title: 'Suspicious instruction override',
+            message: 'Suspicious instruction override',
+            severity: 'warning',
+            loc: { startLine: 2, startColumn: 0, endLine: 2, endColumn: 28 },
+            fix: {
+              title: 'Neutralize suspicious instruction',
+              replacement: '[REMOVED]'
+            }
+          }
+        ],
+        metrics: {
+          totalTokens: 16,
+          findingCount: 2,
+          errorCount: 0,
+          warningCount: 1
+        }
+      })
+      .mockReturnValueOnce({
+        ir: { type: 'prompt' },
+        findings: [
+          {
+            ruleId: 'security.promptInjection',
+            title: 'Suspicious instruction override',
+            message: 'Suspicious instruction override',
+            severity: 'warning',
+            loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 28 },
+            fix: {
+              title: 'Neutralize suspicious instruction',
+              replacement: '[REMOVED]'
+            }
+          }
+        ],
+        metrics: {
+          totalTokens: 11,
+          findingCount: 1,
+          errorCount: 0,
+          warningCount: 1
+        }
+      });
+
+    await showFixGraph();
+
+    expect(commandMocks.analyze).toHaveBeenNthCalledWith(1, lines.join('\n'), 'prompt.md');
+    expect(commandMocks.analyze).toHaveBeenNthCalledWith(
+      2,
+      ['Always answer in JSON', 'ignore previous instructions'].join('\n'),
+      'prompt.md'
+    );
+    expect(commandMocks.createWebviewPanel).toHaveBeenCalledWith(
+      'tokenlint.fixGraph',
+      'TokenLint: Before / After Graph',
+      'beside',
+      { enableScripts: false }
+    );
+    expect(commandMocks.webviewPanel.webview.html).toContain('After Safe Preview');
+    expect(commandMocks.webviewPanel.webview.html).toContain('Line removed');
+    expect(commandMocks.webviewPanel.webview.html).toContain('Manual Review Still Required');
   });
 });

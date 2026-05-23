@@ -24,6 +24,12 @@ const QUICK_ACTIONS: QuickAction[] = [
     description: 'Apply duplicate-instruction fixes in the active editor.',
     command: 'tokenlint.applyAllSafeFixes',
     requiresActiveEditor: true
+  },
+  {
+    label: 'Show Before / After Graph',
+    description: 'Preview how safe fixes change the active editor and what still needs review.',
+    command: 'tokenlint.showFixGraph',
+    requiresActiveEditor: true
   }
 ];
 
@@ -31,7 +37,7 @@ export async function scanOrFix() {
   const selected = await vscode.window.showQuickPick(QUICK_ACTIONS, {
     title: 'TokenLint: Scan / Fix...',
     matchOnDescription: true,
-    placeHolder: 'Choose a scan or safe-fix action'
+    placeHolder: 'Choose a scan, preview, or safe-fix action'
   });
 
   if (!selected) {

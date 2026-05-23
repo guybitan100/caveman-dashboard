@@ -245,6 +245,7 @@ describe('extension providers', () => {
 
     expect(webviewView.webview.options).toEqual({ enableScripts: true });
     expect(webviewView.webview.html).toContain('Apply All Safe Fixes');
+    expect(webviewView.webview.html).toContain('Show Before / After Graph');
     expect(webviewView.webview.html).toContain("acquireVsCodeApi()");
 
     const commands = [
@@ -253,7 +254,8 @@ describe('extension providers', () => {
       ['scanWorkspace', 'tokenlint.scanWorkspace'],
       ['generateReport', 'tokenlint.generateReport'],
       ['showIR', 'tokenlint.showIR'],
-      ['applyAllSafeFixes', 'tokenlint.applyAllSafeFixes']
+      ['applyAllSafeFixes', 'tokenlint.applyAllSafeFixes'],
+      ['showFixGraph', 'tokenlint.showFixGraph']
     ] as const;
 
     for (const [messageCommand, vscodeCommand] of commands) {

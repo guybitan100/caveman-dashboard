@@ -21,6 +21,7 @@ TokenLint is a compiler-style VS Code extension for prompts, AI skills, MCP work
 - Workspace scanner
 - Markdown report generator
 - Show IR command
+- Before / after fix graph preview
 
 ## Activity Bar Sidebar
 
@@ -34,6 +35,7 @@ The sidebar includes:
 - Generate Report
 - Show IR
 - Apply All Safe Fixes
+- Show Before / After Graph
 
 ## Fix Engine
 
@@ -61,6 +63,7 @@ TokenLint includes a safe fix engine.
 - `TokenLint: Generate Report`
 - `TokenLint: Show IR`
 - `TokenLint: Apply All Safe Fixes`
+- `TokenLint: Show Before / After Graph`
 
 ## Scan Scope
 
@@ -144,3 +147,11 @@ TokenLint: Apply All Safe Fixes
 ```
 
 to automatically remove exact duplicate instructions after the file is rescanned.
+
+Or run:
+
+```text
+TokenLint: Show Before / After Graph
+```
+
+to open a visual preview of the current scan state, the safe automatic changes, and the findings that still need manual review.
