@@ -4,8 +4,19 @@ import { TokenLintDiagnosticProvider } from '../providers/diagnosticProvider';
 import { applySafeFixPreview, showFixGraphPreview } from './showFixGraph';
 import { getSkipReason, shouldAnalyzeFile } from '../utils/scanFilter';
 
+function resolveTargetEditor(): vscode.TextEditor | undefined {
+  const activeEditor = vscode.window.activeTextEditor;
+
+  if (activeEditor) {
+    return activeEditor;
+  }
+
+  return vscode.window.visibleTextEditors.find(editor => shouldAnalyzeFile(editor.document.fileName))
+    ?? vscode.window.visibleTextEditors[0];
+}
+
 export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
-  const editor = vscode.window.activeTextEditor;
+  const editor = resolveTargetEditor();
   if (!editor) {
     vscode.window.showInformationMessage(
       'TokenLint: Open a file in the editor to apply safe fixes.'

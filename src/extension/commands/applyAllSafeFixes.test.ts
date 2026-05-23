@@ -3,7 +3,8 @@ import { AnalysisResult } from '../../core/engine/engine';
 
 const vscodeMock = vi.hoisted(() => {
   const state = {
-    activeTextEditor: undefined as { document: MockDocument } | undefined
+    activeTextEditor: undefined as { document: MockDocument } | undefined,
+    visibleTextEditors: [] as Array<{ document: MockDocument }>
   };
 
   return {
@@ -35,6 +36,9 @@ vi.mock('vscode', () => ({
   window: {
     get activeTextEditor() {
       return vscodeMock.state.activeTextEditor;
+    },
+    get visibleTextEditors() {
+      return vscodeMock.state.visibleTextEditors;
     },
     showInformationMessage: vscodeMock.showInformationMessage
   },
@@ -91,6 +95,7 @@ describe('applyAllSafeFixes', () => {
 
   beforeEach(() => {
     vscodeMock.state.activeTextEditor = undefined;
+    vscodeMock.state.visibleTextEditors = [];
     vscodeMock.showInformationMessage.mockReset();
     vscodeMock.applyEdit.mockReset();
     vscodeMock.getDiagnostics.mockReset();
@@ -107,6 +112,56 @@ describe('applyAllSafeFixes', () => {
 
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
       'TokenLint: Open a file in the editor to apply safe fixes.'
+    );
+  });
+
+  it('uses a visible editor when the sidebar command runs without an active text editor', async () => {
+    const document: MockDocument = {
+      fileName: '/workspace/prompt.md',
+      uri: 'file:///prompt.md',
+      getText: vi.fn(() => 'before text'),
+      lineAt: vi.fn().mockReturnValue({
+        rangeIncludingLineBreak: 'line-range'
+      }),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.visibleTextEditors = [{ document }];
+
+    const provider = {
+      scan: vi.fn(() => ({
+        ...emptyResult,
+        findings: [
+          {
+            ruleId: 'optimization.duplicateInstruction',
+            title: 'Duplicate instruction',
+            message: 'Duplicate instruction',
+            severity: 'info' as const,
+            loc: {
+              startLine: 2,
+              startColumn: 0,
+              endLine: 2,
+              endColumn: 10
+            },
+            fix: {
+              title: 'Remove duplicate instruction'
+            }
+          }
+        ]
+      }))
+    };
+
+    vscodeMock.applyEdit.mockResolvedValue(true);
+    showFixGraphMock.applySafeFixPreview.mockReturnValue('after text');
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(provider.scan).toHaveBeenCalledWith(document);
+    expect(document.lineAt).toHaveBeenCalledWith(2);
+    expect(vscodeMock.applyEdit).toHaveBeenCalledTimes(1);
+    expect(document.save).toHaveBeenCalledTimes(1);
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint applied 1 safe fixes.'
     );
   });
 
