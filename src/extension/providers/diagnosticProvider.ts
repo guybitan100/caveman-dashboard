@@ -23,7 +23,12 @@ export class TokenLintDiagnosticProvider {
     const result = analyze(document.getText(), document.fileName);
     const diagnostics = result.findings.map(toDiagnostic);
 
-    this.collection.set(document.uri, diagnostics);
+    if (diagnostics.length > 0) {
+      this.collection.set(document.uri, diagnostics);
+    } else {
+      this.collection.delete(document.uri);
+    }
+
     this.cache.set(document.uri.toString(), result);
 
     return result;

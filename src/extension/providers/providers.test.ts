@@ -180,6 +180,20 @@ describe('extension providers', () => {
     expect(collection.set).toHaveBeenCalledWith(document.uri, [mappedDiagnostic]);
     expect(provider.getCached(document as never)).toBe(result);
 
+    collection.set.mockClear();
+    collection.delete.mockClear();
+    providerMocks.analyze.mockReturnValue({
+      findings: [],
+      metrics: { findingCount: 0, totalTokens: 4, errorCount: 0, warningCount: 0 },
+      ir: { type: 'prompt' }
+    } as never);
+
+    const cleanResult = provider.scan(document as never);
+    expect(cleanResult.findings).toEqual([]);
+    expect(collection.set).not.toHaveBeenCalled();
+    expect(collection.delete).toHaveBeenCalledWith(document.uri);
+    expect(provider.getCached(document as never)).toBe(cleanResult);
+
     providerMocks.shouldAnalyzeFile.mockReturnValue(false);
     expect(provider.scan(document as never).findings).toEqual([]);
     expect(collection.delete).toHaveBeenCalledWith(document.uri);

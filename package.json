@@ -2,7 +2,7 @@
   "name": "tokenlint-vscode",
   "displayName": "TokenLint",
   "description": "Compiler-style prompt, AI skill, MCP, and cognitive security linter for VS Code",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "tokenlint",
   "engines": {
     "vscode": "^1.90.0"
