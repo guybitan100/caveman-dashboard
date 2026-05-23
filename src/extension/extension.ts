@@ -76,7 +76,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.languages.registerCodeActionsProvider(
       supportedSelectors,
-      new TokenLintCodeActionProvider(),
+      new TokenLintCodeActionProvider(diagnostics),
       {
         providedCodeActionKinds: TokenLintCodeActionProvider.providedCodeActionKinds
       }

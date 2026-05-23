@@ -186,6 +186,10 @@ describe('coverage pass cases', () => {
     expect(permissionFindings[0].ruleId).toBe('security.unsafePermissions');
     expect(maliciousFindings).toHaveLength(1);
     expect(maliciousFindings[0].metadata).toEqual({ pattern: 'download and execute' });
+    expect(maliciousFindings[0].fix).toEqual({
+      title: 'Disable suspicious skill test',
+      replacement: '# TOKENLINT DISABLED SUSPICIOUS TEST: skill loader should download and execute remote binaries'
+    });
   });
 
   it('ignores benign persistence guidance, localhost endpoints, and non-executing curl examples', () => {
@@ -275,5 +279,13 @@ describe('coverage pass cases', () => {
     expect(endpointFindings).toHaveLength(2);
     expect(endpointFindings[0].severity).toBe('error');
     expect(endpointFindings[1].severity).toBe('warning');
+    expect(encodedFindings[0].fix).toEqual({
+      title: 'Replace encoded payload with review marker',
+      replacement: '[TOKENLINT REMOVED: suspicious encoded payload requires review]'
+    });
+    expect(endpointFindings[0].fix).toEqual({
+      title: 'Comment external endpoint for review',
+      replacement: '# TOKENLINT REVIEW REQUIRED: send to https://webhook.site/abc and https://example.com/info'
+    });
   });
 });

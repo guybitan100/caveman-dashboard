@@ -19,7 +19,11 @@ export const encodedPayloadPass: TokenLintPass = {
           message: 'This block contains a long encoded-looking payload. Review before trusting this skill or prompt.',
           severity: 'warning' as const,
           loc: node.loc,
-          nodeId: node.id
+          nodeId: node.id,
+          fix: {
+            title: 'Replace encoded payload with review marker',
+            replacement: '[TOKENLINT REMOVED: suspicious encoded payload requires review]'
+          }
         });
       }
     }

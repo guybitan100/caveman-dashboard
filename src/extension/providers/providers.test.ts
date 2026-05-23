@@ -279,7 +279,6 @@ describe('extension providers', () => {
   });
 
   it('code action provider builds edits for each supported TokenLint rule', () => {
-    const provider = new TokenLintCodeActionProvider();
     const range = new providerMocks.Range(new providerMocks.Position(0, 0), new providerMocks.Position(0, 12));
     const document = {
       uri: 'file:///prompt.md',
@@ -300,6 +299,74 @@ describe('extension providers', () => {
         };
       })
     };
+
+    const provider = new TokenLintCodeActionProvider({
+      getCached: vi.fn(() => ({
+        findings: [
+          {
+            ruleId: 'optimization.duplicateInstruction',
+            title: 'Duplicate instruction',
+            message: 'Duplicate instruction',
+            severity: 'warning' as const,
+            loc: { startLine: 0, startColumn: 0, endLine: 0, endColumn: 17 },
+            fix: { title: 'Remove duplicate instruction', replacement: '' }
+          },
+          {
+            ruleId: 'retrieval.topKRisk',
+            title: 'High retrieval amplification risk',
+            message: 'High retrieval amplification risk',
+            severity: 'warning' as const,
+            loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 9 },
+            fix: { title: 'Reduce top_k to 6', replacement: 'top_k: 6' }
+          },
+          {
+            ruleId: 'security.promptInjection',
+            title: 'Potential prompt injection',
+            message: 'Potential prompt injection',
+            severity: 'error' as const,
+            loc: { startLine: 2, startColumn: 0, endLine: 2, endColumn: 28 },
+            fix: {
+              title: 'Neutralize suspicious instruction',
+              replacement: '[REMOVED: suspicious instruction override]'
+            }
+          },
+          {
+            ruleId: 'security.externalEndpoint',
+            title: 'External endpoint detected',
+            message: 'External endpoint detected',
+            severity: 'warning' as const,
+            loc: { startLine: 3, startColumn: 0, endLine: 3, endColumn: 24 },
+            fix: {
+              title: 'Comment external endpoint for review',
+              replacement: '# TOKENLINT REVIEW REQUIRED: https://example.com/hook'
+            }
+          },
+          {
+            ruleId: 'security.encodedPayload',
+            title: 'Suspicious encoded payload',
+            message: 'Suspicious encoded payload',
+            severity: 'warning' as const,
+            loc: { startLine: 4, startColumn: 0, endLine: 4, endColumn: 28 },
+            fix: {
+              title: 'Replace encoded payload with review marker',
+              replacement: '[TOKENLINT REMOVED: suspicious encoded payload requires review]'
+            }
+          },
+          {
+            ruleId: 'skills.maliciousSkillTest',
+            title: 'Potentially malicious skill test',
+            message: 'Potentially malicious skill test',
+            severity: 'error' as const,
+            loc: { startLine: 5, startColumn: 0, endLine: 5, endColumn: 20 },
+            fix: {
+              title: 'Disable suspicious skill test',
+              replacement: '# TOKENLINT DISABLED SUSPICIOUS TEST: download and execute'
+            }
+          }
+        ]
+      })),
+      scan: vi.fn()
+    });
 
     const actions = provider.provideCodeActions(
       document as never,

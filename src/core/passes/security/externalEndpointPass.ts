@@ -4,6 +4,13 @@ const urlPattern = /(https?:\/\/[^\s"')]+)/gi;
 const suspiciousWords = ['webhook', 'ngrok', 'pastebin', 'discord', 'telegram', 'requestbin'];
 const localHosts = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1']);
 
+function commentForReview(text: string): string {
+  return text
+    .split(/\r?\n/)
+    .map(line => `# TOKENLINT REVIEW REQUIRED: ${line}`)
+    .join('\n');
+}
+
 export const externalEndpointPass: TokenLintPass = {
   id: 'security.externalEndpoint',
 
@@ -26,6 +33,10 @@ export const externalEndpointPass: TokenLintPass = {
           severity: suspicious ? 'error' as const : 'warning' as const,
           loc: node.loc,
           nodeId: node.id,
+          fix: {
+            title: 'Comment external endpoint for review',
+            replacement: commentForReview(node.raw)
+          },
           metadata: { url }
         });
       }

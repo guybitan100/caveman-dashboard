@@ -60,6 +60,13 @@ const suspiciousPatterns: SuspiciousPattern[] = [
   }
 ];
 
+function disableSuspiciousBlock(text: string): string {
+  return text
+    .split(/\r?\n/)
+    .map(line => `# TOKENLINT DISABLED SUSPICIOUS TEST: ${line}`)
+    .join('\n');
+}
+
 export const maliciousSkillTestPass: TokenLintPass = {
   id: 'skills.maliciousSkillTest',
 
@@ -80,6 +87,10 @@ export const maliciousSkillTestPass: TokenLintPass = {
             severity: 'error' as const,
             loc: node.loc,
             nodeId: node.id,
+            fix: {
+              title: 'Disable suspicious skill test',
+              replacement: disableSuspiciousBlock(node.raw)
+            },
             metadata: { pattern: pattern.label }
           });
         }
