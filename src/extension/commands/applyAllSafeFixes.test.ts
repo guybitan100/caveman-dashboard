@@ -169,6 +169,78 @@ describe('applyAllSafeFixes', () => {
     );
   });
 
+  it('prefers the visible document with TokenLint diagnostics when multiple supported editors are visible', async () => {
+    const wrongDocument: MockDocument = {
+      fileName: '/workspace/other.md',
+      uri: 'file:///other.md',
+      getText: vi.fn(() => 'other text'),
+      lineAt: vi.fn().mockReturnValue({
+        rangeIncludingLineBreak: 'other-line-range'
+      }),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+    const targetDocument: MockDocument = {
+      fileName: '/workspace/prompt.md',
+      uri: 'file:///prompt.md',
+      getText: vi.fn(() => 'before text'),
+      lineAt: vi.fn().mockReturnValue({
+        rangeIncludingLineBreak: 'target-line-range'
+      }),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.visibleTextEditors = [
+      { document: wrongDocument },
+      { document: targetDocument }
+    ];
+    vscodeMock.getDiagnostics.mockReturnValue([
+      [{ scheme: 'file', fsPath: '/workspace/prompt.md' }, [{ source: 'TokenLint' }]]
+    ]);
+
+    const provider = {
+      scan: vi.fn((document: MockDocument) => {
+        if (document === wrongDocument) {
+          return emptyResult;
+        }
+
+        return {
+          ...emptyResult,
+          findings: [
+            {
+              ruleId: 'optimization.duplicateInstruction',
+              title: 'Duplicate instruction',
+              message: 'Duplicate instruction',
+              severity: 'info' as const,
+              loc: {
+                startLine: 2,
+                startColumn: 0,
+                endLine: 2,
+                endColumn: 10
+              },
+              fix: {
+                title: 'Remove duplicate instruction'
+              }
+            }
+          ]
+        };
+      })
+    };
+
+    vscodeMock.applyEdit.mockResolvedValue(true);
+    showFixGraphMock.applySafeFixPreview.mockReturnValue('after text');
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(provider.scan).toHaveBeenCalledWith(targetDocument);
+    expect(targetDocument.lineAt).toHaveBeenCalledWith(2);
+    expect(vscodeMock.applyEdit).toHaveBeenCalledTimes(1);
+    expect(targetDocument.save).toHaveBeenCalledTimes(1);
+    expect(wrongDocument.save).not.toHaveBeenCalled();
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint applied 1 safe fixes.'
+    );
+  });
+
   it('opens a TokenLint diagnostic file when the sidebar runs without any visible editor', async () => {
     const diagnosticUri = {
       scheme: 'file',
