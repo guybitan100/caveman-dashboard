@@ -4,6 +4,17 @@ import { TokenLintFix } from '../../core/fixes/fix';
 import { fixesFromFindings } from '../../core/fixes/fixEngine';
 import { getSkipReason, shouldAnalyzeFile } from '../utils/scanFilter';
 
+function resolveTargetEditor(): vscode.TextEditor | undefined {
+  const activeEditor = vscode.window.activeTextEditor;
+
+  if (activeEditor) {
+    return activeEditor;
+  }
+
+  return vscode.window.visibleTextEditors.find(editor => shouldAnalyzeFile(editor.document.fileName))
+    ?? vscode.window.visibleTextEditors[0];
+}
+
 type GraphStep = {
   title: string;
   explanation: string;
@@ -19,7 +30,7 @@ type FixCounts = {
 };
 
 export async function showFixGraph() {
-  const editor = vscode.window.activeTextEditor;
+  const editor = resolveTargetEditor();
   if (!editor) {
     vscode.window.showInformationMessage(
       'TokenLint: Open a file in the editor to visualize before/after changes.'

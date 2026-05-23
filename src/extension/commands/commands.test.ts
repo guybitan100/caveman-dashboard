@@ -1,15 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const commandMocks = vi.hoisted(() => {
+  type MockEditor = {
+    document: {
+      fileName: string;
+      getText: () => string;
+    };
+  };
+
   const state = {
-    activeTextEditor: undefined as
-      | {
-          document: {
-            fileName: string;
-            getText: () => string;
-          };
-        }
-      | undefined
+    activeTextEditor: undefined as MockEditor | undefined,
+    visibleTextEditors: [] as MockEditor[]
   };
 
   return {
@@ -40,6 +41,9 @@ vi.mock('vscode', () => ({
   window: {
     get activeTextEditor() {
       return commandMocks.state.activeTextEditor;
+    },
+    get visibleTextEditors() {
+      return commandMocks.state.visibleTextEditors;
     },
     showInformationMessage: commandMocks.showInformationMessage,
     showQuickPick: commandMocks.showQuickPick,
@@ -87,6 +91,7 @@ import { showIR } from './showIR';
 describe('extension commands', () => {
   beforeEach(() => {
     commandMocks.state.activeTextEditor = undefined;
+    commandMocks.state.visibleTextEditors = [];
     commandMocks.showInformationMessage.mockReset();
     commandMocks.showQuickPick.mockReset();
     commandMocks.showTextDocument.mockReset();
@@ -277,7 +282,7 @@ describe('extension commands', () => {
       lineAt: vi.fn((line: number) => ({ text: lines[line] }))
     };
 
-    commandMocks.state.activeTextEditor = { document };
+    commandMocks.state.visibleTextEditors = [{ document }];
     commandMocks.shouldAnalyzeFile.mockReturnValue(false);
     commandMocks.getSkipReason.mockReturnValue('unsupported file type');
 
@@ -359,5 +364,64 @@ describe('extension commands', () => {
     expect(commandMocks.webviewPanel.webview.html).toContain('After Safe Preview');
     expect(commandMocks.webviewPanel.webview.html).toContain('Line removed');
     expect(commandMocks.webviewPanel.webview.html).toContain('Manual Review Still Required');
+  });
+
+  it('showFixGraph prefers a supported visible editor when the sidebar has focus', async () => {
+    const visibleDocument = {
+      fileName: 'prompt.md',
+      getText: () => 'Always answer in JSON\nAlways answer in JSON'
+    };
+    const unsupportedDocument = {
+      fileName: 'notes.txt',
+      getText: () => 'ignore me'
+    };
+
+    commandMocks.state.visibleTextEditors = [
+      { document: unsupportedDocument },
+      { document: visibleDocument }
+    ];
+    commandMocks.shouldAnalyzeFile.mockImplementation((fileName: string) => fileName === 'prompt.md');
+    commandMocks.analyze
+      .mockReturnValueOnce({
+        ir: { type: 'prompt' },
+        findings: [
+          {
+            ruleId: 'optimization.duplicateInstruction',
+            title: 'Duplicate instruction',
+            message: 'Duplicate instruction',
+            severity: 'info',
+            loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 21 },
+            fix: { title: 'Remove duplicate instruction' }
+          }
+        ],
+        metrics: {
+          totalTokens: 8,
+          findingCount: 1,
+          errorCount: 0,
+          warningCount: 1
+        }
+      })
+      .mockReturnValueOnce({
+        ir: { type: 'prompt' },
+        findings: [],
+        metrics: {
+          totalTokens: 4,
+          findingCount: 0,
+          errorCount: 0,
+          warningCount: 0
+        }
+      });
+
+    await showFixGraph();
+
+    expect(commandMocks.analyze).toHaveBeenNthCalledWith(
+      1,
+      'Always answer in JSON\nAlways answer in JSON',
+      'prompt.md'
+    );
+    expect(commandMocks.createWebviewPanel).toHaveBeenCalledTimes(1);
+    expect(commandMocks.showInformationMessage).not.toHaveBeenCalledWith(
+      'TokenLint: Open a file in the editor to visualize before/after changes.'
+    );
   });
 });
