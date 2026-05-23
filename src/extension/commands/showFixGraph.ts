@@ -19,6 +19,133 @@ type FixCounts = {
   unsafe: number;
 };
 
+type FixGraphSelection = {
+  document: vscode.TextDocument;
+  originalText: string;
+  before: AnalysisResult;
+  fixes: TokenLintFix[];
+  safeFixes: TokenLintFix[];
+};
+
+function hasTokenLintDiagnostics(diagnostics: readonly vscode.Diagnostic[]): boolean {
+  return diagnostics.some(diagnostic => diagnostic.source === 'TokenLint');
+}
+
+function getUriKey(uri: vscode.Uri | { fsPath?: string } | string | undefined): string | undefined {
+  if (!uri) {
+    return undefined;
+  }
+
+  if (typeof uri === 'string') {
+    return uri;
+  }
+
+  if (typeof uri === 'object' && 'fsPath' in uri && typeof uri.fsPath === 'string') {
+    return uri.fsPath;
+  }
+
+  return typeof uri.toString === 'function' ? uri.toString() : undefined;
+}
+
+function rememberDocument(seenDocuments: Set<string>, document: vscode.TextDocument) {
+  seenDocuments.add(document.fileName);
+
+  const uriKey = getUriKey(document.uri);
+
+  if (uriKey) {
+    seenDocuments.add(uriKey);
+  }
+}
+
+function getDiagnosticEntries(): ReadonlyArray<[vscode.Uri, readonly vscode.Diagnostic[]]> {
+  const diagnostics = vscode.languages.getDiagnostics();
+
+  if (!Array.isArray(diagnostics)) {
+    return [];
+  }
+
+  const entries: Array<[vscode.Uri, readonly vscode.Diagnostic[]]> = [];
+
+  for (const entry of diagnostics) {
+    if (
+      Array.isArray(entry)
+      && entry.length === 2
+      && typeof entry[0] === 'object'
+      && entry[0] !== null
+      && 'scheme' in entry[0]
+      && Array.isArray(entry[1])
+    ) {
+      entries.push([entry[0], entry[1]]);
+    }
+  }
+
+  return entries;
+}
+
+function inspectDocumentForGraph(document: vscode.TextDocument): FixGraphSelection {
+  const originalText = document.getText();
+  const before = analyze(originalText, document.fileName);
+  const fixes = fixesFromFindings(before.findings);
+
+  return {
+    document,
+    originalText,
+    before,
+    fixes,
+    safeFixes: fixes.filter(fix => fix.safety === 'safe')
+  };
+}
+
+async function resolveFixGraphSelection(
+  initialDocument: vscode.TextDocument
+): Promise<FixGraphSelection | undefined> {
+  const seenDocuments = new Set<string>();
+  let initialSelection: FixGraphSelection | undefined;
+
+  rememberDocument(seenDocuments, initialDocument);
+
+  if (shouldAnalyzeFile(initialDocument.fileName)) {
+    initialSelection = inspectDocumentForGraph(initialDocument);
+
+    if (initialSelection.fixes.length) {
+      return initialSelection;
+    }
+  }
+
+  for (const [uri, entries] of getDiagnosticEntries()) {
+    const uriKey = getUriKey(uri);
+
+    if (
+      uri.scheme !== 'file'
+      || !hasTokenLintDiagnostics(entries)
+      || !shouldAnalyzeFile(uri.fsPath)
+      || seenDocuments.has(uri.fsPath)
+      || (uriKey ? seenDocuments.has(uriKey) : false)
+    ) {
+      continue;
+    }
+
+    try {
+      const document = await vscode.workspace.openTextDocument(uri);
+      rememberDocument(seenDocuments, document);
+
+      const selection = inspectDocumentForGraph(document);
+
+      if (selection.fixes.length) {
+        return selection;
+      }
+    } catch {
+      seenDocuments.add(uri.fsPath);
+
+      if (uriKey) {
+        seenDocuments.add(uriKey);
+      }
+    }
+  }
+
+  return initialSelection;
+}
+
 export async function showFixGraph() {
   const document = await resolveTargetDocument();
   if (!document) {
@@ -28,31 +155,28 @@ export async function showFixGraph() {
     return;
   }
 
-  if (!shouldAnalyzeFile(document.fileName)) {
+  const selection = await resolveFixGraphSelection(document);
+
+  if (!selection) {
     vscode.window.showInformationMessage(
       `TokenLint skipped ${getSkipReason(document.fileName)}`
     );
     return;
   }
 
-  const originalText = document.getText();
-  const before = analyze(originalText, document.fileName);
-  const fixes = fixesFromFindings(before.findings);
-
-  if (!fixes.length) {
+  if (!selection.fixes.length) {
     vscode.window.showInformationMessage('TokenLint: No fixes available to visualize.');
     return;
   }
 
-  const safeFixes = fixes.filter(fix => fix.safety === 'safe');
-  const previewText = applySafeFixPreview(originalText, safeFixes);
+  const previewText = applySafeFixPreview(selection.originalText, selection.safeFixes);
   showFixGraphPreview({
-    fileName: document.fileName,
-    beforeText: originalText,
+    fileName: selection.document.fileName,
+    beforeText: selection.originalText,
     afterText: previewText,
-    beforeResult: before,
-    allFixes: fixes,
-    safeFixes
+    beforeResult: selection.before,
+    allFixes: selection.fixes,
+    safeFixes: selection.safeFixes
   });
 }
 
