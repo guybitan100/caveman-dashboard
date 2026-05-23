@@ -61,6 +61,14 @@ describe('scanFilter', () => {
     scanFilterMocks.detectKind.mockReturnValue('typescript');
     expect(shouldAnalyzeFile('/workspace/agents/release-agent.ts')).toBe(true);
 
+    // Code files in generic "agents/" paths without a relevant basename are skipped
+    scanFilterMocks.detectKind.mockReturnValue('python');
+    expect(shouldAnalyzeFile('/workspace/services/agents/citations/summarizers.py')).toBe(false);
+
+    // Code files in strict prompt directories are still scanned
+    scanFilterMocks.detectKind.mockReturnValue('python');
+    expect(shouldAnalyzeFile('/workspace/.github/agents/helper.py')).toBe(true);
+
     scanFilterMocks.detectKind.mockReturnValue('markdown');
     expect(shouldAnalyzeFile('/workspace/README.md')).toBe(false);
     expect(getSkipReason('/workspace/README.md')).toBe(

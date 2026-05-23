@@ -35,6 +35,10 @@ const scannableKinds = new Set<ScannableKind>([
 const relevantBaseNameRegex = /(?:^|[._-])(agent|agents|skill|skills|mcp|prompt|prompts|instruction|instructions)(?:[._-]|$)/i;
 const relevantPathRegex =
   /(^|\/)(\.github\/agents|\.vscode\/prompts|agents|skills|prompts|mcp)(\/|$)/i;
+const strictPathRegex =
+  /(^|\/)(\.github\/agents|\.vscode\/prompts)(\/|$)/i;
+const codeKinds = new Set(['typescript', 'python']);
+const genericRelevantDirs = new Set(['agents', 'skills', 'prompts', 'mcp']);
 const relevantSpecialFiles = new Set([
   'agents.md',
   'copilot-instructions.md',
@@ -152,6 +156,20 @@ function isRelevantArtifact(fileName: string): boolean {
 
   if (relevantBaseNameRegex.test(baseName)) {
     return true;
+  }
+
+  // Code files (.py, .ts, .tsx) in generic "agents/" or "skills/" directories
+  // are typically source packages, not prompt/agent artifacts.
+  // Only match them if they are direct children of the relevant directory
+  // or in strict prompt directories (.github/agents, .vscode/prompts).
+  if (codeKinds.has(detectKind(fileName))) {
+    if (strictPathRegex.test(normalized)) {
+      return true;
+    }
+
+    const parentDir = path.posix.basename(path.posix.dirname(normalized));
+
+    return genericRelevantDirs.has(parentDir);
   }
 
   return relevantPathRegex.test(normalized);
