@@ -2,6 +2,7 @@ import { TokenLintPass } from '../../engine/pass';
 
 const urlPattern = /(https?:\/\/[^\s"')]+)/gi;
 const suspiciousWords = ['webhook', 'ngrok', 'pastebin', 'discord', 'telegram', 'requestbin'];
+const dataFlowKeywords = /\b(send|post|upload|forward|exfiltrate|transmit|pipe|push|write)\b.*https?:\/\//i;
 const localHosts = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1']);
 
 const safeDocsDomains = new Set([
@@ -32,8 +33,13 @@ const safeDocsDomains = new Set([
   'platform.openai.com',
   'arxiv.org',
   'semver.org',
-  'creativecommons.org'
+  'creativecommons.org',
+  'www.conventionalcommits.org',
+  'conventionalcommits.org'
 ]);
+
+/** URLs in markdown link syntax [text](url) are documentation references */
+const markdownLinkPattern = /\[[^\]]*\]\(https?:\/\/[^)]+\)/gi;
 
 function commentForReview(text: string): string {
   return text
@@ -50,13 +56,21 @@ export const externalEndpointPass: TokenLintPass = {
 
     for (const node of ir.children) {
       const urls = node.raw.match(urlPattern) || [];
+      const markdownLinks = new Set(
+        (node.raw.match(markdownLinkPattern) || []).flatMap(m => m.match(urlPattern) || [])
+      );
 
       for (const url of urls) {
         if (isLocalOrPrivateEndpoint(url)) continue;
         if (isSafeDocsUrl(url)) continue;
+        if (markdownLinks.has(url)) continue;
 
         const lower = url.toLowerCase();
         const suspicious = suspiciousWords.some(w => lower.includes(w));
+        const hasDataFlow = dataFlowKeywords.test(node.raw);
+
+        // Only flag non-suspicious URLs if there's evidence of data being sent
+        if (!suspicious && !hasDataFlow) continue;
 
         findings.push({
           ruleId: this.id,
