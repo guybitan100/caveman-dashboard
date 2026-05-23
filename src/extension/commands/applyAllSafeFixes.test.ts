@@ -15,9 +15,14 @@ const vscodeMock = vi.hoisted(() => {
     getDiagnostics: vi.fn(),
     WorkspaceEdit: class {
       public deletes: Array<{ uri: string; range: string }> = [];
+      public replaces: Array<{ uri: string; range: string; newText: string }> = [];
 
       delete(uri: string, range: string) {
         this.deletes.push({ uri, range });
+      }
+
+      replace(uri: string, range: string, newText: string) {
+        this.replaces.push({ uri, range, newText });
       }
     }
   };
@@ -165,7 +170,7 @@ describe('applyAllSafeFixes', () => {
     expect(vscodeMock.applyEdit).toHaveBeenCalledTimes(1);
     expect(document.save).toHaveBeenCalledTimes(1);
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
-      'TokenLint applied 1 safe fixes.'
+      'TokenLint applied 1 fixes.'
     );
   });
 
@@ -237,7 +242,7 @@ describe('applyAllSafeFixes', () => {
     expect(targetDocument.save).toHaveBeenCalledTimes(1);
     expect(wrongDocument.save).not.toHaveBeenCalled();
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
-      'TokenLint applied 1 safe fixes.'
+      'TokenLint applied 1 fixes.'
     );
   });
 
@@ -293,11 +298,11 @@ describe('applyAllSafeFixes', () => {
     expect(provider.scan).toHaveBeenCalledWith(document);
     expect(document.save).toHaveBeenCalledTimes(1);
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
-      'TokenLint applied 1 safe fixes.'
+      'TokenLint applied 1 fixes.'
     );
   });
 
-  it('falls through to another TokenLint problem file when the first diagnostic file is review-only', async () => {
+  it('applies fixes from both review-required and safe diagnostic files', async () => {
     const reviewUri = {
       scheme: 'file',
       fsPath: '/workspace/review.md'
@@ -310,7 +315,9 @@ describe('applyAllSafeFixes', () => {
       fileName: '/workspace/review.md',
       uri: 'file:///review.md',
       getText: vi.fn(() => 'review text'),
-      lineAt: vi.fn(),
+      lineAt: vi.fn().mockReturnValue({
+        rangeIncludingLineBreak: 'review-line-range'
+      }),
       save: vi.fn().mockResolvedValue(undefined)
     };
     const safeDocument: MockDocument = {
@@ -393,11 +400,12 @@ describe('applyAllSafeFixes', () => {
     expect(vscodeMock.openTextDocument).toHaveBeenNthCalledWith(2, safeUri);
     expect(provider.scan).toHaveBeenNthCalledWith(1, reviewDocument);
     expect(provider.scan).toHaveBeenNthCalledWith(2, safeDocument);
+    expect(reviewDocument.lineAt).toHaveBeenCalledWith(1);
     expect(safeDocument.lineAt).toHaveBeenCalledWith(2);
-    expect(reviewDocument.save).not.toHaveBeenCalled();
+    expect(reviewDocument.save).toHaveBeenCalledTimes(1);
     expect(safeDocument.save).toHaveBeenCalledTimes(1);
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
-      'TokenLint applied 1 safe fixes.'
+      'TokenLint applied 2 fixes across 2 files.'
     );
   });
 
@@ -469,7 +477,7 @@ describe('applyAllSafeFixes', () => {
     expect(safeDocument.save).toHaveBeenCalledTimes(1);
     expect(activeDocument.save).not.toHaveBeenCalled();
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
-      'TokenLint applied 1 safe fixes.'
+      'TokenLint applied 1 fixes.'
     );
   });
 
@@ -576,7 +584,7 @@ describe('applyAllSafeFixes', () => {
     expect(firstDocument.save).toHaveBeenCalledTimes(1);
     expect(secondDocument.save).toHaveBeenCalledTimes(1);
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
-      'TokenLint applied 2 safe fixes across 2 files.'
+      'TokenLint applied 2 fixes across 2 files.'
     );
     expect(showFixGraphMock.showFixGraphPreview).toHaveBeenCalledTimes(1);
     expect(showFixGraphMock.showFixGraphPreview).toHaveBeenCalledWith({
@@ -603,12 +611,14 @@ describe('applyAllSafeFixes', () => {
     });
   });
 
-  it('reports when only review-required quick fixes are available', async () => {
+  it('applies review-required fixes', async () => {
     const document: MockDocument = {
       fileName: '/workspace/prompt.md',
       uri: 'file:///prompt.md',
       getText: vi.fn(() => 'prompt body'),
-      lineAt: vi.fn(),
+      lineAt: vi.fn().mockReturnValue({
+        rangeIncludingLineBreak: 'line-range'
+      }),
       save: vi.fn().mockResolvedValue(undefined)
     };
 
@@ -643,13 +653,16 @@ describe('applyAllSafeFixes', () => {
         range: { start: { line: 1 } }
       }
     ]);
+    vscodeMock.applyEdit.mockResolvedValue(true);
+    showFixGraphMock.applySafeFixPreview.mockReturnValue('after text');
 
     await applyAllSafeFixes(provider as never);
 
     expect(provider.scan).toHaveBeenCalledWith(document);
-    expect(vscodeMock.applyEdit).not.toHaveBeenCalled();
+    expect(vscodeMock.applyEdit).toHaveBeenCalledTimes(1);
+    expect(document.save).toHaveBeenCalledTimes(1);
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
-      'TokenLint: No safe automatic fixes available. 1 review-required quick fix available from Quick Fix.'
+      'TokenLint applied 1 fixes.'
     );
   });
 
@@ -671,7 +684,7 @@ describe('applyAllSafeFixes', () => {
     expect(provider.scan).toHaveBeenCalledWith(document);
     expect(vscodeMock.applyEdit).not.toHaveBeenCalled();
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
-      'TokenLint: No safe automatic fixes available.'
+      'TokenLint: No automatic fixes available.'
     );
   });
 
@@ -747,7 +760,7 @@ describe('applyAllSafeFixes', () => {
       }
     ]);
     expect(document.save).toHaveBeenCalledTimes(1);
-    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith('TokenLint applied 1 safe fixes.');
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith('TokenLint applied 1 fixes.');
     expect(showFixGraphMock.showFixGraphPreview).toHaveBeenCalledWith({
       fileName: '/workspace/prompt.md',
       beforeText: 'before text',
@@ -871,7 +884,7 @@ describe('applyAllSafeFixes', () => {
     expect(document.save).not.toHaveBeenCalled();
     expect(showFixGraphMock.showFixGraphPreview).not.toHaveBeenCalled();
     expect(vscodeMock.showInformationMessage).not.toHaveBeenCalledWith(
-      'TokenLint applied 1 safe fixes.'
+      'TokenLint applied 1 fixes.'
     );
   });
 

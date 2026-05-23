@@ -37,7 +37,7 @@ function getFixBuckets(result: ReturnType<TokenLintDiagnosticProvider['scan']>) 
   return {
     fixes,
     safeFixes: fixes
-      .filter(fix => fix.safety === 'safe')
+      .filter(fix => fix.safety !== 'unsafe')
       .sort((a, b) => b.loc.startLine - a.loc.startLine)
   };
 }
@@ -76,10 +76,6 @@ function getDiagnosticEntries(): ReadonlyArray<[vscode.Uri, readonly vscode.Diag
   }
 
   return entries;
-}
-
-function getReviewRequiredFixes(plans: DocumentFixPlan[]) {
-  return plans.flatMap(plan => plan.fixes.filter(fix => fix.safety === 'review_required'));
 }
 
 async function scanDocumentForFixes(
@@ -156,17 +152,7 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
   const safePlans = plans.filter(plan => plan.safeFixes.length > 0);
 
   if (!safePlans.length) {
-    const reviewRequiredFixes = getReviewRequiredFixes(plans);
-
-    if (reviewRequiredFixes.length) {
-      const suffix = reviewRequiredFixes.length === 1 ? '' : 'es';
-      vscode.window.showInformationMessage(
-        `TokenLint: No safe automatic fixes available. ${reviewRequiredFixes.length} review-required quick fix${suffix} available from Quick Fix.`
-      );
-      return;
-    }
-
-    vscode.window.showInformationMessage('TokenLint: No safe automatic fixes available.');
+    vscode.window.showInformationMessage('TokenLint: No automatic fixes available.');
     return;
   }
 
@@ -174,12 +160,25 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
   const originalText = previewPlan.document.getText();
   const previewText = applySafeFixPreview(originalText, previewPlan.safeFixes);
   const edit = new vscode.WorkspaceEdit();
-  const totalSafeFixes = safePlans.reduce((total, plan) => total + plan.safeFixes.length, 0);
+  const totalFixes = safePlans.reduce((total, plan) => total + plan.safeFixes.length, 0);
 
   for (const plan of safePlans) {
     for (const fix of plan.safeFixes) {
-      const line = plan.document.lineAt(fix.loc.startLine);
-      edit.delete(plan.document.uri, line.rangeIncludingLineBreak);
+      const startLine = plan.document.lineAt(fix.loc.startLine);
+      const endLineIdx = Math.min(fix.loc.endLine, plan.document.lineCount - 1);
+
+      let range = startLine.rangeIncludingLineBreak;
+
+      if (endLineIdx > fix.loc.startLine) {
+        const endLine = plan.document.lineAt(endLineIdx);
+        range = range.union(endLine.rangeIncludingLineBreak);
+      }
+
+      if (fix.replacement) {
+        edit.replace(plan.document.uri, range, fix.replacement + '\n');
+      } else {
+        edit.delete(plan.document.uri, range);
+      }
     }
   }
 
@@ -193,11 +192,11 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
 
     if (safePlans.length === 1) {
       vscode.window.showInformationMessage(
-        `TokenLint applied ${totalSafeFixes} safe fixes.`
+        `TokenLint applied ${totalFixes} fixes.`
       );
     } else {
       vscode.window.showInformationMessage(
-        `TokenLint applied ${totalSafeFixes} safe fixes across ${safePlans.length} files.`
+        `TokenLint applied ${totalFixes} fixes across ${safePlans.length} files.`
       );
     }
 
