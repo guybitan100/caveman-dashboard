@@ -772,6 +772,57 @@ describe('applyAllSafeFixes', () => {
     });
   });
 
+  it('rescans fixed documents after applying safe edits so diagnostics clear immediately', async () => {
+    const document: MockDocument = {
+      fileName: '/workspace/prompt.md',
+      uri: 'file:///prompt.md',
+      getText: vi.fn(() => 'before text'),
+      lineAt: vi.fn().mockReturnValue({
+        rangeIncludingLineBreak: 'line-range'
+      }),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document };
+
+    const provider = {
+      scan: vi
+        .fn()
+        .mockReturnValueOnce({
+          ...emptyResult,
+          findings: [
+            {
+              ruleId: 'optimization.duplicateInstruction',
+              title: 'Duplicate instruction',
+              message: 'Duplicate instruction',
+              severity: 'info' as const,
+              loc: {
+                startLine: 3,
+                startColumn: 0,
+                endLine: 3,
+                endColumn: 10
+              },
+              fix: {
+                title: 'Remove duplicate instruction'
+              }
+            }
+          ]
+        })
+        .mockReturnValueOnce(emptyResult)
+    };
+
+    vscodeMock.applyEdit.mockResolvedValue(true);
+    showFixGraphMock.applySafeFixPreview.mockReturnValue('after text');
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(vscodeMock.applyEdit).toHaveBeenCalledTimes(1);
+    expect(document.save).toHaveBeenCalledTimes(1);
+    expect(provider.scan).toHaveBeenCalledTimes(2);
+    expect(provider.scan).toHaveBeenNthCalledWith(1, document);
+    expect(provider.scan).toHaveBeenNthCalledWith(2, document);
+  });
+
   it('does not save or report success when the workspace edit fails', async () => {
     const document: MockDocument = {
       fileName: '/workspace/prompt.md',

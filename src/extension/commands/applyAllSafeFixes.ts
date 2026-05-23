@@ -188,6 +188,7 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
   if (success) {
     for (const plan of safePlans) {
       await plan.document.save();
+      provider.scan(plan.document);
     }
 
     if (safePlans.length === 1) {
