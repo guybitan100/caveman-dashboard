@@ -93,8 +93,10 @@ export const externalEndpointPass: TokenLintPass = {
 };
 
 function isLocalOrPrivateEndpoint(url: string): boolean {
+  // Handle template-variable ports like http://localhost:{PORT}/path
+  const normalizedUrl = url.replace(/\{[^}]+\}/g, '0');
   try {
-    const host = new URL(url).hostname.toLowerCase();
+    const host = new URL(normalizedUrl).hostname.toLowerCase();
 
     if (localHosts.has(host) || host.endsWith('.local')) return true;
 

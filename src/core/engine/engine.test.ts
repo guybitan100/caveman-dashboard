@@ -71,6 +71,18 @@ describe('analyze', () => {
     expect(result.findings.filter(f => f.ruleId.includes('maliciousSkillTest'))).toEqual([]);
   });
 
+  it('ignores localhost URLs with template-variable ports', () => {
+    const text = 'Query http://localhost:{OKI_PORT}/okiquery_range for metrics';
+    const result = analyze(text, 'AGENTS.md');
+    expect(result.findings.filter(f => f.ruleId.includes('externalEndpoint'))).toEqual([]);
+  });
+
+  it('does not fire contextAmplification for prose mentions of retrieval without explicit topK', () => {
+    const text = 'This agent uses retrieval to find relevant documents from a vector store.';
+    const result = analyze(text, 'README.md');
+    expect(result.findings.filter(f => f.ruleId.includes('contextAmplification'))).toEqual([]);
+  });
+
   it('detects encoded payloads', () => {
     const longBase64 = 'data: ' + 'A'.repeat(200);
     const result = analyze(longBase64, 'test.md');

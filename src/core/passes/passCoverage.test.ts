@@ -99,7 +99,8 @@ describe('coverage pass cases', () => {
 
     expect(noRetrieval).toEqual([]);
     expect(modestAmplification).toEqual([]);
-    expect(implicitTopK).toHaveLength(1);
+    // Keyword-detected retrieval nodes without explicit topK are prose mentions — do not fire
+    expect(implicitTopK).toEqual([]);
     expect(highAmplification).toHaveLength(1);
     expect(highAmplification[0].metadata).toMatchObject({
       baseTokens: 1500,

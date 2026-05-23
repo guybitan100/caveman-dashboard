@@ -5,12 +5,15 @@ export const contextAmplificationPass: TokenLintPass = {
   id: 'retrieval.contextAmplification',
 
   run(ir) {
-    const retrievalNodes = ir.children.filter(n => n.type === 'retrieval') as RetrievalNode[];
+    // Only consider retrieval nodes with explicit topK configuration.
+    // Keyword-detected nodes (no topK) are prose mentions, not actual retrieval config.
+    const retrievalNodes = (ir.children.filter(n => n.type === 'retrieval') as RetrievalNode[])
+      .filter(n => n.topK !== undefined);
     if (retrievalNodes.length === 0) return [];
 
     const estimatedRetrievalTokens = retrievalNodes.reduce((sum, r) => {
       const assumedChunkTokens = 750;
-      return sum + (r.topK || 5) * assumedChunkTokens;
+      return sum + r.topK! * assumedChunkTokens;
     }, 0);
 
     const estimatedFinalContext = ir.tokens + estimatedRetrievalTokens;

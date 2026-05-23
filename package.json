@@ -4,6 +4,11 @@
   "description": "Compiler-style prompt, AI skill, MCP, and cognitive security linter for VS Code",
   "version": "1.0.2",
   "publisher": "tokenlint",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clbt-8d14fd5e/token-lint"
+  },
+  "license": "MIT",
   "engines": {
     "vscode": "^1.90.0"
   },
