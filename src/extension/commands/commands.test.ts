@@ -124,7 +124,7 @@ describe('extension commands', () => {
     );
 
     const document = { fileName: 'ignored.md', getText: () => '' };
-    commandMocks.state.activeTextEditor = { document };
+  commandMocks.state.visibleTextEditors = [{ document }];
     commandMocks.shouldAnalyzeFile.mockReturnValue(false);
     commandMocks.getSkipReason.mockReturnValue('unsupported file type');
 
@@ -150,6 +150,7 @@ describe('extension commands', () => {
       scan: vi
         .fn()
         .mockReturnValueOnce({ metrics: { findingCount: 1, totalTokens: 10 } })
+        .mockReturnValueOnce({ metrics: { findingCount: 0, totalTokens: 0 } })
     };
     const secondProvider = {
       scan: vi
@@ -171,6 +172,8 @@ describe('extension commands', () => {
       commandMocks.workspaceScanGlob,
       '**/node_modules/**'
     );
+    expect(firstProvider.scan).toHaveBeenNthCalledWith(1, firstDoc);
+    expect(firstProvider.scan).toHaveBeenNthCalledWith(2, secondDoc);
     expect(commandMocks.showInformationMessage).toHaveBeenLastCalledWith(
       'TokenLint workspace scan complete: 1 files, 1 findings, 10 tokens, 1 ignored'
     );

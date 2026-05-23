@@ -1,24 +1,26 @@
 import * as vscode from 'vscode';
 import { TokenLintDiagnosticProvider } from '../providers/diagnosticProvider';
 import { getSkipReason, shouldAnalyzeFile } from '../utils/scanFilter';
+import { resolveTargetDocument } from '../utils/targetDocument';
 
 export async function scanCurrentFile(provider: TokenLintDiagnosticProvider) {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) {
+  const document = await resolveTargetDocument();
+
+  if (!document) {
     vscode.window.showInformationMessage(
       'TokenLint: Open a file in the editor to scan it.'
     );
     return;
   }
 
-  if (!shouldAnalyzeFile(editor.document.fileName)) {
+  if (!shouldAnalyzeFile(document.fileName)) {
     vscode.window.showInformationMessage(
-      `TokenLint skipped ${getSkipReason(editor.document.fileName)}`
+      `TokenLint skipped ${getSkipReason(document.fileName)}`
     );
     return;
   }
 
-  const result = provider.scan(editor.document);
+  const result = provider.scan(document);
 
   vscode.window.showInformationMessage(
     `TokenLint: ${result.metrics.findingCount} findings, ${result.metrics.totalTokens} tokens`
