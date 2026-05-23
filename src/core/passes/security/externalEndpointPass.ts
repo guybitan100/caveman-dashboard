@@ -4,6 +4,37 @@ const urlPattern = /(https?:\/\/[^\s"')]+)/gi;
 const suspiciousWords = ['webhook', 'ngrok', 'pastebin', 'discord', 'telegram', 'requestbin'];
 const localHosts = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1']);
 
+const safeDocsDomains = new Set([
+  'github.com',
+  'docs.github.com',
+  'docs.microsoft.com',
+  'learn.microsoft.com',
+  'developer.mozilla.org',
+  'npmjs.com',
+  'www.npmjs.com',
+  'pypi.org',
+  'crates.io',
+  'pkg.go.dev',
+  'rubygems.org',
+  'stackoverflow.com',
+  'wikipedia.org',
+  'en.wikipedia.org',
+  'code.visualstudio.com',
+  'marketplace.visualstudio.com',
+  'registry.npmjs.org',
+  'schemas.microsoft.com',
+  'json-schema.org',
+  'www.w3.org',
+  'tc39.es',
+  'spec.openapis.org',
+  'swagger.io',
+  'openai.com',
+  'platform.openai.com',
+  'arxiv.org',
+  'semver.org',
+  'creativecommons.org'
+]);
+
 function commentForReview(text: string): string {
   return text
     .split(/\r?\n/)
@@ -22,6 +53,7 @@ export const externalEndpointPass: TokenLintPass = {
 
       for (const url of urls) {
         if (isLocalOrPrivateEndpoint(url)) continue;
+        if (isSafeDocsUrl(url)) continue;
 
         const lower = url.toLowerCase();
         const suspicious = suspiciousWords.some(w => lower.includes(w));
@@ -62,6 +94,20 @@ function isLocalOrPrivateEndpoint(url: string): boolean {
     if (first === 192 && second === 168) return true;
     if (first === 172 && second >= 16 && second <= 31) return true;
 
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function isSafeDocsUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (safeDocsDomains.has(host)) return true;
+    // Allow subdomains of safe domains (e.g., raw.githubusercontent.com)
+    for (const safe of safeDocsDomains) {
+      if (host.endsWith('.' + safe)) return true;
+    }
     return false;
   } catch {
     return false;

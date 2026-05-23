@@ -93,4 +93,25 @@ describe('parseToIR', () => {
     expect(toolNode.permissions).toEqual([]);
     expect(toolNode.name).toBe('tool');
   });
+
+  it('does not classify lines containing rag as a substring as retrieval nodes', () => {
+    const ir = parseToIR(
+      ['swagger_coverage.yaml', 'storage account', 'paragraph of text', 'drag and drop'].join('\n'),
+      'prompt.md'
+    );
+
+    const types = ir.children.map(n => n.type);
+    expect(types).not.toContain('retrieval');
+  });
+
+  it('classifies standalone rag keyword as retrieval', () => {
+    const ir = parseToIR('use rag for document lookup', 'prompt.md');
+    expect(ir.children[0].type).toBe('retrieval');
+  });
+
+  it('does not classify file extensions as tool references', () => {
+    const ir = parseToIR('see config.yaml for details', 'prompt.md');
+    const types = ir.children.map(n => n.type);
+    expect(types).not.toContain('tool');
+  });
 });

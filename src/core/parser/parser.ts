@@ -52,7 +52,7 @@ export function parseToIR(text: string, fileName = 'unknown'): PromptNode {
       return;
     }
 
-    if (lower.includes('retrieval') || lower.includes('vector') || lower.includes('rag')) {
+    if (lower.includes('retrieval') || lower.includes('vector') || /\brag\b/.test(lower)) {
       children.push(retrieval(trimmed, index));
       return;
     }
@@ -72,7 +72,7 @@ export function parseToIR(text: string, fileName = 'unknown'): PromptNode {
       return;
     }
 
-    if (lower.includes('tool') || lower.includes('permission') || /[a-z]+\.[a-z]+/.test(lower)) {
+    if (lower.includes('tool') || lower.includes('permission') || isToolReference(lower)) {
       const permissions = extractPermissions(trimmed);
       const toolName = permissions[0] || extractName(trimmed, 'tool');
       const t = tool(trimmed, index, toolName, permissions);
@@ -124,4 +124,21 @@ function extractName(text: string, fallback: string): string {
 function extractPermissions(text: string): string[] {
   const matches = text.match(/[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g);
   return matches || [];
+}
+
+const commonFileExtensions = new Set([
+  'md', 'ts', 'tsx', 'js', 'jsx', 'json', 'yaml', 'yml', 'py', 'html', 'css',
+  'txt', 'log', 'env', 'sh', 'bash', 'zsh', 'toml', 'xml', 'csv', 'svg',
+  'png', 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'lock', 'mjs', 'cjs',
+  'rs', 'go', 'rb', 'java', 'kt', 'swift', 'c', 'h', 'cpp', 'cs',
+  'sql', 'graphql', 'proto', 'wasm', 'map', 'conf', 'cfg', 'ini'
+]);
+
+function isToolReference(text: string): boolean {
+  const matches = text.match(/\b([a-z][a-z0-9_-]*)\.([a-z][a-z0-9_-]*)\b/g);
+  if (!matches) return false;
+  return matches.some(m => {
+    const ext = m.split('.').pop()!;
+    return !commonFileExtensions.has(ext);
+  });
 }
