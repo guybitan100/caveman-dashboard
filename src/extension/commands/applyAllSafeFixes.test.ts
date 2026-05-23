@@ -401,6 +401,208 @@ describe('applyAllSafeFixes', () => {
     );
   });
 
+  it('falls through to diagnostic files when the active editor has no safe fixes', async () => {
+    const activeDocument: MockDocument = {
+      fileName: '/workspace/stream.py',
+      uri: 'file:///stream.py',
+      getText: vi.fn(() => 'stream body'),
+      lineAt: vi.fn(),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+    const safeUri = {
+      scheme: 'file',
+      fsPath: '/workspace/prompt.md'
+    };
+    const safeDocument: MockDocument = {
+      fileName: '/workspace/prompt.md',
+      uri: 'file:///prompt.md',
+      getText: vi.fn(() => 'before text'),
+      lineAt: vi.fn().mockReturnValue({
+        rangeIncludingLineBreak: 'line-range'
+      }),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document: activeDocument };
+    vscodeMock.getDiagnostics.mockReturnValue([
+      [safeUri, [{ source: 'TokenLint' }]]
+    ]);
+    vscodeMock.openTextDocument.mockResolvedValue(safeDocument);
+
+    const provider = {
+      scan: vi.fn((document: MockDocument) => {
+        if (document === activeDocument) {
+          return emptyResult;
+        }
+
+        return {
+          ...emptyResult,
+          findings: [
+            {
+              ruleId: 'optimization.duplicateInstruction',
+              title: 'Duplicate instruction',
+              message: 'Duplicate instruction',
+              severity: 'info' as const,
+              loc: {
+                startLine: 2,
+                startColumn: 0,
+                endLine: 2,
+                endColumn: 10
+              },
+              fix: {
+                title: 'Remove duplicate instruction'
+              }
+            }
+          ]
+        };
+      })
+    };
+
+    vscodeMock.applyEdit.mockResolvedValue(true);
+    showFixGraphMock.applySafeFixPreview.mockReturnValue('after text');
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(provider.scan).toHaveBeenNthCalledWith(1, activeDocument);
+    expect(vscodeMock.openTextDocument).toHaveBeenCalledWith(safeUri);
+    expect(provider.scan).toHaveBeenNthCalledWith(2, safeDocument);
+    expect(safeDocument.save).toHaveBeenCalledTimes(1);
+    expect(activeDocument.save).not.toHaveBeenCalled();
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint applied 1 safe fixes.'
+    );
+  });
+
+  it('applies safe fixes across every TokenLint diagnostic file', async () => {
+    const firstDocument: MockDocument = {
+      fileName: '/workspace/first.md',
+      uri: 'file:///first.md',
+      getText: vi.fn(() => 'first before'),
+      lineAt: vi.fn().mockReturnValue({
+        rangeIncludingLineBreak: 'first-line-range'
+      }),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+    const secondUri = {
+      scheme: 'file',
+      fsPath: '/workspace/second.md'
+    };
+    const secondDocument: MockDocument = {
+      fileName: '/workspace/second.md',
+      uri: 'file:///second.md',
+      getText: vi.fn(() => 'second before'),
+      lineAt: vi.fn().mockReturnValue({
+        rangeIncludingLineBreak: 'second-line-range'
+      }),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document: firstDocument };
+    vscodeMock.getDiagnostics.mockReturnValue([
+      [{ scheme: 'file', fsPath: '/workspace/first.md' }, [{ source: 'TokenLint' }]],
+      [secondUri, [{ source: 'TokenLint' }]]
+    ]);
+    vscodeMock.openTextDocument.mockResolvedValue(secondDocument);
+
+    const provider = {
+      scan: vi.fn((document: MockDocument) => {
+        if (document === secondDocument) {
+          return {
+            ...emptyResult,
+            findings: [
+              {
+                ruleId: 'optimization.duplicateInstruction',
+                title: 'Duplicate instruction',
+                message: 'Duplicate instruction',
+                severity: 'info' as const,
+                loc: {
+                  startLine: 5,
+                  startColumn: 0,
+                  endLine: 5,
+                  endColumn: 10
+                },
+                fix: {
+                  title: 'Remove second duplicate instruction'
+                }
+              }
+            ]
+          };
+        }
+
+        return {
+          ...emptyResult,
+          findings: [
+            {
+              ruleId: 'optimization.duplicateInstruction',
+              title: 'Duplicate instruction',
+              message: 'Duplicate instruction',
+              severity: 'info' as const,
+              loc: {
+                startLine: 2,
+                startColumn: 0,
+                endLine: 2,
+                endColumn: 10
+              },
+              fix: {
+                title: 'Remove first duplicate instruction'
+              }
+            }
+          ]
+        };
+      })
+    };
+
+    vscodeMock.applyEdit.mockResolvedValue(true);
+    showFixGraphMock.applySafeFixPreview
+      .mockReturnValueOnce('first after')
+      .mockReturnValueOnce('second after');
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(provider.scan).toHaveBeenNthCalledWith(1, firstDocument);
+    expect(vscodeMock.openTextDocument).toHaveBeenCalledWith(secondUri);
+    expect(provider.scan).toHaveBeenNthCalledWith(2, secondDocument);
+    expect(vscodeMock.applyEdit).toHaveBeenCalledTimes(1);
+    expect((vscodeMock.applyEdit.mock.calls[0][0] as { deletes: Array<{ uri: string; range: string }> }).deletes).toEqual([
+      {
+        uri: 'file:///first.md',
+        range: 'first-line-range'
+      },
+      {
+        uri: 'file:///second.md',
+        range: 'second-line-range'
+      }
+    ]);
+    expect(firstDocument.save).toHaveBeenCalledTimes(1);
+    expect(secondDocument.save).toHaveBeenCalledTimes(1);
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint applied 2 safe fixes across 2 files.'
+    );
+    expect(showFixGraphMock.showFixGraphPreview).toHaveBeenCalledTimes(1);
+    expect(showFixGraphMock.showFixGraphPreview).toHaveBeenCalledWith({
+      fileName: '/workspace/first.md',
+      beforeText: 'first before',
+      afterText: 'first after',
+      beforeResult: expect.objectContaining({
+        findings: expect.any(Array)
+      }),
+      allFixes: [
+        expect.objectContaining({
+          id: 'optimization.duplicateInstruction:2',
+          title: 'Remove first duplicate instruction',
+          safety: 'safe'
+        })
+      ],
+      safeFixes: [
+        expect.objectContaining({
+          id: 'optimization.duplicateInstruction:2',
+          title: 'Remove first duplicate instruction',
+          safety: 'safe'
+        })
+      ]
+    });
+  });
+
   it('reports when only review-required quick fixes are available', async () => {
     const document: MockDocument = {
       fileName: '/workspace/prompt.md',
