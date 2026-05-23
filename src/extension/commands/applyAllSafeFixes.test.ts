@@ -11,6 +11,7 @@ const vscodeMock = vi.hoisted(() => {
     state,
     showInformationMessage: vi.fn(),
     applyEdit: vi.fn(),
+    openTextDocument: vi.fn(),
     getDiagnostics: vi.fn(),
     WorkspaceEdit: class {
       public deletes: Array<{ uri: string; range: string }> = [];
@@ -46,7 +47,8 @@ vi.mock('vscode', () => ({
     getDiagnostics: vscodeMock.getDiagnostics
   },
   workspace: {
-    applyEdit: vscodeMock.applyEdit
+    applyEdit: vscodeMock.applyEdit,
+    openTextDocument: vscodeMock.openTextDocument
   },
   WorkspaceEdit: vscodeMock.WorkspaceEdit
 }));
@@ -98,12 +100,14 @@ describe('applyAllSafeFixes', () => {
     vscodeMock.state.visibleTextEditors = [];
     vscodeMock.showInformationMessage.mockReset();
     vscodeMock.applyEdit.mockReset();
+    vscodeMock.openTextDocument.mockReset();
     vscodeMock.getDiagnostics.mockReset();
     scanFilterMock.shouldAnalyzeFile.mockReset();
     scanFilterMock.getSkipReason.mockReset();
     showFixGraphMock.applySafeFixPreview.mockReset();
     showFixGraphMock.showFixGraphPreview.mockReset();
     scanFilterMock.shouldAnalyzeFile.mockReturnValue(true);
+    vscodeMock.getDiagnostics.mockReturnValue([]);
     showFixGraphMock.applySafeFixPreview.mockImplementation((text: string) => text);
   });
 
@@ -159,6 +163,62 @@ describe('applyAllSafeFixes', () => {
     expect(provider.scan).toHaveBeenCalledWith(document);
     expect(document.lineAt).toHaveBeenCalledWith(2);
     expect(vscodeMock.applyEdit).toHaveBeenCalledTimes(1);
+    expect(document.save).toHaveBeenCalledTimes(1);
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint applied 1 safe fixes.'
+    );
+  });
+
+  it('opens a TokenLint diagnostic file when the sidebar runs without any visible editor', async () => {
+    const diagnosticUri = {
+      scheme: 'file',
+      fsPath: '/workspace/prompt.md'
+    };
+    const document: MockDocument = {
+      fileName: '/workspace/prompt.md',
+      uri: 'file:///prompt.md',
+      getText: vi.fn(() => 'before text'),
+      lineAt: vi.fn().mockReturnValue({
+        rangeIncludingLineBreak: 'line-range'
+      }),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.getDiagnostics.mockReturnValue([
+      [diagnosticUri, [{ source: 'TokenLint' }]]
+    ]);
+    vscodeMock.openTextDocument.mockResolvedValue(document);
+
+    const provider = {
+      scan: vi.fn(() => ({
+        ...emptyResult,
+        findings: [
+          {
+            ruleId: 'optimization.duplicateInstruction',
+            title: 'Duplicate instruction',
+            message: 'Duplicate instruction',
+            severity: 'info' as const,
+            loc: {
+              startLine: 1,
+              startColumn: 0,
+              endLine: 1,
+              endColumn: 10
+            },
+            fix: {
+              title: 'Remove duplicate instruction'
+            }
+          }
+        ]
+      }))
+    };
+
+    vscodeMock.applyEdit.mockResolvedValue(true);
+    showFixGraphMock.applySafeFixPreview.mockReturnValue('after text');
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(vscodeMock.openTextDocument).toHaveBeenCalledWith(diagnosticUri);
+    expect(provider.scan).toHaveBeenCalledWith(document);
     expect(document.save).toHaveBeenCalledTimes(1);
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
       'TokenLint applied 1 safe fixes.'

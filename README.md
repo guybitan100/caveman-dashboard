@@ -45,7 +45,7 @@ TokenLint includes a safe fix engine.
 
 - Remove exact duplicate instructions
 
-`TokenLint: Apply All Safe Fixes` rescans the active editor before applying fixes, so duplicate-instruction removals work even if the file has not been scanned manually yet.
+`TokenLint: Apply All Safe Fixes` rescans the current editor before applying fixes and falls back to an existing TokenLint problem file when the sidebar runs without any visible text editor.
 
 ### Review-required fixes
 

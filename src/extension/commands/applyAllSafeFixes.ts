@@ -3,28 +3,16 @@ import { fixesFromFindings } from '../../core/fixes/fixEngine';
 import { TokenLintDiagnosticProvider } from '../providers/diagnosticProvider';
 import { applySafeFixPreview, showFixGraphPreview } from './showFixGraph';
 import { getSkipReason, shouldAnalyzeFile } from '../utils/scanFilter';
-
-function resolveTargetEditor(): vscode.TextEditor | undefined {
-  const activeEditor = vscode.window.activeTextEditor;
-
-  if (activeEditor) {
-    return activeEditor;
-  }
-
-  return vscode.window.visibleTextEditors.find(editor => shouldAnalyzeFile(editor.document.fileName))
-    ?? vscode.window.visibleTextEditors[0];
-}
+import { resolveTargetDocument } from '../utils/targetDocument';
 
 export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
-  const editor = resolveTargetEditor();
-  if (!editor) {
+  const document = await resolveTargetDocument();
+  if (!document) {
     vscode.window.showInformationMessage(
       'TokenLint: Open a file in the editor to apply safe fixes.'
     );
     return;
   }
-
-  const document = editor.document;
 
   if (!shouldAnalyzeFile(document.fileName)) {
     vscode.window.showInformationMessage(

@@ -29,6 +29,7 @@ const commandMocks = vi.hoisted(() => {
     asRelativePath: vi.fn((file: { fsPath: string }) => file.fsPath),
     createWebviewPanel: vi.fn(),
     executeCommand: vi.fn(),
+    getDiagnostics: vi.fn(),
     analyze: vi.fn(),
     buildMarkdownReport: vi.fn(),
     shouldAnalyzeFile: vi.fn(),
@@ -54,6 +55,9 @@ vi.mock('vscode', () => ({
     findFiles: commandMocks.findFiles,
     openTextDocument: commandMocks.openTextDocument,
     asRelativePath: commandMocks.asRelativePath
+  },
+  languages: {
+    getDiagnostics: commandMocks.getDiagnostics
   },
   commands: {
     executeCommand: commandMocks.executeCommand
@@ -102,11 +106,13 @@ describe('extension commands', () => {
     commandMocks.createWebviewPanel.mockReset();
     commandMocks.createWebviewPanel.mockReturnValue(commandMocks.webviewPanel);
     commandMocks.executeCommand.mockReset();
+    commandMocks.getDiagnostics.mockReset();
     commandMocks.analyze.mockReset();
     commandMocks.buildMarkdownReport.mockReset();
     commandMocks.shouldAnalyzeFile.mockReset();
     commandMocks.getSkipReason.mockReset();
     commandMocks.parseToIR.mockReset();
+    commandMocks.getDiagnostics.mockReturnValue([]);
   });
 
   it('scanCurrentFile handles no editor, skipped files, and successful scans', async () => {
@@ -423,5 +429,62 @@ describe('extension commands', () => {
     expect(commandMocks.showInformationMessage).not.toHaveBeenCalledWith(
       'TokenLint: Open a file in the editor to visualize before/after changes.'
     );
+  });
+
+  it('showFixGraph opens a TokenLint diagnostic file when no editor is visible', async () => {
+    const diagnosticUri = {
+      scheme: 'file',
+      fsPath: '/workspace/prompt.md'
+    };
+    const lines = [
+      'Always answer in JSON',
+      'Always answer in JSON'
+    ];
+    const document = {
+      fileName: diagnosticUri.fsPath,
+      getText: () => lines.join('\n')
+    };
+
+    commandMocks.getDiagnostics.mockReturnValue([
+      [diagnosticUri, [{ source: 'TokenLint' }]]
+    ]);
+    commandMocks.openTextDocument.mockResolvedValue(document);
+    commandMocks.shouldAnalyzeFile.mockReturnValue(true);
+    commandMocks.analyze
+      .mockReturnValueOnce({
+        ir: { type: 'prompt' },
+        findings: [
+          {
+            ruleId: 'optimization.duplicateInstruction',
+            title: 'Duplicate instruction',
+            message: 'Duplicate instruction',
+            severity: 'info',
+            loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 21 },
+            fix: { title: 'Remove duplicate instruction' }
+          }
+        ],
+        metrics: {
+          totalTokens: 8,
+          findingCount: 1,
+          errorCount: 0,
+          warningCount: 0
+        }
+      })
+      .mockReturnValueOnce({
+        ir: { type: 'prompt' },
+        findings: [],
+        metrics: {
+          totalTokens: 4,
+          findingCount: 0,
+          errorCount: 0,
+          warningCount: 0
+        }
+      });
+
+    await showFixGraph();
+
+    expect(commandMocks.openTextDocument).toHaveBeenCalledWith(diagnosticUri);
+    expect(commandMocks.analyze).toHaveBeenNthCalledWith(1, lines.join('\n'), diagnosticUri.fsPath);
+    expect(commandMocks.createWebviewPanel).toHaveBeenCalledTimes(1);
   });
 });
