@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { fixesFromFindings } from '../../core/fixes/fixEngine';
 import { TokenLintDiagnosticProvider } from '../providers/diagnosticProvider';
+import { applySafeFixPreview, showFixGraphPreview } from './showFixGraph';
 import { getSkipReason, shouldAnalyzeFile } from '../utils/scanFilter';
 
 export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
@@ -23,6 +24,7 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
 
   const result = provider.scan(document);
   const fixes = fixesFromFindings(result.findings);
+  const originalText = document.getText();
 
   const safeFixes = fixes
     .filter(fix => fix.safety === 'safe')
@@ -44,6 +46,7 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
     return;
   }
 
+  const previewText = applySafeFixPreview(originalText, safeFixes);
   const edit = new vscode.WorkspaceEdit();
 
   for (const fix of safeFixes) {
@@ -58,5 +61,13 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
     vscode.window.showInformationMessage(
       `TokenLint applied ${safeFixes.length} safe fixes.`
     );
+    showFixGraphPreview({
+      fileName: document.fileName,
+      beforeText: originalText,
+      afterText: previewText,
+      beforeResult: result,
+      allFixes: fixes,
+      safeFixes
+    });
   }
 }

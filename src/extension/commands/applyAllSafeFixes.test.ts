@@ -26,6 +26,11 @@ const scanFilterMock = vi.hoisted(() => ({
   getSkipReason: vi.fn()
 }));
 
+const showFixGraphMock = vi.hoisted(() => ({
+  applySafeFixPreview: vi.fn(),
+  showFixGraphPreview: vi.fn()
+}));
+
 vi.mock('vscode', () => ({
   window: {
     get activeTextEditor() {
@@ -47,6 +52,11 @@ vi.mock('../utils/scanFilter', () => ({
   getSkipReason: scanFilterMock.getSkipReason
 }));
 
+vi.mock('./showFixGraph', () => ({
+  applySafeFixPreview: showFixGraphMock.applySafeFixPreview,
+  showFixGraphPreview: showFixGraphMock.showFixGraphPreview
+}));
+
 import { applyAllSafeFixes } from './applyAllSafeFixes';
 
 type MockDiagnostic = {
@@ -62,6 +72,7 @@ type MockDiagnostic = {
 type MockDocument = {
   fileName: string;
   uri: string;
+  getText?: ReturnType<typeof vi.fn>;
   lineAt: ReturnType<typeof vi.fn>;
   save: ReturnType<typeof vi.fn>;
 };
@@ -85,7 +96,10 @@ describe('applyAllSafeFixes', () => {
     vscodeMock.getDiagnostics.mockReset();
     scanFilterMock.shouldAnalyzeFile.mockReset();
     scanFilterMock.getSkipReason.mockReset();
+    showFixGraphMock.applySafeFixPreview.mockReset();
+    showFixGraphMock.showFixGraphPreview.mockReset();
     scanFilterMock.shouldAnalyzeFile.mockReturnValue(true);
+    showFixGraphMock.applySafeFixPreview.mockImplementation((text: string) => text);
   });
 
   it('shows a message when no editor is open', async () => {
@@ -100,6 +114,7 @@ describe('applyAllSafeFixes', () => {
     const document: MockDocument = {
       fileName: '/workspace/prompt.md',
       uri: 'file:///prompt.md',
+      getText: vi.fn(() => 'prompt body'),
       lineAt: vi.fn(),
       save: vi.fn().mockResolvedValue(undefined)
     };
@@ -149,6 +164,7 @@ describe('applyAllSafeFixes', () => {
     const document: MockDocument = {
       fileName: '/workspace/prompt.md',
       uri: 'file:///prompt.md',
+      getText: vi.fn(() => 'prompt body'),
       lineAt: vi.fn(),
       save: vi.fn().mockResolvedValue(undefined)
     };
@@ -171,6 +187,7 @@ describe('applyAllSafeFixes', () => {
     const document: MockDocument = {
       fileName: '/workspace/prompt.md',
       uri: 'file:///prompt.md',
+      getText: vi.fn(() => 'before text'),
       lineAt: vi.fn().mockReturnValue({
         rangeIncludingLineBreak: 'line-range'
       }),
@@ -216,10 +233,18 @@ describe('applyAllSafeFixes', () => {
 
     vscodeMock.getDiagnostics.mockImplementation(() => diagnostics);
     vscodeMock.applyEdit.mockResolvedValue(true);
+    showFixGraphMock.applySafeFixPreview.mockReturnValue('after text');
 
     await applyAllSafeFixes(provider as never);
 
     expect(provider.scan).toHaveBeenCalledWith(document);
+    expect(showFixGraphMock.applySafeFixPreview).toHaveBeenCalledWith('before text', [
+      expect.objectContaining({
+        id: 'optimization.duplicateInstruction:3',
+        title: 'Remove duplicate instruction',
+        safety: 'safe'
+      })
+    ]);
     expect(document.lineAt).toHaveBeenCalledWith(3);
     expect(vscodeMock.applyEdit).toHaveBeenCalledTimes(1);
     expect((vscodeMock.applyEdit.mock.calls[0][0] as { deletes: Array<{ uri: string; range: string }> }).deletes).toEqual([
@@ -230,12 +255,35 @@ describe('applyAllSafeFixes', () => {
     ]);
     expect(document.save).toHaveBeenCalledTimes(1);
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith('TokenLint applied 1 safe fixes.');
+    expect(showFixGraphMock.showFixGraphPreview).toHaveBeenCalledWith({
+      fileName: '/workspace/prompt.md',
+      beforeText: 'before text',
+      afterText: 'after text',
+      beforeResult: expect.objectContaining({
+        findings: expect.any(Array)
+      }),
+      allFixes: [
+        expect.objectContaining({
+          id: 'optimization.duplicateInstruction:3',
+          title: 'Remove duplicate instruction',
+          safety: 'safe'
+        })
+      ],
+      safeFixes: [
+        expect.objectContaining({
+          id: 'optimization.duplicateInstruction:3',
+          title: 'Remove duplicate instruction',
+          safety: 'safe'
+        })
+      ]
+    });
   });
 
   it('does not save or report success when the workspace edit fails', async () => {
     const document: MockDocument = {
       fileName: '/workspace/prompt.md',
       uri: 'file:///prompt.md',
+      getText: vi.fn(() => 'before text'),
       lineAt: vi.fn().mockReturnValue({
         rangeIncludingLineBreak: 'line-range'
       }),
@@ -277,6 +325,7 @@ describe('applyAllSafeFixes', () => {
     await applyAllSafeFixes(provider as never);
 
     expect(document.save).not.toHaveBeenCalled();
+    expect(showFixGraphMock.showFixGraphPreview).not.toHaveBeenCalled();
     expect(vscodeMock.showInformationMessage).not.toHaveBeenCalledWith(
       'TokenLint applied 1 safe fixes.'
     );
@@ -286,6 +335,7 @@ describe('applyAllSafeFixes', () => {
     const document: MockDocument = {
       fileName: '/workspace/rewrite.txt',
       uri: 'file:///rewrite.txt',
+      getText: vi.fn(() => 'ignored text'),
       lineAt: vi.fn(),
       save: vi.fn().mockResolvedValue(undefined)
     };

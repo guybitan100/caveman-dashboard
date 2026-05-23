@@ -47,9 +47,27 @@ export async function showFixGraph() {
 
   const safeFixes = fixes.filter(fix => fix.safety === 'safe');
   const previewText = applySafeFixPreview(originalText, safeFixes);
-  const after = analyze(previewText, document.fileName);
-  const remainingFixes = fixesFromFindings(after.findings);
+  showFixGraphPreview({
+    fileName: document.fileName,
+    beforeText: originalText,
+    afterText: previewText,
+    beforeResult: before,
+    allFixes: fixes,
+    safeFixes
+  });
+}
 
+export function showFixGraphPreview(model: {
+  fileName: string;
+  beforeText: string;
+  afterText: string;
+  beforeResult?: AnalysisResult;
+  allFixes: TokenLintFix[];
+  safeFixes: TokenLintFix[];
+}) {
+  const before = model.beforeResult ?? analyze(model.beforeText, model.fileName);
+  const after = analyze(model.afterText, model.fileName);
+  const remainingFixes = fixesFromFindings(after.findings);
   const panel = vscode.window.createWebviewPanel(
     'tokenlint.fixGraph',
     'TokenLint: Before / After Graph',
@@ -60,17 +78,17 @@ export async function showFixGraph() {
   );
 
   panel.webview.html = buildFixGraphHtml({
-    fileName: document.fileName,
+    fileName: model.fileName,
     before,
     after,
-    graphSteps: buildGraphSteps(document, safeFixes),
-    beforeFixCounts: countFixes(fixes),
+    graphSteps: buildGraphSteps(model.beforeText, model.safeFixes),
+    beforeFixCounts: countFixes(model.allFixes),
     afterFixCounts: countFixes(remainingFixes),
-    manualReviewFixes: fixes.filter(fix => fix.safety !== 'safe')
+    manualReviewFixes: remainingFixes.filter(fix => fix.safety !== 'safe')
   });
 }
 
-function applySafeFixPreview(text: string, safeFixes: TokenLintFix[]): string {
+export function applySafeFixPreview(text: string, safeFixes: TokenLintFix[]): string {
   if (!safeFixes.length) {
     return text;
   }
@@ -94,7 +112,7 @@ function applySafeFixPreview(text: string, safeFixes: TokenLintFix[]): string {
 }
 
 function buildGraphSteps(
-  document: vscode.TextDocument,
+  sourceText: string,
   safeFixes: TokenLintFix[]
 ): GraphStep[] {
   return [...safeFixes]
@@ -103,19 +121,16 @@ function buildGraphSteps(
       title: fix.title,
       explanation: fix.explanation,
       lineNumber: fix.loc.startLine + 1,
-      before: getOriginalSnippet(document, fix),
+      before: getOriginalSnippet(sourceText, fix),
       after: fix.replacement || 'Line removed'
     }));
 }
 
-function getOriginalSnippet(document: vscode.TextDocument, fix: TokenLintFix): string {
-  const lines: string[] = [];
+function getOriginalSnippet(sourceText: string, fix: TokenLintFix): string {
+  const lines = sourceText.split(/\r?\n/);
+  const snippet = lines.slice(fix.loc.startLine, fix.loc.endLine + 1);
 
-  for (let line = fix.loc.startLine; line <= fix.loc.endLine; line += 1) {
-    lines.push(document.lineAt(line).text);
-  }
-
-  return lines.join('\n');
+  return snippet.join('\n');
 }
 
 function countFixes(fixes: TokenLintFix[]): FixCounts {
