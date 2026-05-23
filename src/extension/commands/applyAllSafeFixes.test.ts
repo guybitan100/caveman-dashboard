@@ -297,6 +297,110 @@ describe('applyAllSafeFixes', () => {
     );
   });
 
+  it('falls through to another TokenLint problem file when the first diagnostic file is review-only', async () => {
+    const reviewUri = {
+      scheme: 'file',
+      fsPath: '/workspace/review.md'
+    };
+    const safeUri = {
+      scheme: 'file',
+      fsPath: '/workspace/safe.md'
+    };
+    const reviewDocument: MockDocument = {
+      fileName: '/workspace/review.md',
+      uri: 'file:///review.md',
+      getText: vi.fn(() => 'review text'),
+      lineAt: vi.fn(),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+    const safeDocument: MockDocument = {
+      fileName: '/workspace/safe.md',
+      uri: 'file:///safe.md',
+      getText: vi.fn(() => 'before text'),
+      lineAt: vi.fn().mockReturnValue({
+        rangeIncludingLineBreak: 'line-range'
+      }),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.getDiagnostics.mockReturnValue([
+      [reviewUri, [{ source: 'TokenLint' }]],
+      [safeUri, [{ source: 'TokenLint' }]]
+    ]);
+    vscodeMock.openTextDocument.mockImplementation(async (uri: { fsPath: string }) => {
+      if (uri.fsPath === reviewUri.fsPath) {
+        return reviewDocument;
+      }
+
+      return safeDocument;
+    });
+
+    const provider = {
+      scan: vi.fn((document: MockDocument) => {
+        if (document === reviewDocument) {
+          return {
+            ...emptyResult,
+            findings: [
+              {
+                ruleId: 'security.promptInjection',
+                title: 'Suspicious override',
+                message: 'Suspicious override',
+                severity: 'warning' as const,
+                loc: {
+                  startLine: 1,
+                  startColumn: 0,
+                  endLine: 1,
+                  endColumn: 10
+                },
+                fix: {
+                  title: 'Neutralize suspicious instruction',
+                  replacement: '[REMOVED]'
+                }
+              }
+            ]
+          };
+        }
+
+        return {
+          ...emptyResult,
+          findings: [
+            {
+              ruleId: 'optimization.duplicateInstruction',
+              title: 'Duplicate instruction',
+              message: 'Duplicate instruction',
+              severity: 'info' as const,
+              loc: {
+                startLine: 2,
+                startColumn: 0,
+                endLine: 2,
+                endColumn: 10
+              },
+              fix: {
+                title: 'Remove duplicate instruction'
+              }
+            }
+          ]
+        };
+      })
+    };
+
+    vscodeMock.applyEdit.mockResolvedValue(true);
+    showFixGraphMock.applySafeFixPreview.mockReturnValue('after text');
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(vscodeMock.openTextDocument).toHaveBeenNthCalledWith(1, reviewUri);
+    expect(vscodeMock.openTextDocument).toHaveBeenNthCalledWith(2, safeUri);
+    expect(provider.scan).toHaveBeenNthCalledWith(1, reviewDocument);
+    expect(provider.scan).toHaveBeenNthCalledWith(2, safeDocument);
+    expect(safeDocument.lineAt).toHaveBeenCalledWith(2);
+    expect(reviewDocument.save).not.toHaveBeenCalled();
+    expect(safeDocument.save).toHaveBeenCalledTimes(1);
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint applied 1 safe fixes.'
+    );
+  });
+
   it('reports when only review-required quick fixes are available', async () => {
     const document: MockDocument = {
       fileName: '/workspace/prompt.md',

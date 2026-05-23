@@ -5,8 +5,98 @@ import { applySafeFixPreview, showFixGraphPreview } from './showFixGraph';
 import { getSkipReason, shouldAnalyzeFile } from '../utils/scanFilter';
 import { resolveTargetDocument } from '../utils/targetDocument';
 
+function getUriKey(uri: vscode.Uri | { fsPath?: string } | string | undefined): string | undefined {
+  if (!uri) {
+    return undefined;
+  }
+
+  if (typeof uri === 'string') {
+    return uri;
+  }
+
+  if (typeof uri === 'object' && 'fsPath' in uri && typeof uri.fsPath === 'string') {
+    return uri.fsPath;
+  }
+
+  return typeof uri.toString === 'function' ? uri.toString() : undefined;
+}
+
+function rememberDocument(seenDocuments: Set<string>, document: vscode.TextDocument) {
+  seenDocuments.add(document.fileName);
+
+  const uriKey = getUriKey(document.uri);
+
+  if (uriKey) {
+    seenDocuments.add(uriKey);
+  }
+}
+
+function getFixBuckets(result: ReturnType<TokenLintDiagnosticProvider['scan']>) {
+  const fixes = fixesFromFindings(result.findings);
+
+  return {
+    fixes,
+    safeFixes: fixes
+      .filter(fix => fix.safety === 'safe')
+      .sort((a, b) => b.loc.startLine - a.loc.startLine)
+  };
+}
+
+function hasTokenLintDiagnostics(diagnostics: readonly vscode.Diagnostic[]): boolean {
+  return diagnostics.some(diagnostic => diagnostic.source === 'TokenLint');
+}
+
+async function findDiagnosticDocumentWithSafeFixes(
+  provider: TokenLintDiagnosticProvider,
+  seenDocuments: Set<string>
+) {
+  for (const [uri, entries] of vscode.languages.getDiagnostics()) {
+    const uriKey = getUriKey(uri);
+
+    if (
+      uri.scheme !== 'file'
+      || !hasTokenLintDiagnostics(entries)
+      || !shouldAnalyzeFile(uri.fsPath)
+      || seenDocuments.has(uri.fsPath)
+      || (uriKey ? seenDocuments.has(uriKey) : false)
+    ) {
+      continue;
+    }
+
+    try {
+      const document = await vscode.workspace.openTextDocument(uri);
+      const result = provider.scan(document);
+      const { fixes, safeFixes } = getFixBuckets(result);
+
+      rememberDocument(seenDocuments, document);
+
+      if (safeFixes.length) {
+        return {
+          document,
+          result,
+          fixes,
+          safeFixes
+        };
+      }
+    } catch {
+      seenDocuments.add(uri.fsPath);
+
+      if (uriKey) {
+        seenDocuments.add(uriKey);
+      }
+    }
+  }
+
+  return undefined;
+}
+
 export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
-  const document = await resolveTargetDocument();
+  const hasEditorContext = Boolean(
+    vscode.window.activeTextEditor
+    || vscode.window.visibleTextEditors.length
+  );
+  let document = await resolveTargetDocument();
+
   if (!document) {
     vscode.window.showInformationMessage(
       'TokenLint: Open a file in the editor to apply safe fixes.'
@@ -21,13 +111,24 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
     return;
   }
 
-  const result = provider.scan(document);
-  const fixes = fixesFromFindings(result.findings);
-  const originalText = document.getText();
+  let result = provider.scan(document);
+  let { fixes, safeFixes } = getFixBuckets(result);
 
-  const safeFixes = fixes
-    .filter(fix => fix.safety === 'safe')
-    .sort((a, b) => b.loc.startLine - a.loc.startLine);
+  if (!safeFixes.length && !hasEditorContext) {
+    const seenDocuments = new Set<string>();
+    rememberDocument(seenDocuments, document);
+
+    const safeFixCandidate = await findDiagnosticDocumentWithSafeFixes(provider, seenDocuments);
+
+    if (safeFixCandidate) {
+      document = safeFixCandidate.document;
+      result = safeFixCandidate.result;
+      fixes = safeFixCandidate.fixes;
+      safeFixes = safeFixCandidate.safeFixes;
+    }
+  }
+
+  const originalText = document.getText();
 
   if (!safeFixes.length) {
     const reviewRequiredFixes = fixes

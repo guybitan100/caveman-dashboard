@@ -45,7 +45,7 @@ TokenLint includes a safe fix engine.
 
 - Remove exact duplicate instructions
 
-`TokenLint: Apply All Safe Fixes` rescans the current editor before applying fixes and falls back to an existing TokenLint problem file when the sidebar runs without any visible text editor.
+`TokenLint: Apply All Safe Fixes` rescans the current editor before applying fixes and, when the sidebar runs without any visible text editor, falls back to a TokenLint problem file that actually has safe fixes if one is available.
 
 ### Review-required fixes
 
