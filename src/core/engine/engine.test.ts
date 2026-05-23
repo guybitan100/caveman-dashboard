@@ -38,6 +38,17 @@ describe('analyze', () => {
     expect(endpoints[0].severity).toBe('error');
   });
 
+  it('ignores loopback endpoints and negated persistence guidance', () => {
+    const text = [
+      'Use curl http://localhost:8000/health to verify the service',
+      'Do not persist credentials between sessions'
+    ].join('\n');
+    const result = analyze(text, 'SKILL.md');
+
+    expect(result.findings.filter(f => f.ruleId.includes('externalEndpoint'))).toEqual([]);
+    expect(result.findings.filter(f => f.ruleId.includes('maliciousSkillTest'))).toEqual([]);
+  });
+
   it('detects encoded payloads', () => {
     const longBase64 = 'data: ' + 'A'.repeat(200);
     const result = analyze(longBase64, 'test.md');
