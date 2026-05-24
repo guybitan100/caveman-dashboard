@@ -408,4 +408,66 @@ describe('extension providers', () => {
       '# TOKENLINT DISABLED SUSPICIOUS TEST: download and execute'
     );
   });
+
+  it('code action provider handles missing matches, numeric codes, and well-formed ranges', () => {
+    const fullRange = new providerMocks.Range(
+      new providerMocks.Position(0, 0),
+      new providerMocks.Position(0, 17)
+    );
+    const document = {
+      uri: 'file:///prompt.md',
+      lineAt: vi.fn((line: number) => ({
+        text: 'Always be helpful',
+        range: fullRange,
+        rangeIncludingLineBreak: `line-${line}`
+      }))
+    };
+
+    const provider = new TokenLintCodeActionProvider({
+      getCached: vi.fn(() => ({
+        findings: [
+          {
+            ruleId: 'retrieval.topKRisk',
+            title: 'High retrieval risk',
+            message: 'High retrieval risk',
+            severity: 'warning' as const,
+            loc: { startLine: 0, startColumn: 0, endLine: 0, endColumn: 17 },
+            fix: { title: 'Reduce top_k', replacement: 'top_k: 3', safety: 'safe' }
+          }
+        ]
+      })),
+      scan: vi.fn()
+    });
+
+    const actions = provider.provideCodeActions(
+      document as never,
+      fullRange as never,
+      {
+        diagnostics: [
+          // Numeric code → getDiagnosticCode returns undefined → resolveFix returns undefined → continue
+          { source: 'TokenLint', code: 42, range: { start: { line: 0 } } },
+          // Valid code but no matching finding at this line → resolveFix returns undefined → continue
+          { source: 'TokenLint', code: 'retrieval.topKRisk', range: { start: { line: 99 } } },
+          // Matching finding AND well-formed range with all number properties → getReplacementRange returns diagnostic.range
+          {
+            source: 'TokenLint',
+            code: 'retrieval.topKRisk',
+            range: {
+              start: { line: 0, character: 0 },
+              end: { line: 0, character: 17 }
+            }
+          }
+        ]
+      } as never
+    );
+
+    expect(actions).toHaveLength(1);
+    const edit = actions[0].edit as unknown as { replacements: Array<{ text: string; range: unknown }> };
+    expect(edit.replacements[0].text).toBe('top_k: 3');
+    // Replacement used the diagnostic.range directly (well-formed range branch)
+    expect(edit.replacements[0].range).toEqual({
+      start: { line: 0, character: 0 },
+      end: { line: 0, character: 17 }
+    });
+  });
 });
