@@ -1508,4 +1508,89 @@ describe('applyAllSafeFixes', () => {
       'TokenLint skipped unsupported file type'
     );
   });
+
+  it('applies a safe fix that spans multiple lines using a union range', async () => {
+    const makeRange = (line: number) => ({
+      union(other: unknown) {
+        void other;
+        return `union-range-${line}`;
+      }
+    });
+    const document: MockDocument = {
+      fileName: '/workspace/prompt.md',
+      uri: 'file:///prompt.md',
+      getText: vi.fn(() => 'line 0\nline 1\nline 2\nline 3'),
+      lineAt: vi.fn((line: number) => ({ rangeIncludingLineBreak: makeRange(line) })),
+      lineCount: 4,
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document };
+
+    const provider = {
+      scan: vi.fn(() => ({
+        ...emptyResult,
+        findings: [
+          {
+            ruleId: 'optimization.duplicateInstruction',
+            title: 'Remove multi-line duplicate',
+            message: 'Duplicate instruction spans multiple lines',
+            severity: 'info' as const,
+            loc: { startLine: 1, startColumn: 0, endLine: 2, endColumn: 0 },
+            fix: { title: 'Remove duplicate instruction' }
+          }
+        ]
+      }))
+    };
+
+    vscodeMock.applyEdit.mockResolvedValue(true);
+    showFixGraphMock.applySafeFixPreview.mockReturnValue('after text');
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(document.lineAt).toHaveBeenCalledWith(1);
+    expect(document.lineAt).toHaveBeenCalledWith(2);
+    const edit = vscodeMock.applyEdit.mock.calls[0][0] as {
+      deletes: Array<{ uri: string; range: unknown }>;
+    };
+    expect(edit.deletes[0].range).toBe('union-range-1');
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith('TokenLint applied 1 fixes.');
+  });
+
+  it('resolves diagnostic code when code is a number', async () => {
+    const document: MockDocument = {
+      fileName: '/workspace/dashboard.json',
+      uri: 'file:///dashboard.json',
+      lineCount: 3,
+      getText: vi.fn(() => '{\n  "title": "Dashboard",\n  "widgets": []\n}'),
+      lineAt: vi.fn((line: number) => ({
+        text: ['{}', '  "title": "Dashboard",', '  "widgets": []'][line] ?? '',
+        range: { start: { line, character: 0 }, end: { line, character: 10 } },
+        rangeIncludingLineBreak: `line-${line}`
+      })),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document };
+    vscodeMock.getDiagnostics.mockReturnValue([
+      [{ scheme: 'file', fsPath: '/workspace/dashboard.json' }, [
+        {
+          source: 'json',
+          code: 519,        // numeric code — exercises the typeof === 'number' branch
+          message: 'Trailing comma',
+          range: { start: { line: 1, character: 0 } }
+        }
+      ]]
+    ]);
+
+    const provider = { scan: vi.fn(() => emptyResult) };
+    vscodeMock.applyEdit.mockResolvedValue(true);
+
+    await applyAllSafeFixes(provider as never);
+
+    // dashboard.json body is valid JSON so repairDashboardJsonText returns undefined — no edit
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining('TokenLint')
+    );
+  });
 });

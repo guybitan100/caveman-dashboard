@@ -659,4 +659,54 @@ describe('showFixGraphPreview', () => {
     expect(commandMocks.analyze).toHaveBeenCalledWith('Hello world', 'prompt.md');
     expect(commandMocks.createWebviewPanel).toHaveBeenCalled();
   });
+
+  it('counts unsafe fixes separately and renders graph steps when safeFixes has multiple entries', () => {
+    commandMocks.analyze.mockReturnValue({
+      ir: { type: 'prompt' },
+      findings: [],
+      metrics: { totalTokens: 5, findingCount: 0, errorCount: 0, warningCount: 0 }
+    });
+    const panel = { webview: { html: '' } };
+    commandMocks.createWebviewPanel.mockReturnValue(panel);
+
+    showFixGraphPreview({
+      fileName: 'prompt.md',
+      beforeText: 'line 0\nline 1\nline 2',
+      afterText: 'line 0\nline 2',
+      allFixes: [
+        {
+          id: 'unsafe-rule:0',
+          title: 'Unsafe fix',
+          safety: 'unsafe' as const,
+          loc: { startLine: 0, startColumn: 0, endLine: 0, endColumn: 6 },
+          replacement: '',
+          explanation: 'This is an unsafe change that requires careful review'
+        }
+      ],
+      // Two safe fixes forces the sort comparator to run (line 242) and covers both
+      // branches of `fix.replacement || 'Line removed'`
+      safeFixes: [
+        {
+          id: 'safe-rule:1',
+          title: 'Safe fix with replacement',
+          safety: 'safe' as const,
+          loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 6 },
+          replacement: 'replaced',
+          explanation: 'Safe replacement'
+        },
+        {
+          id: 'safe-rule:0',
+          title: 'Safe delete fix',
+          safety: 'safe' as const,
+          loc: { startLine: 0, startColumn: 0, endLine: 0, endColumn: 6 },
+          replacement: '',
+          explanation: 'Safe deletion (no replacement → Line removed)'
+        }
+      ]
+    });
+
+    expect(commandMocks.createWebviewPanel).toHaveBeenCalled();
+    expect(panel.webview.html).toContain('Line removed');
+    expect(panel.webview.html).toContain('replaced');
+  });
 });
