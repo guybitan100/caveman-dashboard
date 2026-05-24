@@ -588,10 +588,12 @@ import { applySafeFixPreview, showFixGraphPreview } from './showFixGraph';
 describe('applySafeFixPreview', () => {
   it('handles replacement fixes, trailing newlines, and CRLF line endings', () => {
     const fix = {
+      id: 'fix-1',
       title: 'Rewrite line',
       replacement: 'new line A\nnew line B',
       safety: 'safe' as const,
       loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 10 },
+      explanation: 'Rewrite to remove duplicate instruction.',
       ruleId: 'optimization.duplicateInstruction'
     };
 
