@@ -20,6 +20,12 @@ const vscodeMock = vi.hoisted(() => {
     getDiagnostics: vi.fn(),
     getWorkspaceFolder: vi.fn(),
     uriFile: vi.fn((fileName: string) => ({ fsPath: fileName, scheme: 'file' })),
+    Range: class {
+      constructor(
+        public start: unknown,
+        public end: unknown
+      ) {}
+    },
     WorkspaceEdit: class {
       public deletes: Array<{ uri: string; range: string }> = [];
       public replaces: Array<{ uri: string; range: string; newText: string }> = [];
@@ -68,6 +74,7 @@ vi.mock('vscode', () => ({
     openTextDocument: vscodeMock.openTextDocument,
     getWorkspaceFolder: vscodeMock.getWorkspaceFolder
   },
+  Range: vscodeMock.Range,
   WorkspaceEdit: vscodeMock.WorkspaceEdit,
   Uri: {
     file: vscodeMock.uriFile
@@ -1167,6 +1174,224 @@ describe('applyAllSafeFixes', () => {
     expect(showFixGraphMock.showFixGraphPreview).not.toHaveBeenCalled();
     expect(vscodeMock.showInformationMessage).not.toHaveBeenCalledWith(
       'TokenLint applied 1 fixes.'
+    );
+  });
+
+  it('falls through from an unsupported active editor to a fixable diagnostic file', async () => {
+    const unsupportedDocument: MockDocument = {
+      fileName: '/workspace/rewrite.txt',
+      uri: 'file:///rewrite.txt',
+      getText: vi.fn(() => 'ignored text'),
+      lineAt: vi.fn(),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+    const targetUri = {
+      scheme: 'file',
+      fsPath: '/workspace/dashboard.json'
+    };
+    const targetDocument: MockDocument = {
+      fileName: '/workspace/dashboard.json',
+      uri: 'file:///dashboard.json',
+      getText: vi.fn(() => 'large dashboard body'),
+      lineAt: vi.fn(),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document: unsupportedDocument };
+    scanFilterMock.shouldAnalyzeFile.mockImplementation((fileName: string) => fileName !== '/workspace/rewrite.txt');
+    vscodeMock.getDiagnostics.mockReturnValue([
+      [targetUri, [{
+        source: 'TokenLint',
+        code: 'optimization.promptSize',
+        range: { start: { line: 0 } }
+      }]]
+    ]);
+    vscodeMock.openTextDocument.mockResolvedValue(targetDocument);
+
+    const provider = {
+      scan: vi
+        .fn()
+        .mockReturnValueOnce({
+          ...emptyResult,
+          findings: [
+            {
+              ruleId: 'optimization.promptSize',
+              title: 'Large prompt',
+              message: 'Prompt is large',
+              severity: 'warning' as const,
+              loc: {
+                startLine: 0,
+                startColumn: 0,
+                endLine: 20,
+                endColumn: 0
+              }
+            }
+          ]
+        })
+        .mockReturnValueOnce(emptyResult)
+    };
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(vscodeMock.openTextDocument).toHaveBeenCalledWith(targetUri);
+    expect(provider.scan).toHaveBeenCalledTimes(2);
+    expect(provider.scan).toHaveBeenNthCalledWith(1, targetDocument);
+    expect(provider.scan).toHaveBeenNthCalledWith(2, targetDocument);
+    expect(fsPromisesMock.writeFile).toHaveBeenCalledWith(
+      '/workspace/.tokenlintignore',
+      'dashboard.json\n',
+      'utf8'
+    );
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint applied 1 fixes. Included 1 oversized-file ignores.'
+    );
+  });
+
+  it('repairs malformed dashboard json syntax and ignores prompt-size-only files', async () => {
+    const malformedLines = [
+      '{',
+      '  "title": "Dashboard",',
+      '  "widgets": [',
+      '    {',
+      '      "id": 1,',
+      '        "title": "Group",',
+      '        "type": "group",',
+      '        "widgets": [',
+      '          {',
+      '            "id": 2,',
+      '              "type": "note",',
+      '              "content": "hello",',
+      '              "tick_pos": "50%",',
+      '            }',
+      '          },',
+      '          {',
+      '            "id": 3,',
+      '              "title": "Metric",',
+      '              "type": "query_value",',
+      '              "requests": [',
+      '                {',
+      '                  "queries": [',
+      '                    {',
+      '                      "name": "a",',
+      '                      "query": "sum:test",',
+      '                    }',
+      '                  ],',
+      '                  "formulas": [',
+      '                    {',
+      '                    }',
+      '                  ],',
+      '                    {',
+      '                      "comparator": ">",',
+      '                      "value": 0,',
+      '                    }',
+      '                  ]',
+      '                }',
+      '              ],',
+      '              "precision": 0',
+      '            }',
+      '          }',
+      '        ]',
+      '      }',
+      '    }',
+      '  ]',
+      '}'
+    ];
+    const malformedText = malformedLines.join('\n');
+    const document: MockDocument = {
+      fileName: '/workspace/dashboard.json',
+      uri: 'file:///dashboard.json',
+      lineCount: malformedLines.length,
+      getText: vi.fn(() => malformedText),
+      lineAt: vi.fn((line: number) => ({
+        text: malformedLines[line],
+        range: {
+          start: { line, character: 0 },
+          end: { line, character: malformedLines[line].length }
+        },
+        rangeIncludingLineBreak: `line-${line}`
+      })),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document };
+    vscodeMock.getDiagnostics.mockReturnValue([
+      [{ scheme: 'file', fsPath: '/workspace/dashboard.json' }, [
+        {
+          source: 'TokenLint',
+          code: 'optimization.promptSize',
+          range: { start: { line: 0 } }
+        },
+        {
+          source: 'json',
+          code: '519',
+          message: 'Trailing comma',
+          range: { start: { line: 12, character: 32 } }
+        },
+        {
+          source: 'json',
+          code: '514',
+          message: 'Expected comma',
+          range: { start: { line: 17, character: 11 } }
+        },
+        {
+          source: 'json',
+          code: '513',
+          message: 'Property expected',
+          range: { start: { line: 31, character: 20 } }
+        },
+        {
+          source: 'json',
+          message: 'End of file expected.',
+          range: { start: { line: 41, character: 6 } }
+        }
+      ]]
+    ]);
+
+    const provider = {
+      scan: vi
+        .fn()
+        .mockReturnValueOnce({
+          ...emptyResult,
+          findings: [
+            {
+              ruleId: 'optimization.promptSize',
+              title: 'Large prompt',
+              message: 'Prompt is large',
+              severity: 'warning' as const,
+              loc: {
+                startLine: 0,
+                startColumn: 0,
+                endLine: malformedLines.length - 1,
+                endColumn: 1
+              }
+            }
+          ]
+        })
+        .mockReturnValueOnce(emptyResult)
+    };
+
+    vscodeMock.applyEdit.mockResolvedValue(true);
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(vscodeMock.applyEdit).toHaveBeenCalledTimes(1);
+    const workspaceEdit = vscodeMock.applyEdit.mock.calls[0][0] as {
+      replaces: Array<{ uri: string; range: { start: { line: number; character: number }; end: { line: number; character: number } }; newText: string }>;
+    };
+    expect(workspaceEdit.replaces).toHaveLength(1);
+    expect(workspaceEdit.replaces[0].uri).toBe('file:///dashboard.json');
+    expect(workspaceEdit.replaces[0].newText).toContain('"definition": {');
+    expect(workspaceEdit.replaces[0].newText).toContain('"conditional_formats": [');
+    expect(() => JSON.parse(workspaceEdit.replaces[0].newText)).not.toThrow();
+    expect(fsPromisesMock.writeFile).toHaveBeenCalledWith(
+      '/workspace/.tokenlintignore',
+      'dashboard.json\n',
+      'utf8'
+    );
+    expect(document.save).toHaveBeenCalledTimes(1);
+    expect(provider.scan).toHaveBeenCalledTimes(2);
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint applied 2 fixes. Included 1 JSON syntax repairs and 1 oversized-file ignores.'
     );
   });
 

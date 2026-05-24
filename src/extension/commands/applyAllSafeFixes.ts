@@ -8,6 +8,7 @@ import { getSkipReason, shouldAnalyzeFile } from '../utils/scanFilter';
 import { resolveTargetDocument } from '../utils/targetDocument';
 
 const supportedMarkdownlintCodes = new Set(['MD024', 'MD041', 'MD056']);
+const supportedJsonSyntaxCodes = new Set(['513', '514', '519']);
 
 function getUriKey(uri: vscode.Uri | { fsPath?: string } | string | undefined): string | undefined {
   if (!uri) {
@@ -140,6 +141,13 @@ type MarkdownlintFixPlan = {
   apply: (edit: vscode.WorkspaceEdit) => void;
 };
 
+type JsonSyntaxFixPlan = {
+  document: vscode.TextDocument;
+  editCount: number;
+  fixedDiagnosticKeys: string[];
+  apply: (edit: vscode.WorkspaceEdit) => void;
+};
+
 type PromptSizeIgnorePlan = {
   document: vscode.TextDocument;
   ignoreFilePath: string;
@@ -158,6 +166,21 @@ function getSupportedMarkdownlintDiagnostics(
     && diagnostic.source.toLowerCase() === 'markdownlint'
     && supportedMarkdownlintCodes.has(getDiagnosticCode(diagnostic) ?? '')
   ));
+}
+
+function getSupportedJsonSyntaxDiagnostics(
+  diagnostics: readonly vscode.Diagnostic[]
+): vscode.Diagnostic[] {
+  return diagnostics.filter(diagnostic => {
+    if (typeof diagnostic.source !== 'string' || diagnostic.source.toLowerCase() !== 'json') {
+      return false;
+    }
+
+    const code = getDiagnosticCode(diagnostic);
+
+    return supportedJsonSyntaxCodes.has(code ?? '')
+      || diagnostic.message === 'End of file expected.';
+  });
 }
 
 function getDiagnosticEntries(): ReadonlyArray<[vscode.Uri, readonly vscode.Diagnostic[]]> {
@@ -238,6 +261,34 @@ async function collectDiagnosticFixPlans(
   return plans;
 }
 
+async function resolveApplicableDocument(
+  initialDocument: vscode.TextDocument
+): Promise<vscode.TextDocument | undefined> {
+  if (shouldAnalyzeFile(initialDocument.fileName)) {
+    return initialDocument;
+  }
+
+  const fallback = getDiagnosticEntries().find(([uri, diagnostics]) => (
+    uri.scheme === 'file'
+    && shouldAnalyzeFile(uri.fsPath)
+    && (
+      hasTokenLintDiagnostics(diagnostics)
+      || getSupportedMarkdownlintDiagnostics(diagnostics).length > 0
+      || getSupportedJsonSyntaxDiagnostics(diagnostics).length > 0
+    )
+  ));
+
+  if (!fallback) {
+    return undefined;
+  }
+
+  try {
+    return await vscode.workspace.openTextDocument(fallback[0]);
+  } catch {
+    return undefined;
+  }
+}
+
 function collectNonFixableTokenLintRuleCounts(
   plans: DocumentFixPlan[],
   ignoredDocumentKeys = new Set<string>()
@@ -300,6 +351,173 @@ function buildOtherDiagnosticsSummary(otherSourceCounts: Map<string, number>): s
   }
 
   return `Other diagnostics are still present: ${formatCountSummary(otherSourceCounts)}.`;
+}
+
+function looksLikeDashboardJson(text: string): boolean {
+  return /"widgets"\s*:\s*\[/.test(text) && /"title"\s*:/.test(text);
+}
+
+function insertMissingDefinitionWrappers(lines: string[]): boolean {
+  let changed = false;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!/^\s*"id"\s*:\s*\d+,?\s*$/.test(lines[index])) {
+      continue;
+    }
+
+    let nextIndex = index + 1;
+
+    while (nextIndex < lines.length && lines[nextIndex].trim().length === 0) {
+      nextIndex += 1;
+    }
+
+    if (
+      nextIndex >= lines.length
+      || !/^\s*"/.test(lines[nextIndex])
+      || /^\s*"definition"\s*:/.test(lines[nextIndex])
+    ) {
+      continue;
+    }
+
+    const indent = lines[index].match(/^\s*/)?.[0] ?? '';
+
+    lines.splice(index + 1, 0, `${indent}"definition": {`);
+    changed = true;
+    index += 1;
+  }
+
+  return changed;
+}
+
+function insertMissingConditionalFormats(lines: string[]): boolean {
+  let changed = false;
+
+  for (let index = 1; index < lines.length - 1; index += 1) {
+    const currentTrimmed = lines[index].trim();
+
+    if (currentTrimmed !== '{') {
+      continue;
+    }
+
+    const previousTrimmed = lines[index - 1].trim();
+    const nextTrimmed = lines[index + 1].trim();
+
+    if (!previousTrimmed.endsWith('],') || !nextTrimmed.startsWith('"comparator"')) {
+      continue;
+    }
+
+    const previousIndent = lines[index - 1].match(/^\s*/)?.[0] ?? '';
+
+    lines.splice(index, 0, `${previousIndent}"conditional_formats": [`);
+    changed = true;
+    index += 1;
+  }
+
+  return changed;
+}
+
+function removeTrailingCommas(text: string): string {
+  return text.replace(/,(?=\s*[}\]])/g, '');
+}
+
+function repairDashboardJsonText(text: string): string | undefined {
+  if (!looksLikeDashboardJson(text)) {
+    return undefined;
+  }
+
+  const lines = text.split(/\r?\n/);
+  const insertedDefinitions = insertMissingDefinitionWrappers(lines);
+  const insertedConditionalFormats = insertMissingConditionalFormats(lines);
+  const joined = lines.join('\n');
+  const normalized = removeTrailingCommas(joined);
+  const changed = insertedDefinitions || insertedConditionalFormats || normalized !== text;
+
+  if (!changed) {
+    return undefined;
+  }
+
+  try {
+    JSON.parse(normalized);
+    return normalized;
+  } catch {
+    return undefined;
+  }
+}
+
+function getFullDocumentRange(document: vscode.TextDocument): vscode.Range {
+  const lastLineIndex = Math.max(document.lineCount - 1, 0);
+  const firstLine = document.lineAt(0);
+  const lastLine = document.lineAt(lastLineIndex);
+
+  return new vscode.Range(firstLine.range.start, lastLine.range.end);
+}
+
+function buildJsonSyntaxFixPlan(
+  document: vscode.TextDocument,
+  diagnostics: readonly vscode.Diagnostic[]
+): JsonSyntaxFixPlan | undefined {
+  const supportedDiagnostics = getSupportedJsonSyntaxDiagnostics(diagnostics);
+
+  if (!supportedDiagnostics.length) {
+    return undefined;
+  }
+
+  const repairedText = repairDashboardJsonText(document.getText());
+
+  if (!repairedText || repairedText === document.getText()) {
+    return undefined;
+  }
+
+  return {
+    document,
+    editCount: 1,
+    fixedDiagnosticKeys: supportedDiagnostics.map(diagnostic => buildDiagnosticKey(document.fileName, diagnostic)),
+    apply(edit: vscode.WorkspaceEdit) {
+      edit.replace(document.uri, getFullDocumentRange(document), repairedText);
+    }
+  };
+}
+
+async function collectJsonSyntaxFixPlans(initialPlans: DocumentFixPlan[]): Promise<JsonSyntaxFixPlan[]> {
+  const documents = new Map<string, vscode.TextDocument>();
+
+  for (const plan of initialPlans) {
+    rememberDocumentInCache(documents, plan.document);
+  }
+
+  const plans: JsonSyntaxFixPlan[] = [];
+
+  for (const [uri, diagnostics] of getDiagnosticEntries()) {
+    const uriKey = getUriKey(uri);
+    const supportedDiagnostics = getSupportedJsonSyntaxDiagnostics(diagnostics);
+
+    if (
+      uri.scheme !== 'file'
+      || !supportedDiagnostics.length
+      || !shouldAnalyzeFile(uri.fsPath)
+    ) {
+      continue;
+    }
+
+    let document = documents.get(uri.fsPath) ?? (uriKey ? documents.get(uriKey) : undefined);
+
+    if (!document) {
+      try {
+        document = await vscode.workspace.openTextDocument(uri);
+        rememberDocumentInCache(documents, document);
+      } catch {
+        continue;
+      }
+    }
+
+    const plan = buildJsonSyntaxFixPlan(document, supportedDiagnostics);
+
+    if (plan) {
+      plans.push(plan);
+    }
+  }
+
+  return plans;
 }
 
 function parseHeading(lineText: string): { prefix: string; heading: string; suffix: string } | undefined {
@@ -613,8 +831,16 @@ async function applyPromptSizeIgnorePlans(plans: PromptSizeIgnorePlan[]): Promis
   return ignoredDocumentKeys;
 }
 
-function buildAppliedBreakdown(markdownlintFixCount: number, promptSizeIgnoreCount: number): string | undefined {
+function buildAppliedBreakdown(
+  jsonSyntaxFixCount: number,
+  markdownlintFixCount: number,
+  promptSizeIgnoreCount: number
+): string | undefined {
   const parts: string[] = [];
+
+  if (jsonSyntaxFixCount > 0) {
+    parts.push(`${jsonSyntaxFixCount} JSON syntax repairs`);
+  }
 
   if (markdownlintFixCount > 0) {
     parts.push(`${markdownlintFixCount} markdownlint fixes`);
@@ -632,11 +858,20 @@ function buildAppliedBreakdown(markdownlintFixCount: number, promptSizeIgnoreCou
 }
 
 export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
-  const document = await resolveTargetDocument();
+  const initialDocument = await resolveTargetDocument();
+
+  if (!initialDocument) {
+    vscode.window.showInformationMessage(
+      'TokenLint: Open a file in the editor to apply safe fixes.'
+    );
+    return;
+  }
+
+  const document = await resolveApplicableDocument(initialDocument);
 
   if (!document) {
     vscode.window.showInformationMessage(
-      'TokenLint: Open a file in the editor to apply safe fixes.'
+      `TokenLint skipped ${getSkipReason(initialDocument.fileName)}`
     );
     return;
   }
@@ -650,17 +885,22 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
 
   const plans = await collectDiagnosticFixPlans(provider, document);
   const safePlans = plans.filter(plan => plan.safeFixes.length > 0);
+  const jsonSyntaxPlans = await collectJsonSyntaxFixPlans(plans);
   const markdownlintPlans = await collectMarkdownlintFixPlans(plans);
   const promptSizeIgnorePlans = collectPromptSizeIgnorePlans(plans);
-  const fixedOtherDiagnosticKeys = new Set(markdownlintPlans.flatMap(plan => plan.fixedDiagnosticKeys));
+  const fixedOtherDiagnosticKeys = new Set([
+    ...jsonSyntaxPlans.flatMap(plan => plan.fixedDiagnosticKeys),
+    ...markdownlintPlans.flatMap(plan => plan.fixedDiagnosticKeys)
+  ]);
   const otherDiagnosticsSummary = buildOtherDiagnosticsSummary(
     collectOtherDiagnosticSourceCounts(fixedOtherDiagnosticKeys)
   );
   const tokenlintFixCount = safePlans.reduce((total, plan) => total + plan.safeFixes.length, 0);
+  const jsonSyntaxFixCount = jsonSyntaxPlans.reduce((total, plan) => total + plan.editCount, 0);
   const markdownlintFixCount = markdownlintPlans.reduce((total, plan) => total + plan.editCount, 0);
   const promptSizeIgnoreCount = promptSizeIgnorePlans.length;
 
-  if (!tokenlintFixCount && !markdownlintFixCount && !promptSizeIgnoreCount) {
+  if (!tokenlintFixCount && !jsonSyntaxFixCount && !markdownlintFixCount && !promptSizeIgnoreCount) {
     const remainingSummary = buildRemainingSummary(collectNonFixableTokenLintRuleCounts(plans));
 
     vscode.window.showInformationMessage([
@@ -677,13 +917,18 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
     ? applySafeFixPreview(originalText, previewPlan.safeFixes)
     : undefined;
   const edit = new vscode.WorkspaceEdit();
-  const totalFixes = tokenlintFixCount + markdownlintFixCount + promptSizeIgnoreCount;
+  const totalFixes = tokenlintFixCount + jsonSyntaxFixCount + markdownlintFixCount + promptSizeIgnoreCount;
   const touchedDocumentKeys = new Set<string>([
     ...safePlans.map(plan => getUriKey(plan.document.uri) ?? plan.document.fileName),
+    ...jsonSyntaxPlans.map(plan => getUriKey(plan.document.uri) ?? plan.document.fileName),
     ...markdownlintPlans.map(plan => getUriKey(plan.document.uri) ?? plan.document.fileName),
     ...promptSizeIgnorePlans.map(plan => getUriKey(plan.document.uri) ?? plan.document.fileName)
   ]);
-  const appliedBreakdown = buildAppliedBreakdown(markdownlintFixCount, promptSizeIgnoreCount);
+  const appliedBreakdown = buildAppliedBreakdown(
+    jsonSyntaxFixCount,
+    markdownlintFixCount,
+    promptSizeIgnoreCount
+  );
 
   for (const plan of safePlans) {
     for (const fix of plan.safeFixes) {
@@ -705,11 +950,15 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
     }
   }
 
+  for (const jsonSyntaxPlan of jsonSyntaxPlans) {
+    jsonSyntaxPlan.apply(edit);
+  }
+
   for (const markdownlintPlan of markdownlintPlans) {
     markdownlintPlan.apply(edit);
   }
 
-  const needsTextEditApply = tokenlintFixCount > 0 || markdownlintFixCount > 0;
+  const needsTextEditApply = tokenlintFixCount > 0 || jsonSyntaxFixCount > 0 || markdownlintFixCount > 0;
   const success = needsTextEditApply
     ? await vscode.workspace.applyEdit(edit)
     : true;
@@ -726,6 +975,10 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
     rememberDocumentInCache(documentsToSave, plan.document);
   }
 
+  for (const plan of jsonSyntaxPlans) {
+    rememberDocumentInCache(documentsToSave, plan.document);
+  }
+
   for (const plan of markdownlintPlans) {
     rememberDocumentInCache(documentsToSave, plan.document);
   }
@@ -736,6 +989,17 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
 
   for (const plan of safePlans) {
     const documentKey = getUriKey(plan.document.uri) ?? plan.document.fileName;
+
+    rescannedDocumentKeys.add(documentKey);
+    provider.scan(plan.document);
+  }
+
+  for (const plan of jsonSyntaxPlans) {
+    const documentKey = getUriKey(plan.document.uri) ?? plan.document.fileName;
+
+    if (rescannedDocumentKeys.has(documentKey)) {
+      continue;
+    }
 
     rescannedDocumentKeys.add(documentKey);
     provider.scan(plan.document);
