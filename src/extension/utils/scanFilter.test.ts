@@ -164,4 +164,28 @@ describe('scanFilter', () => {
 
     expect(workspaceScanGlob).toBe('**/*.{md,prompt,yaml,yml,json,ts,tsx,py}');
   });
+
+  it('treats a missing ignore file as no-op and recognizes .prompt and special file names', async () => {
+    const { shouldAnalyzeFile } = await import('./scanFilter');
+    scanFilterMocks.isGeneratedDependencyFile.mockReturnValue(false);
+    scanFilterMocks.detectKind.mockReturnValue('markdown');
+    // Workspace folder is found but the ignore file does not exist → catch block
+    scanFilterMocks.getWorkspaceFolder.mockReturnValue({
+      uri: { fsPath: '/workspace' }
+    });
+    scanFilterMocks.statSync.mockImplementation(() => {
+      throw new Error('ENOENT');
+    });
+
+    // Any supported file should be analyzed when ignore file is missing
+    expect(shouldAnalyzeFile('/workspace/.github/agents/release.md')).toBe(true);
+
+    // .prompt extension → isRelevantArtifact returns true early (endsWith branch)
+    scanFilterMocks.detectKind.mockReturnValue('prompt');
+    expect(shouldAnalyzeFile('/workspace/agent.prompt')).toBe(true);
+
+    // Special file names like copilot-instructions.md → relevantSpecialFiles branch
+    scanFilterMocks.detectKind.mockReturnValue('markdown');
+    expect(shouldAnalyzeFile('/workspace/copilot-instructions.md')).toBe(true);
+  });
 });

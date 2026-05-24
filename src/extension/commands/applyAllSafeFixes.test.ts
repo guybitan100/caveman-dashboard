@@ -861,6 +861,97 @@ describe('applyAllSafeFixes', () => {
     );
   });
 
+  it('respects existing .tokenlintignore content: skips comment lines and appends without double newline', async () => {
+    const document: MockDocument = {
+      fileName: '/workspace/new-large.md',
+      uri: 'file:///new-large.md',
+      getText: vi.fn(() => 'very large prompt body'),
+      lineAt: vi.fn(),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document };
+    // Existing .tokenlintignore has a comment line and an existing entry without trailing newline
+    fsPromisesMock.readFile.mockResolvedValue('# ignore list\nold-large.md');
+
+    const provider = {
+      scan: vi.fn(() => ({
+        ...emptyResult,
+        findings: [
+          {
+            ruleId: 'optimization.promptSize',
+            title: 'Large prompt',
+            message: 'Prompt is large',
+            severity: 'warning' as const,
+            loc: { startLine: 0, startColumn: 0, endLine: 10, endColumn: 0 }
+          }
+        ]
+      }))
+    };
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(fsPromisesMock.writeFile).toHaveBeenCalledWith(
+      '/workspace/.tokenlintignore',
+      '# ignore list\nold-large.md\nnew-large.md\n',
+      'utf8'
+    );
+  });
+
+  it('resolves a markdownlint-only diagnostic file when the active editor is unsupported', async () => {
+    const unsupportedDocument: MockDocument = {
+      fileName: '/workspace/config.json',
+      uri: { scheme: 'file', fsPath: '/workspace/config.json' } as never,
+      getText: vi.fn(() => '{}'),
+      lineAt: vi.fn(),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+    const markdownUri = { scheme: 'file', fsPath: '/workspace/docs/prompt.md' };
+    const markdownDocument: MockDocument = {
+      fileName: '/workspace/docs/prompt.md',
+      uri: 'file:///docs/prompt.md' as never,
+      lineCount: 3,
+      getText: vi.fn(() => 'Overview\n## Repeated\n## Repeated'),
+      lineAt: vi.fn((line: number) => {
+        const text = ['Overview', '## Repeated', '## Repeated'][line];
+        return {
+          text,
+          range: { start: { line, character: 0 }, end: { line, character: text.length } },
+          rangeIncludingLineBreak: `line-${line}`
+        };
+      }),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document: unsupportedDocument };
+    // Active editor is not supported; only the markdown doc has markdownlint diagnostics
+    scanFilterMock.shouldAnalyzeFile.mockImplementation((fileName: string) =>
+      fileName !== '/workspace/config.json'
+    );
+    vscodeMock.getDiagnostics.mockReturnValue([
+      [markdownUri, [
+        {
+          source: 'markdownlint',
+          code: { value: 'MD024' },
+          message: 'Duplicate headings',
+          range: { start: { line: 2, character: 0 } }
+        }
+      ]]
+    ]);
+    vscodeMock.openTextDocument.mockResolvedValue(markdownDocument);
+    vscodeMock.applyEdit.mockResolvedValue(true);
+
+    const provider = { scan: vi.fn(() => emptyResult) };
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(vscodeMock.openTextDocument).toHaveBeenCalledWith(markdownUri);
+    expect(vscodeMock.applyEdit).toHaveBeenCalledTimes(1);
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      expect.stringContaining('markdownlint')
+    );
+  });
+
   it('applies supported markdownlint fixes when no TokenLint edit exists', async () => {
     const lines = [
       'Overview',

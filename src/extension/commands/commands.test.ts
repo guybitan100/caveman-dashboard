@@ -582,3 +582,57 @@ describe('extension commands', () => {
     );
   });
 });
+
+import { applySafeFixPreview, showFixGraphPreview } from './showFixGraph';
+
+describe('applySafeFixPreview', () => {
+  it('handles replacement fixes, trailing newlines, and CRLF line endings', () => {
+    const fix = {
+      title: 'Rewrite line',
+      replacement: 'new line A\nnew line B',
+      safety: 'safe' as const,
+      loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 10 },
+      ruleId: 'optimization.duplicateInstruction'
+    };
+
+    // Replacement fix on text WITHOUT trailing newline
+    const unixResult = applySafeFixPreview('line 0\nline 1\nline 2', [fix]);
+    expect(unixResult).toBe('line 0\nnew line A\nnew line B\nline 2');
+
+    // Text WITH trailing newline → hadTrailingLineBreak = true → trailing newline preserved
+    const withNewline = applySafeFixPreview('line 0\nline 1\n', [{
+      ...fix,
+      loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 10 },
+      replacement: 'replaced'
+    }]);
+    expect(withNewline.endsWith('\n')).toBe(true);
+
+    // CRLF line endings → lineEnding = '\r\n'
+    const crlfResult = applySafeFixPreview('line 0\r\nline 1\r\nline 2', [fix]);
+    expect(crlfResult).toBe('line 0\r\nnew line A\r\nnew line B\r\nline 2');
+  });
+});
+
+describe('showFixGraphPreview', () => {
+  it('analyzes beforeText when no beforeResult is provided', () => {
+    commandMocks.analyze.mockReturnValue({
+      ir: { type: 'prompt' },
+      findings: [],
+      metrics: { totalTokens: 5, findingCount: 0, errorCount: 0, warningCount: 0 }
+    });
+    commandMocks.createWebviewPanel.mockReturnValue({
+      webview: { html: '' }
+    });
+
+    showFixGraphPreview({
+      fileName: 'prompt.md',
+      beforeText: 'Hello world',
+      afterText: 'Hello world',
+      allFixes: [],
+      safeFixes: []
+    });
+
+    expect(commandMocks.analyze).toHaveBeenCalledWith('Hello world', 'prompt.md');
+    expect(commandMocks.createWebviewPanel).toHaveBeenCalled();
+  });
+});
