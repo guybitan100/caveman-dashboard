@@ -581,6 +581,28 @@ describe('extension commands', () => {
       'TokenLint: No fixes available to visualize.'
     );
   });
+
+  it('showFixGraph shows a message when the document has no fixes to visualize', async () => {
+    const document = {
+      fileName: 'prompt.md',
+      getText: () => 'Simple text with no issues.'
+    };
+
+    commandMocks.state.visibleTextEditors = [{ document }];
+    commandMocks.shouldAnalyzeFile.mockReturnValue(true);
+    commandMocks.analyze.mockReturnValue({
+      ir: { type: 'prompt' },
+      findings: [],
+      metrics: { totalTokens: 6, findingCount: 0, errorCount: 0, warningCount: 0 }
+    });
+
+    await showFixGraph();
+
+    expect(commandMocks.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint: No fixes available to visualize.'
+    );
+    expect(commandMocks.createWebviewPanel).not.toHaveBeenCalled();
+  });
 });
 
 import { applySafeFixPreview, showFixGraphPreview } from './showFixGraph';
