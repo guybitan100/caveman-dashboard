@@ -5,6 +5,8 @@ type SuspiciousPattern = {
   matches: (content: string) => boolean;
 };
 
+const disabledSuspiciousPrefix = '# tokenlint disabled suspicious test:';
+
 const shellBootstrapPattern =
   /\b(?:curl|wget)\b.*(?:\|\s*(?:sh|bash|zsh|pwsh|powershell|python|python3)\b|(?:&&|;)\s*(?:chmod\s+\+x|sh|bash|zsh|pwsh|powershell)\b)/;
 const riskyPowerShellPattern =
@@ -67,6 +69,15 @@ function disableSuspiciousBlock(text: string): string {
     .join('\n');
 }
 
+function isAlreadyDisabledSuspiciousBlock(text: string): boolean {
+  const lines = text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  return lines.length > 0 && lines.every(line => line.toLowerCase().startsWith(disabledSuspiciousPrefix));
+}
+
 export const maliciousSkillTestPass: TokenLintPass = {
   id: 'skills.maliciousSkillTest',
 
@@ -75,6 +86,8 @@ export const maliciousSkillTestPass: TokenLintPass = {
 
     for (const node of ir.children) {
       if (node.type !== 'skill_test' && node.type !== 'skill' && node.type !== 'unknown') continue;
+
+      if (isAlreadyDisabledSuspiciousBlock(node.raw)) continue;
 
       const content = node.raw.toLowerCase();
 

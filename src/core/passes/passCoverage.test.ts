@@ -245,6 +245,45 @@ describe('coverage pass cases', () => {
     expect(maliciousFindings[0].metadata).toEqual({ pattern: 'remote shell bootstrap' });
   });
 
+  it('does not re-flag suspicious blocks after TokenLint disables them', () => {
+    const maliciousFindings = maliciousSkillTestPass.run(
+      createPrompt([
+        {
+          id: 'skill_1',
+          type: 'unknown',
+          raw: '# TOKENLINT DISABLED SUSPICIOUS TEST: eval(user_input)',
+          tokens: 6,
+          loc: { startLine: 0, startColumn: 0, endLine: 0, endColumn: 54 }
+        },
+        {
+          id: 'skill_2',
+          type: 'unknown',
+          raw: '# TOKENLINT DISABLED SUSPICIOUS TEST: exec(payload)',
+          tokens: 6,
+          loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 52 }
+        }
+      ])
+    );
+
+    expect(maliciousFindings).toEqual([]);
+  });
+
+  it('does not re-flag external endpoints after TokenLint comments them for review', () => {
+    const endpointFindings = externalEndpointPass.run(
+      createPrompt([
+        {
+          id: 'endpoint_1',
+          type: 'unknown',
+          raw: '# TOKENLINT REVIEW REQUIRED: send to https://webhook.site/abc',
+          tokens: 8,
+          loc: { startLine: 0, startColumn: 0, endLine: 0, endColumn: 63 }
+        }
+      ])
+    );
+
+    expect(endpointFindings).toEqual([]);
+  });
+
   it('detects encoded payload formats and suspicious versus ordinary external urls', () => {
     const encodedFindings = encodedPayloadPass.run(
       createPrompt([

@@ -40,12 +40,22 @@ const safeDocsDomains = new Set([
 
 /** URLs in markdown link syntax [text](url) are documentation references */
 const markdownLinkPattern = /\[[^\]]*\]\(https?:\/\/[^)]+\)/gi;
+const reviewRequiredPrefix = '# tokenlint review required:';
 
 function commentForReview(text: string): string {
   return text
     .split(/\r?\n/)
     .map(line => `# TOKENLINT REVIEW REQUIRED: ${line}`)
     .join('\n');
+}
+
+function isAlreadyCommentedForReview(text: string): boolean {
+  const lines = text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  return lines.length > 0 && lines.every(line => line.toLowerCase().startsWith(reviewRequiredPrefix));
 }
 
 export const externalEndpointPass: TokenLintPass = {
@@ -55,6 +65,8 @@ export const externalEndpointPass: TokenLintPass = {
     const findings = [];
 
     for (const node of ir.children) {
+      if (isAlreadyCommentedForReview(node.raw)) continue;
+
       const urls = node.raw.match(urlPattern) || [];
       const markdownLinks = new Set(
         (node.raw.match(markdownLinkPattern) || []).flatMap(m => m.match(urlPattern) || [])
