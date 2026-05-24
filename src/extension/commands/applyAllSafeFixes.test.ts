@@ -666,6 +666,66 @@ describe('applyAllSafeFixes', () => {
     );
   });
 
+  it('reports remaining TokenLint findings that were not automatically fixable', async () => {
+    const document: MockDocument = {
+      fileName: '/workspace/prompt.md',
+      uri: 'file:///prompt.md',
+      getText: vi.fn(() => 'prompt body'),
+      lineAt: vi.fn().mockReturnValue({
+        rangeIncludingLineBreak: 'line-range'
+      }),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document };
+
+    const provider = {
+      scan: vi.fn(() => ({
+        ...emptyResult,
+        findings: [
+          {
+            ruleId: 'optimization.duplicateInstruction',
+            title: 'Duplicate instruction',
+            message: 'Duplicate instruction',
+            severity: 'info' as const,
+            loc: {
+              startLine: 1,
+              startColumn: 0,
+              endLine: 1,
+              endColumn: 10
+            },
+            fix: {
+              title: 'Remove duplicate instruction'
+            }
+          },
+          {
+            ruleId: 'optimization.promptSize',
+            title: 'Large prompt',
+            message: 'Prompt is large',
+            severity: 'warning' as const,
+            loc: {
+              startLine: 3,
+              startColumn: 0,
+              endLine: 3,
+              endColumn: 10
+            }
+          }
+        ]
+      }))
+    };
+
+    vscodeMock.applyEdit.mockResolvedValue(true);
+    showFixGraphMock.applySafeFixPreview.mockReturnValue('after text');
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(vscodeMock.applyEdit).toHaveBeenCalledTimes(1);
+    expect(document.save).toHaveBeenCalledTimes(1);
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint applied 1 fixes. 1 TokenLint finding remains for manual review or has no automatic fix.'
+    );
+  });
+
   it('reports when the refreshed diagnostics contain no automatic fixes at all', async () => {
     const document: MockDocument = {
       fileName: '/workspace/prompt.md',

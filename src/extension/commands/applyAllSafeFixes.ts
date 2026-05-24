@@ -42,6 +42,18 @@ function getFixBuckets(result: ReturnType<TokenLintDiagnosticProvider['scan']>) 
   };
 }
 
+function buildRemainingSummary(remainingFindings: number): string | undefined {
+  if (remainingFindings <= 0) {
+    return undefined;
+  }
+
+  if (remainingFindings === 1) {
+    return '1 TokenLint finding remains for manual review or has no automatic fix.';
+  }
+
+  return `${remainingFindings} TokenLint findings remain for manual review or have no automatic fix.`;
+}
+
 type DocumentFixPlan = {
   document: vscode.TextDocument;
   result: ReturnType<TokenLintDiagnosticProvider['scan']>;
@@ -161,6 +173,9 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
   const previewText = applySafeFixPreview(originalText, previewPlan.safeFixes);
   const edit = new vscode.WorkspaceEdit();
   const totalFixes = safePlans.reduce((total, plan) => total + plan.safeFixes.length, 0);
+  const remainingFindings = plans.reduce((total, plan) => (
+    total + Math.max(plan.result.findings.length - plan.safeFixes.length, 0)
+  ), 0);
 
   for (const plan of safePlans) {
     for (const fix of plan.safeFixes) {
@@ -190,14 +205,18 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
       provider.scan(plan.document);
     }
 
+    const remainingSummary = buildRemainingSummary(remainingFindings);
+
     if (safePlans.length === 1) {
-      vscode.window.showInformationMessage(
-        `TokenLint applied ${totalFixes} fixes.`
-      );
+      vscode.window.showInformationMessage([
+        `TokenLint applied ${totalFixes} fixes.`,
+        remainingSummary
+      ].filter(Boolean).join(' '));
     } else {
-      vscode.window.showInformationMessage(
-        `TokenLint applied ${totalFixes} fixes across ${safePlans.length} files.`
-      );
+      vscode.window.showInformationMessage([
+        `TokenLint applied ${totalFixes} fixes across ${safePlans.length} files.`,
+        remainingSummary
+      ].filter(Boolean).join(' '));
     }
 
     showFixGraphPreview({
