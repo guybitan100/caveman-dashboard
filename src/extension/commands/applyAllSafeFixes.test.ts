@@ -722,7 +722,54 @@ describe('applyAllSafeFixes', () => {
     expect(vscodeMock.applyEdit).toHaveBeenCalledTimes(1);
     expect(document.save).toHaveBeenCalledTimes(1);
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
-      'TokenLint applied 1 fixes. 1 TokenLint finding remains for manual review or has no automatic fix.'
+      'TokenLint applied 1 fixes. Remaining TokenLint findings without automatic fixes: optimization.promptSize (1).'
+    );
+  });
+
+  it('reports non-fixable TokenLint findings and other diagnostic sources when no automatic fixes exist', async () => {
+    const document: MockDocument = {
+      fileName: '/workspace/prompt.md',
+      uri: 'file:///prompt.md',
+      getText: vi.fn(() => 'prompt body'),
+      lineAt: vi.fn(),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document };
+
+    const provider = {
+      scan: vi.fn(() => ({
+        ...emptyResult,
+        findings: [
+          {
+            ruleId: 'optimization.promptSize',
+            title: 'Large prompt',
+            message: 'Prompt is large',
+            severity: 'warning' as const,
+            loc: {
+              startLine: 0,
+              startColumn: 0,
+              endLine: 10,
+              endColumn: 0
+            }
+          }
+        ]
+      }))
+    };
+
+    vscodeMock.getDiagnostics.mockReturnValue([
+      [{ scheme: 'file', fsPath: '/workspace/prompt.md' }, [
+        { source: 'TokenLint' },
+        { source: 'markdownlint' },
+        { source: 'markdownlint' }
+      ]]
+    ]);
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(vscodeMock.applyEdit).not.toHaveBeenCalled();
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint: No automatic fixes available. Remaining TokenLint findings without automatic fixes: optimization.promptSize (1). Other diagnostics are still present: markdownlint (2).'
     );
   });
 

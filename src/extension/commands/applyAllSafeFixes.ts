@@ -31,6 +31,17 @@ function rememberDocument(seenDocuments: Set<string>, document: vscode.TextDocum
   }
 }
 
+function incrementCount(counts: Map<string, number>, key: string) {
+  counts.set(key, (counts.get(key) ?? 0) + 1);
+}
+
+function formatCountSummary(counts: Map<string, number>): string {
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([key, count]) => `${key} (${count})`)
+    .join(', ');
+}
+
 function getFixBuckets(result: ReturnType<TokenLintDiagnosticProvider['scan']>) {
   const fixes = fixesFromFindings(result.findings);
 
@@ -42,16 +53,54 @@ function getFixBuckets(result: ReturnType<TokenLintDiagnosticProvider['scan']>) 
   };
 }
 
-function buildRemainingSummary(remainingFindings: number): string | undefined {
-  if (remainingFindings <= 0) {
+function collectNonFixableTokenLintRuleCounts(plans: DocumentFixPlan[]): Map<string, number> {
+  const counts = new Map<string, number>();
+
+  for (const plan of plans) {
+    for (const finding of plan.result.findings) {
+      if (finding.fix) {
+        continue;
+      }
+
+      incrementCount(counts, finding.ruleId);
+    }
+  }
+
+  return counts;
+}
+
+function collectOtherDiagnosticSourceCounts(): Map<string, number> {
+  const counts = new Map<string, number>();
+
+  for (const [, diagnostics] of getDiagnosticEntries()) {
+    for (const diagnostic of diagnostics) {
+      const source = typeof diagnostic.source === 'string' ? diagnostic.source : 'unknown';
+
+      if (source.toLowerCase() === 'tokenlint') {
+        continue;
+      }
+
+      incrementCount(counts, source);
+    }
+  }
+
+  return counts;
+}
+
+function buildRemainingSummary(remainingRuleCounts: Map<string, number>): string | undefined {
+  if (remainingRuleCounts.size === 0) {
     return undefined;
   }
 
-  if (remainingFindings === 1) {
-    return '1 TokenLint finding remains for manual review or has no automatic fix.';
+  return `Remaining TokenLint findings without automatic fixes: ${formatCountSummary(remainingRuleCounts)}.`;
+}
+
+function buildOtherDiagnosticsSummary(otherSourceCounts: Map<string, number>): string | undefined {
+  if (otherSourceCounts.size === 0) {
+    return undefined;
   }
 
-  return `${remainingFindings} TokenLint findings remain for manual review or have no automatic fix.`;
+  return `Other diagnostics are still present: ${formatCountSummary(otherSourceCounts)}.`;
 }
 
 type DocumentFixPlan = {
@@ -162,9 +211,16 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
 
   const plans = await collectDiagnosticFixPlans(provider, document);
   const safePlans = plans.filter(plan => plan.safeFixes.length > 0);
+  const otherDiagnosticsSummary = buildOtherDiagnosticsSummary(collectOtherDiagnosticSourceCounts());
 
   if (!safePlans.length) {
-    vscode.window.showInformationMessage('TokenLint: No automatic fixes available.');
+    const remainingSummary = buildRemainingSummary(collectNonFixableTokenLintRuleCounts(plans));
+
+    vscode.window.showInformationMessage([
+      'TokenLint: No automatic fixes available.',
+      remainingSummary,
+      otherDiagnosticsSummary
+    ].filter(Boolean).join(' '));
     return;
   }
 
@@ -173,9 +229,6 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
   const previewText = applySafeFixPreview(originalText, previewPlan.safeFixes);
   const edit = new vscode.WorkspaceEdit();
   const totalFixes = safePlans.reduce((total, plan) => total + plan.safeFixes.length, 0);
-  const remainingFindings = plans.reduce((total, plan) => (
-    total + Math.max(plan.result.findings.length - plan.safeFixes.length, 0)
-  ), 0);
 
   for (const plan of safePlans) {
     for (const fix of plan.safeFixes) {
@@ -205,17 +258,19 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
       provider.scan(plan.document);
     }
 
-    const remainingSummary = buildRemainingSummary(remainingFindings);
+    const remainingSummary = buildRemainingSummary(collectNonFixableTokenLintRuleCounts(plans));
 
     if (safePlans.length === 1) {
       vscode.window.showInformationMessage([
         `TokenLint applied ${totalFixes} fixes.`,
-        remainingSummary
+        remainingSummary,
+        otherDiagnosticsSummary
       ].filter(Boolean).join(' '));
     } else {
       vscode.window.showInformationMessage([
         `TokenLint applied ${totalFixes} fixes across ${safePlans.length} files.`,
-        remainingSummary
+        remainingSummary,
+        otherDiagnosticsSummary
       ].filter(Boolean).join(' '));
     }
 
