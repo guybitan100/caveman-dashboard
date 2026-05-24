@@ -4,6 +4,8 @@ import { TokenLintDiagnosticProvider } from '../providers/diagnosticProvider';
 import { applySafeFixPreview, showFixGraphPreview } from './showFixGraph';
 import { getSkipReason, shouldAnalyzeFile } from '../utils/scanFilter';
 import { resolveTargetDocument } from '../utils/targetDocument';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 function getUriKey(uri: vscode.Uri | { fsPath?: string } | string | undefined): string | undefined {
   if (!uri) {
@@ -12,6 +14,8 @@ function getUriKey(uri: vscode.Uri | { fsPath?: string } | string | undefined): 
 
   if (typeof uri === 'string') {
     return uri;
+const supportedMarkdownlintCodes = new Set(['MD024', 'MD041', 'MD056']);
+
   }
 
   if (typeof uri === 'object' && 'fsPath' in uri && typeof uri.fsPath === 'string') {
@@ -137,6 +141,9 @@ function getDiagnosticEntries(): ReadonlyArray<[vscode.Uri, readonly vscode.Diag
   }
 
   return entries;
+    function toPosix(value: string): string {
+      return value.replace(/\\/g, '/');
+    }
 }
 
 async function scanDocumentForFixes(
@@ -179,6 +186,15 @@ async function collectDiagnosticFixPlans(
 
     try {
       const document = await vscode.workspace.openTextDocument(uri);
+    function getSupportedMarkdownlintDiagnostics(
+      diagnostics: readonly vscode.Diagnostic[]
+    ): vscode.Diagnostic[] {
+      return diagnostics.filter(diagnostic => (
+        typeof diagnostic.source === 'string'
+        && diagnostic.source.toLowerCase() === 'markdownlint'
+        && supportedMarkdownlintCodes.has(getDiagnosticCode(diagnostic) ?? '')
+      ));
+    }
       plans.push(await scanDocumentForFixes(provider, document, seenDocuments));
     } catch {
       seenDocuments.add(uri.fsPath);
@@ -202,6 +218,14 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
     return;
   }
 
+      for (const [uri, diagnostics] of getDiagnosticEntries()) {
+        for (const diagnostic of diagnostics) {
+          const source = typeof diagnostic.source === 'string' ? diagnostic.source : 'unknown';
+          const diagnosticKey = buildDiagnosticKey(uri, diagnostic);
+
+          if (excludedDiagnosticKeys.has(diagnosticKey)) {
+            continue;
+          }
   if (!shouldAnalyzeFile(document.fileName)) {
     vscode.window.showInformationMessage(
       `TokenLint skipped ${getSkipReason(document.fileName)}`
@@ -233,6 +257,13 @@ export async function applyAllSafeFixes(provider: TokenLintDiagnosticProvider) {
   for (const plan of safePlans) {
     for (const fix of plan.safeFixes) {
       const startLine = plan.document.lineAt(fix.loc.startLine);
+    for (const plan of plans) {
+      if (
+        !plan.result.findings.length
+        || !plan.result.findings.every(finding => finding.ruleId === 'optimization.promptSize')
+      ) {
+        continue;
+      }
       const endLineIdx = Math.min(fix.loc.endLine, plan.document.lineCount - 1);
 
       let range = startLine.rangeIncludingLineBreak;
