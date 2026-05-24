@@ -209,6 +209,10 @@ describe('extension activation', () => {
     expect(extensionMocks.scanCurrentFile).toHaveBeenCalledWith(extensionMocks.diagnosticsInstance);
     expect(extensionMocks.statusBar.text).toBe('TokenLint: 3 findings | 30 tokens');
 
+    extensionMocks.diagnosticsInstance.getCached.mockReturnValue(undefined);
+    await extensionMocks.commandHandlers.get('tokenlint.scanCurrentFile')?.();
+    expect(extensionMocks.statusBar.text).toBe('TokenLint: 3 findings | 30 tokens');
+
     extensionMocks.state.activeTextEditor = undefined;
     await extensionMocks.commandHandlers.get('tokenlint.scanCurrentFile')?.();
 

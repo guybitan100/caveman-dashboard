@@ -106,6 +106,20 @@ describe('coverage pass cases', () => {
       baseTokens: 1500,
       estimatedRetrievalTokens: 15000
     });
+
+    const zeroTokens = contextAmplificationPass.run(
+      createPrompt([
+        {
+          id: 'retrieval_z',
+          type: 'retrieval',
+          raw: 'top_k: 5',
+          topK: 5,
+          tokens: 5,
+          loc: { startLine: 0, startColumn: 0, endLine: 0, endColumn: 8 }
+        }
+      ], 0)
+    );
+    expect(zeroTokens).toEqual([]);
   });
 
   it('distinguishes high and critical retrieval risk thresholds', () => {
@@ -268,6 +282,68 @@ describe('coverage pass cases', () => {
     expect(maliciousFindings).toEqual([]);
   });
 
+  it('detects persistence when pattern matches with context and no negation', () => {
+    const maliciousFindings = maliciousSkillTestPass.run(
+      createPrompt([
+        {
+          id: 'skill_1',
+          type: 'skill',
+          raw: 'maintain persistence via startup service to survive reboot',
+          tokens: 9,
+          loc: { startLine: 0, startColumn: 0, endLine: 0, endColumn: 57 }
+        }
+      ])
+    );
+
+    expect(maliciousFindings).toHaveLength(1);
+    expect(maliciousFindings[0].metadata).toEqual({ pattern: 'persistence' });
+  });
+
+  it('does not flag persistence when context keywords are absent', () => {
+    const maliciousFindings = maliciousSkillTestPass.run(
+      createPrompt([
+        {
+          id: 'skill_1',
+          type: 'skill',
+          raw: 'persist user preferences in the local database',
+          tokens: 7,
+          loc: { startLine: 0, startColumn: 0, endLine: 0, endColumn: 46 }
+        }
+      ])
+    );
+
+    expect(maliciousFindings).toEqual([]);
+  });
+
+  it('flags bare eval( but not eval as a substring in a function name', () => {
+    const truePositive = maliciousSkillTestPass.run(
+      createPrompt([
+        {
+          id: 'skill_1',
+          type: 'skill',
+          raw: 'call eval(user_input) to process the expression',
+          tokens: 8,
+          loc: { startLine: 0, startColumn: 0, endLine: 0, endColumn: 48 }
+        }
+      ])
+    );
+    const falsePositive = maliciousSkillTestPass.run(
+      createPrompt([
+        {
+          id: 'skill_2',
+          type: 'skill',
+          raw: 'async def run_compaction_eval(inputs: CompactionEvalInput)',
+          tokens: 7,
+          loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 58 }
+        }
+      ])
+    );
+
+    expect(truePositive).toHaveLength(1);
+    expect(truePositive[0].metadata).toEqual({ pattern: 'eval(' });
+    expect(falsePositive).toEqual([]);
+  });
+
   it('does not re-flag external endpoints after TokenLint comments them for review', () => {
     const endpointFindings = externalEndpointPass.run(
       createPrompt([
@@ -282,6 +358,82 @@ describe('coverage pass cases', () => {
     );
 
     expect(endpointFindings).toEqual([]);
+  });
+
+  it('treats private IPs, .local hostnames, and safe-docs subdomains as non-external', () => {
+    const findings = externalEndpointPass.run(
+      createPrompt([
+        {
+          id: 'priv_10',
+          type: 'unknown',
+          raw: 'send data to http://10.0.0.1/api',
+          tokens: 6,
+          loc: { startLine: 0, startColumn: 0, endLine: 0, endColumn: 32 }
+        },
+        {
+          id: 'priv_127',
+          type: 'unknown',
+          raw: 'send data to http://127.1.2.3/api',
+          tokens: 6,
+          loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 33 }
+        },
+        {
+          id: 'priv_192',
+          type: 'unknown',
+          raw: 'send data to http://192.168.1.50/api',
+          tokens: 6,
+          loc: { startLine: 2, startColumn: 0, endLine: 2, endColumn: 36 }
+        },
+        {
+          id: 'priv_172',
+          type: 'unknown',
+          raw: 'send data to http://172.20.0.1/api',
+          tokens: 6,
+          loc: { startLine: 3, startColumn: 0, endLine: 3, endColumn: 34 }
+        },
+        {
+          id: 'local_mdns',
+          type: 'unknown',
+          raw: 'send data to http://mydevbox.local/api',
+          tokens: 6,
+          loc: { startLine: 4, startColumn: 0, endLine: 4, endColumn: 38 }
+        },
+        {
+          id: 'safe_subdomain',
+          type: 'unknown',
+          raw: 'send data to https://raw.github.com/user/repo/file.json',
+          tokens: 6,
+          loc: { startLine: 5, startColumn: 0, endLine: 5, endColumn: 55 }
+        }
+      ])
+    );
+
+    expect(findings).toEqual([]);
+  });
+
+  it('flags public IPs and non-private 172.x addresses that carry suspicious words', () => {
+    const findings = externalEndpointPass.run(
+      createPrompt([
+        {
+          id: 'pub_8',
+          type: 'unknown',
+          raw: 'forward to https://8.8.8.8/webhook',
+          tokens: 5,
+          loc: { startLine: 0, startColumn: 0, endLine: 0, endColumn: 34 }
+        },
+        {
+          id: 'pub_172_32',
+          type: 'unknown',
+          raw: 'push to https://172.32.0.1/webhook',
+          tokens: 5,
+          loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 34 }
+        }
+      ])
+    );
+
+    expect(findings).toHaveLength(2);
+    expect(findings[0].metadata).toEqual({ url: 'https://8.8.8.8/webhook' });
+    expect(findings[1].metadata).toEqual({ url: 'https://172.32.0.1/webhook' });
   });
 
   it('detects encoded payload formats and suspicious versus ordinary external urls', () => {
