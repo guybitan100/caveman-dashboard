@@ -96,8 +96,11 @@ function buildDiagnosticKey(
   const uriKey = getUriKey(uri) ?? 'unknown';
   const source = typeof diagnostic.source === 'string' ? diagnostic.source : 'unknown';
   const code = getDiagnosticCode(diagnostic) ?? 'unknown';
+  const startLine = typeof diagnostic.range?.start?.line === 'number'
+    ? diagnostic.range.start.line
+    : -1;
 
-  return `${uriKey}:${source}:${code}:${diagnostic.range.start.line}:${getDiagnosticStartCharacter(diagnostic)}`;
+  return `${uriKey}:${source}:${code}:${startLine}:${getDiagnosticStartCharacter(diagnostic)}`;
 }
 
 function getFixBuckets(result: ReturnType<TokenLintDiagnosticProvider['scan']>) {
@@ -420,7 +423,7 @@ function buildMarkdownlintFixPlan(
         range: document.lineAt(lineNumber).range,
         newText: replacement
       });
-      fixedDiagnosticKeys.push(buildDiagnosticKey(document.uri, diagnostic));
+      fixedDiagnosticKeys.push(buildDiagnosticKey(document.fileName, diagnostic));
       continue;
     }
 
@@ -434,7 +437,7 @@ function buildMarkdownlintFixPlan(
         position: document.lineAt(0).range.start,
         newText: `# ${buildTitleFromFileName(document.fileName)}\n\n`
       });
-      fixedDiagnosticKeys.push(buildDiagnosticKey(document.uri, diagnostic));
+      fixedDiagnosticKeys.push(buildDiagnosticKey(document.fileName, diagnostic));
       insertedFirstHeading = true;
       continue;
     }
@@ -457,7 +460,7 @@ function buildMarkdownlintFixPlan(
         range: document.lineAt(lineNumber).range,
         newText: replacement
       });
-      fixedDiagnosticKeys.push(buildDiagnosticKey(document.uri, diagnostic));
+      fixedDiagnosticKeys.push(buildDiagnosticKey(document.fileName, diagnostic));
     }
   }
 

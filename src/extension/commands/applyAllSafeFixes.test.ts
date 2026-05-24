@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysisResult } from '../../core/engine/engine';
 
+const fsPromisesMock = vi.hoisted(() => ({
+  readFile: vi.fn(),
+  writeFile: vi.fn()
+}));
+
 const vscodeMock = vi.hoisted(() => {
   const state = {
     activeTextEditor: undefined as { document: MockDocument } | undefined,
@@ -13,9 +18,12 @@ const vscodeMock = vi.hoisted(() => {
     applyEdit: vi.fn(),
     openTextDocument: vi.fn(),
     getDiagnostics: vi.fn(),
+    getWorkspaceFolder: vi.fn(),
+    uriFile: vi.fn((fileName: string) => ({ fsPath: fileName, scheme: 'file' })),
     WorkspaceEdit: class {
       public deletes: Array<{ uri: string; range: string }> = [];
       public replaces: Array<{ uri: string; range: string; newText: string }> = [];
+      public inserts: Array<{ uri: string; position: unknown; newText: string }> = [];
 
       delete(uri: string, range: string) {
         this.deletes.push({ uri, range });
@@ -23,6 +31,10 @@ const vscodeMock = vi.hoisted(() => {
 
       replace(uri: string, range: string, newText: string) {
         this.replaces.push({ uri, range, newText });
+      }
+
+      insert(uri: string, position: unknown, newText: string) {
+        this.inserts.push({ uri, position, newText });
       }
     }
   };
@@ -53,10 +65,16 @@ vi.mock('vscode', () => ({
   },
   workspace: {
     applyEdit: vscodeMock.applyEdit,
-    openTextDocument: vscodeMock.openTextDocument
+    openTextDocument: vscodeMock.openTextDocument,
+    getWorkspaceFolder: vscodeMock.getWorkspaceFolder
   },
-  WorkspaceEdit: vscodeMock.WorkspaceEdit
+  WorkspaceEdit: vscodeMock.WorkspaceEdit,
+  Uri: {
+    file: vscodeMock.uriFile
+  }
 }));
+
+vi.mock('fs/promises', () => fsPromisesMock);
 
 vi.mock('../utils/scanFilter', () => ({
   shouldAnalyzeFile: scanFilterMock.shouldAnalyzeFile,
@@ -72,10 +90,16 @@ import { applyAllSafeFixes } from './applyAllSafeFixes';
 
 type MockDiagnostic = {
   source?: string;
-  code?: string | number;
+  code?: string | number | { value: string | number };
+  message?: string;
   range: {
     start: {
       line: number;
+      character?: number;
+    };
+    end?: {
+      line: number;
+      character?: number;
     };
   };
 };
@@ -85,6 +109,7 @@ type MockDocument = {
   uri: string;
   getText?: ReturnType<typeof vi.fn>;
   lineAt: ReturnType<typeof vi.fn>;
+  lineCount?: number;
   save: ReturnType<typeof vi.fn>;
 };
 
@@ -107,12 +132,21 @@ describe('applyAllSafeFixes', () => {
     vscodeMock.applyEdit.mockReset();
     vscodeMock.openTextDocument.mockReset();
     vscodeMock.getDiagnostics.mockReset();
+    vscodeMock.getWorkspaceFolder.mockReset();
+    vscodeMock.uriFile.mockClear();
     scanFilterMock.shouldAnalyzeFile.mockReset();
     scanFilterMock.getSkipReason.mockReset();
     showFixGraphMock.applySafeFixPreview.mockReset();
     showFixGraphMock.showFixGraphPreview.mockReset();
+    fsPromisesMock.readFile.mockReset();
+    fsPromisesMock.writeFile.mockReset();
     scanFilterMock.shouldAnalyzeFile.mockReturnValue(true);
     vscodeMock.getDiagnostics.mockReturnValue([]);
+    vscodeMock.getWorkspaceFolder.mockReturnValue({
+      uri: { fsPath: '/workspace' }
+    });
+    fsPromisesMock.readFile.mockRejectedValue(new Error('missing'));
+    fsPromisesMock.writeFile.mockResolvedValue(undefined);
     showFixGraphMock.applySafeFixPreview.mockImplementation((text: string) => text);
   });
 
@@ -699,9 +733,9 @@ describe('applyAllSafeFixes', () => {
             }
           },
           {
-            ruleId: 'optimization.promptSize',
-            title: 'Large prompt',
-            message: 'Prompt is large',
+            ruleId: 'retrieval.contextAmplification',
+            title: 'Context amplification risk',
+            message: 'Retrieved context is too large',
             severity: 'warning' as const,
             loc: {
               startLine: 3,
@@ -722,7 +756,7 @@ describe('applyAllSafeFixes', () => {
     expect(vscodeMock.applyEdit).toHaveBeenCalledTimes(1);
     expect(document.save).toHaveBeenCalledTimes(1);
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
-      'TokenLint applied 1 fixes. Remaining TokenLint findings without automatic fixes: optimization.promptSize (1).'
+      'TokenLint applied 1 fixes. Remaining TokenLint findings without automatic fixes: retrieval.contextAmplification (1).'
     );
   });
 
@@ -731,6 +765,53 @@ describe('applyAllSafeFixes', () => {
       fileName: '/workspace/prompt.md',
       uri: 'file:///prompt.md',
       getText: vi.fn(() => 'prompt body'),
+      lineAt: vi.fn(),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document };
+
+    const provider = {
+      scan: vi.fn(() => ({
+        ...emptyResult,
+        findings: [
+          {
+            ruleId: 'retrieval.contextAmplification',
+            title: 'Context amplification risk',
+            message: 'Retrieved context is too large',
+            severity: 'warning' as const,
+            loc: {
+              startLine: 0,
+              startColumn: 0,
+              endLine: 10,
+              endColumn: 0
+            }
+          }
+        ]
+      }))
+    };
+
+    vscodeMock.getDiagnostics.mockReturnValue([
+      [{ scheme: 'file', fsPath: '/workspace/prompt.md' }, [
+        { source: 'TokenLint' },
+        { source: 'markdownlint' },
+        { source: 'markdownlint' }
+      ]]
+    ]);
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(vscodeMock.applyEdit).not.toHaveBeenCalled();
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint: No automatic fixes available. Remaining TokenLint findings without automatic fixes: retrieval.contextAmplification (1). Other diagnostics are still present: markdownlint (2).'
+    );
+  });
+
+  it('adds oversized files to .tokenlintignore when prompt size is the only TokenLint issue', async () => {
+    const document: MockDocument = {
+      fileName: '/workspace/oversized.md',
+      uri: 'file:///oversized.md',
+      getText: vi.fn(() => 'very large prompt body'),
       lineAt: vi.fn(),
       save: vi.fn().mockResolvedValue(undefined)
     };
@@ -757,19 +838,113 @@ describe('applyAllSafeFixes', () => {
       }))
     };
 
-    vscodeMock.getDiagnostics.mockReturnValue([
-      [{ scheme: 'file', fsPath: '/workspace/prompt.md' }, [
-        { source: 'TokenLint' },
-        { source: 'markdownlint' },
-        { source: 'markdownlint' }
-      ]]
-    ]);
-
     await applyAllSafeFixes(provider as never);
 
     expect(vscodeMock.applyEdit).not.toHaveBeenCalled();
+    expect(fsPromisesMock.writeFile).toHaveBeenCalledWith(
+      '/workspace/.tokenlintignore',
+      'oversized.md\n',
+      'utf8'
+    );
+    expect(provider.scan).toHaveBeenCalledTimes(2);
+    expect(provider.scan).toHaveBeenNthCalledWith(1, document);
+    expect(provider.scan).toHaveBeenNthCalledWith(2, document);
     expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
-      'TokenLint: No automatic fixes available. Remaining TokenLint findings without automatic fixes: optimization.promptSize (1). Other diagnostics are still present: markdownlint (2).'
+      'TokenLint applied 1 fixes. Included 1 oversized-file ignores.'
+    );
+  });
+
+  it('applies supported markdownlint fixes when no TokenLint edit exists', async () => {
+    const lines = [
+      'Overview',
+      '## Repeated',
+      '## Repeated',
+      '| Name | Value | Notes |',
+      '| --- | --- | --- |',
+      '| only |'
+    ];
+    const document: MockDocument = {
+      fileName: '/workspace/docs/prompt.md',
+      uri: 'file:///prompt.md',
+      lineCount: lines.length,
+      getText: vi.fn(() => lines.join('\n')),
+      lineAt: vi.fn((line: number) => ({
+        text: lines[line],
+        range: {
+          start: { line, character: 0 },
+          end: { line, character: lines[line].length }
+        },
+        rangeIncludingLineBreak: `line-${line}`
+      })),
+      save: vi.fn().mockResolvedValue(undefined)
+    };
+
+    vscodeMock.state.activeTextEditor = { document };
+    vscodeMock.getDiagnostics.mockReturnValue([
+      [{ scheme: 'file', fsPath: '/workspace/docs/prompt.md' }, [
+        {
+          source: 'markdownlint',
+          code: { value: 'MD041' },
+          message: 'First line in a file should be a top-level heading',
+          range: { start: { line: 0, character: 0 } }
+        },
+        {
+          source: 'markdownlint',
+          code: { value: 'MD024' },
+          message: 'Multiple headings with the same content',
+          range: { start: { line: 2, character: 0 } }
+        },
+        {
+          source: 'markdownlint',
+          code: { value: 'MD056' },
+          message: 'Table column count [Expected: 3; Actual: 1; Too few cells, row will be missing data]',
+          range: { start: { line: 5, character: 0 } }
+        }
+      ]]
+    ]);
+
+    const provider = {
+      scan: vi.fn(() => emptyResult)
+    };
+
+    vscodeMock.applyEdit.mockResolvedValue(true);
+
+    await applyAllSafeFixes(provider as never);
+
+    expect(vscodeMock.applyEdit).toHaveBeenCalledTimes(1);
+    const edit = vscodeMock.applyEdit.mock.calls[0][0] as {
+      replaces: Array<{ uri: string; range: unknown; newText: string }>;
+      inserts: Array<{ uri: string; position: unknown; newText: string }>;
+    };
+    expect(edit.inserts).toEqual([
+      {
+        uri: 'file:///prompt.md',
+        position: { line: 0, character: 0 },
+        newText: '# Prompt\n\n'
+      }
+    ]);
+    expect(edit.replaces).toEqual([
+      {
+        uri: 'file:///prompt.md',
+        range: {
+          start: { line: 5, character: 0 },
+          end: { line: 5, character: 8 }
+        },
+        newText: '| only |  |  |'
+      },
+      {
+        uri: 'file:///prompt.md',
+        range: {
+          start: { line: 2, character: 0 },
+          end: { line: 2, character: 11 }
+        },
+        newText: '## Repeated (2)'
+      }
+    ]);
+    expect(document.save).toHaveBeenCalledTimes(1);
+    expect(provider.scan).toHaveBeenCalledTimes(2);
+    expect(vscodeMock.showInformationMessage).toHaveBeenCalledWith(
+      'TokenLint applied 3 fixes. Included 3 markdownlint fixes.'
     );
   });
 
