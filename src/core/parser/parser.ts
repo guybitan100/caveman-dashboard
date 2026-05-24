@@ -22,12 +22,23 @@ export function parseToIR(text: string, fileName = 'unknown'): PromptNode {
 
   const lines = text.split(/\r?\n/);
   let currentSkill: SkillNode | null = null;
+  let inFencedBlock = false;
 
   lines.forEach((line, index) => {
     const trimmed = line.trim();
     const lower = trimmed.toLowerCase();
 
+    if (trimmed.startsWith('```')) {
+      inFencedBlock = !inFencedBlock;
+      return;
+    }
+
     if (!trimmed) return;
+
+    if (inFencedBlock) {
+      children.push(unknown(trimmed, index));
+      return;
+    }
 
     const skillMatch =
       trimmed.match(/(?:name|skill)\s*[:=]\s*["']?([a-zA-Z0-9_-]+)/) ||

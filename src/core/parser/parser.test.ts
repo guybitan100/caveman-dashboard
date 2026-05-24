@@ -114,4 +114,41 @@ describe('parseToIR', () => {
     const types = ir.children.map(n => n.type);
     expect(types).not.toContain('tool');
   });
+
+  it('classifies lines inside fenced code blocks as unknown, not instruction', () => {
+    const text = [
+      'Always be concise',
+      '```yaml',
+      '- uses: actions/checkout@v4',
+      '- run: npm test',
+      '```',
+      '- Always verify your work'
+    ].join('\n');
+
+    const ir = parseToIR(text, 'SKILL.md');
+    const types = ir.children.map(n => n.type);
+
+    // The instruction before and after the block are classified normally
+    expect(types[0]).toBe('instruction');
+    expect(types[types.length - 1]).toBe('instruction');
+
+    // Lines inside the fenced block must be unknown, not instruction
+    const codeBlockNodes = ir.children.slice(1, -1);
+    expect(codeBlockNodes.every(n => n.type === 'unknown')).toBe(true);
+  });
+
+  it('does not flag duplicate instructions when the repeat is inside a fenced code block', () => {
+    const text = [
+      '- Always be concise',
+      '```markdown',
+      '- Always be concise',
+      '```'
+    ].join('\n');
+
+    const ir = parseToIR(text, 'agent.md');
+    const instructionNodes = ir.children.filter(n => n.type === 'instruction');
+
+    // Only the first line should be an instruction; the copy inside the fence is unknown
+    expect(instructionNodes).toHaveLength(1);
+  });
 });

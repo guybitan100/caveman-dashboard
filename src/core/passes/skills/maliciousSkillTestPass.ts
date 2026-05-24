@@ -31,7 +31,7 @@ const suspiciousPatterns: SuspiciousPattern[] = [
   },
   {
     label: 'eval(',
-    matches: content => content.includes('eval(')
+    matches: content => /\beval\(/.test(content)
   },
   {
     label: 'exec(',
