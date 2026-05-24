@@ -434,6 +434,62 @@ describe('extension commands', () => {
     );
   });
 
+  it('showFixGraph falls through to a visible editor when the active editor is unsupported (e.g. workspace report)', async () => {
+    // Active editor is the untitled workspace report — not an analyzable file
+    const reportDocument = {
+      fileName: 'Untitled-1',
+      getText: () => '# TokenLint Workspace Report\n...'
+    };
+    const promptDocument = {
+      fileName: 'prompt.md',
+      getText: () => 'Always answer in JSON\nAlways answer in JSON'
+    };
+
+    commandMocks.state.activeTextEditor = { document: reportDocument };
+    commandMocks.state.visibleTextEditors = [
+      { document: reportDocument },
+      { document: promptDocument }
+    ];
+    commandMocks.shouldAnalyzeFile.mockImplementation((fileName: string) => fileName === 'prompt.md');
+    commandMocks.analyze
+      .mockReturnValueOnce({
+        ir: { type: 'prompt' },
+        findings: [
+          {
+            ruleId: 'optimization.duplicateInstruction',
+            title: 'Duplicate instruction',
+            message: 'Duplicate instruction',
+            severity: 'info',
+            loc: { startLine: 1, startColumn: 0, endLine: 1, endColumn: 21 },
+            fix: { title: 'Remove duplicate instruction' }
+          }
+        ],
+        metrics: { totalTokens: 8, findingCount: 1, errorCount: 0, warningCount: 1 }
+      })
+      .mockReturnValueOnce({
+        ir: { type: 'prompt' },
+        findings: [],
+        metrics: { totalTokens: 4, findingCount: 0, errorCount: 0, warningCount: 0 }
+      });
+
+    await showFixGraph();
+
+    // Must NOT show the "open a file" or "unsupported" messages
+    expect(commandMocks.showInformationMessage).not.toHaveBeenCalledWith(
+      'TokenLint: Open a file in the editor to visualize before/after changes.'
+    );
+    expect(commandMocks.showInformationMessage).not.toHaveBeenCalledWith(
+      expect.stringContaining('unsupported file type')
+    );
+    // Must have analyzed the visible prompt.md instead
+    expect(commandMocks.analyze).toHaveBeenNthCalledWith(
+      1,
+      'Always answer in JSON\nAlways answer in JSON',
+      'prompt.md'
+    );
+    expect(commandMocks.createWebviewPanel).toHaveBeenCalledTimes(1);
+  });
+
   it('showFixGraph opens a TokenLint diagnostic file when no editor is visible', async () => {
     const diagnosticUri = {
       scheme: 'file',

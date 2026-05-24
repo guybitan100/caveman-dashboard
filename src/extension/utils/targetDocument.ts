@@ -37,14 +37,16 @@ function hasVisibleTokenLintDiagnostics(
 function resolveVisibleDocument(): vscode.TextDocument | undefined {
   const activeEditor = vscode.window.activeTextEditor;
 
-  if (activeEditor) {
+  if (activeEditor && shouldAnalyzeFile(activeEditor.document.fileName)) {
     return activeEditor.document;
   }
 
   const visibleDocuments = vscode.window.visibleTextEditors.map(editor => editor.document);
 
   if (!visibleDocuments.length) {
-    return undefined;
+    // No other editors open. Return the active document (even if unsupported) so callers
+    // that have their own fallback logic (e.g. resolveApplicableDocument) can handle it.
+    return activeEditor?.document;
   }
 
   const diagnostics = vscode.languages.getDiagnostics();
@@ -55,6 +57,7 @@ function resolveVisibleDocument(): vscode.TextDocument | undefined {
   ))
     ?? visibleDocuments.find(document => shouldAnalyzeFile(document.fileName))
     ?? visibleDocuments.find(document => hasVisibleTokenLintDiagnostics(document, diagnostics))
+    ?? activeEditor?.document
     ?? visibleDocuments[0];
 }
 
