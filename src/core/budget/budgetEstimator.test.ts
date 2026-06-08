@@ -110,7 +110,7 @@ describe('budgetEstimator', () => {
     expect(analysis.estimatedRetrievalTokens).toBe(
       (20 + 12) * ASSUMED_RETRIEVAL_CHUNK_TOKENS
     );
-    expect(analysis.highestRiskFiles[0]?.fileName).toBe('agent.yaml');
+    expect(analysis.highestRiskFiles[0]).toBe('agent.yaml');
     expect(analysis.estimatedRuntimeAmplification).toBeGreaterThan(1);
   });
 });

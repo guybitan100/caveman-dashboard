@@ -135,7 +135,7 @@ export function analyzeWorkspaceBudget(
     estimatedRetrievalTokens,
     estimatedFinalContext,
     estimatedRuntimeAmplification,
-    highestRiskFiles: fileEstimates.slice(0, 5),
+    highestRiskFiles: fileEstimates.slice(0, 5).map(estimate => estimate.fileName),
     fileEstimates
   };
 }

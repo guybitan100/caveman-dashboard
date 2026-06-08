@@ -52,6 +52,6 @@ export interface WorkspaceBudgetAnalysis {
   estimatedRetrievalTokens: number;
   estimatedFinalContext: number;
   estimatedRuntimeAmplification: number;
-  highestRiskFiles: BudgetWorkspaceFileRisk[];
+  highestRiskFiles: string[];
   fileEstimates: BudgetWorkspaceFileRisk[];
 }

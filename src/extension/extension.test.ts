@@ -160,7 +160,8 @@ vi.mock('./utils/scanFilter', () => ({
 }));
 
 vi.mock('./utils/copilotBudget', () => ({
-  CopilotBudgetController: extensionMocks.MockCopilotBudgetController
+  CopilotBudgetController: extensionMocks.MockCopilotBudgetController,
+  shouldIncludeBudgetFile: extensionMocks.shouldAnalyzeFile
 }));
 
 vi.mock('./commands/scanCurrentFile', () => ({
@@ -320,8 +321,8 @@ describe('extension activation', () => {
     extensionMocks.shouldAnalyzeFile.mockReturnValue(false);
     extensionMocks.state.saveHandler?.(ignoredDocument);
     expect(extensionMocks.diagnosticsInstance.scan).toHaveBeenCalledWith(ignoredDocument);
-    expect(extensionMocks.budgetController.invalidateWorkspaceEstimate).toHaveBeenCalledTimes(1);
-    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ forceWorkspaceRefresh: true });
+    expect(extensionMocks.budgetController.invalidateWorkspaceEstimate).not.toHaveBeenCalled();
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith();
 
     extensionMocks.shouldAnalyzeFile.mockReturnValue(true);
     extensionMocks.diagnosticsInstance.scan.mockReturnValue({
@@ -330,7 +331,7 @@ describe('extension activation', () => {
     extensionMocks.state.saveHandler?.(analyzedDocument);
 
     expect(extensionMocks.diagnosticsInstance.scan).toHaveBeenCalledWith(analyzedDocument);
-    expect(extensionMocks.budgetController.invalidateWorkspaceEstimate).toHaveBeenCalledTimes(2);
+    expect(extensionMocks.budgetController.invalidateWorkspaceEstimate).toHaveBeenCalledTimes(1);
     expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ forceWorkspaceRefresh: true });
   });
 
