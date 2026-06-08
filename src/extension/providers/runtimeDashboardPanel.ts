@@ -877,6 +877,18 @@ export class RuntimeDashboardPanel {
       color: var(--rose);
     }
 
+    .delta-positive {
+      color: var(--lime);
+    }
+
+    .delta-negative {
+      color: var(--rose);
+    }
+
+    .delta-neutral {
+      color: var(--foreground);
+    }
+
     .muted { color: var(--muted); }
     .hidden { display: none; }
 
@@ -1397,7 +1409,7 @@ export class RuntimeDashboardPanel {
     const palette = ['var(--accent)', 'var(--teal)', 'var(--violet)', 'var(--amber)', 'var(--rose)', 'var(--lime)'];
     let currentState = null;
     let activeSection = 'overview';
-    const dashboardSections = ['overview', 'analysis', 'models', 'workspaces', 'sessions', 'settings'];
+    const dashboardSections = ['overview', 'analysis', 'models', 'workspaces', 'sessions', 'history', 'diff', 'settings'];
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -1454,6 +1466,86 @@ export class RuntimeDashboardPanel {
       }
 
       return shortDateFormatter.format(new Date(value + 'T00:00:00.000Z'));
+    }
+
+    function formatIsoDate(value) {
+      if (!value) {
+        return '--';
+      }
+
+      const timestamp = Date.parse(value);
+      if (Number.isNaN(timestamp)) {
+        return '--';
+      }
+
+      return formatDate(timestamp);
+    }
+
+    function formatSignedNumber(value, suffix) {
+      if (typeof value !== 'number' || Number.isNaN(value)) {
+        return '--';
+      }
+
+      const rounded = Math.round(value * 10) / 10;
+      const prefix = rounded > 0 ? '+' : '';
+      return prefix + numberFormatter.format(rounded) + (suffix || '');
+    }
+
+    function formatSignedCompact(value, suffix) {
+      if (typeof value !== 'number' || Number.isNaN(value)) {
+        return '--';
+      }
+
+      const rounded = Math.round(value * 10) / 10;
+      const prefix = rounded > 0 ? '+' : '';
+      return prefix + compactNumberFormatter.format(rounded) + (suffix || '');
+    }
+
+    function formatSignedCurrency(value) {
+      if (typeof value !== 'number' || Number.isNaN(value)) {
+        return '--';
+      }
+
+      const prefix = value > 0 ? '+' : '';
+      return prefix + currencyFormatter.format(value);
+    }
+
+    function deltaToneClass(change, favorableDirection) {
+      if (typeof change !== 'number' || Number.isNaN(change) || change === 0) {
+        return 'delta-neutral';
+      }
+
+      if (favorableDirection === 'up') {
+        return change > 0 ? 'delta-positive' : 'delta-negative';
+      }
+
+      return change < 0 ? 'delta-positive' : 'delta-negative';
+    }
+
+    function formatHistoryBaselineLabel(history) {
+      if (history && history.baselineId) {
+        return history.baselineId;
+      }
+
+      if (!history || !history.settings || !history.settings.baseline || history.settings.baseline === 'latest') {
+        return 'Latest snapshot';
+      }
+
+      return history.settings.baseline;
+    }
+
+    function formatDiffModeLabel(history) {
+      switch (history && history.diffMode) {
+        case 'baseline':
+          return 'Latest vs Baseline';
+        case 'sevenDays':
+          return 'Latest vs 7 Days Ago';
+        case 'snapshot':
+          return 'Latest vs Selected Snapshot';
+        case 'previous':
+        default:
+          return 'Latest vs Previous Snapshot';
+      }
     }
 
     function cacheIndicatorClass(value) {
@@ -1909,6 +2001,9 @@ export class RuntimeDashboardPanel {
     function renderSettings(state) {
       const workspace = document.getElementById('settings-workspace');
       const windowLabel = document.getElementById('settings-window');
+      const historyEnabled = document.getElementById('settings-history-enabled');
+      const historyRetention = document.getElementById('settings-history-retention');
+      const historyBaseline = document.getElementById('settings-history-baseline');
       if (workspace) {
         workspace.textContent = state.filter.workspace;
       }
@@ -1916,6 +2011,15 @@ export class RuntimeDashboardPanel {
         windowLabel.textContent = state.filter.timeWindowDays === 1
           ? '24 hours'
           : String(state.filter.timeWindowDays) + ' days';
+      }
+      if (historyEnabled) {
+        historyEnabled.textContent = state.history.settings.enabled ? 'Yes' : 'No';
+      }
+      if (historyRetention) {
+        historyRetention.textContent = state.history.settings.retentionDays + ' days / ' + formatNumber(state.history.settings.maxSnapshots) + ' snapshots';
+      }
+      if (historyBaseline) {
+        historyBaseline.textContent = formatHistoryBaselineLabel(state.history);
       }
     }
 
@@ -2085,6 +2189,216 @@ export class RuntimeDashboardPanel {
       }).join('') || '<tr><td colspan="10" class="muted">No sessions in the selected time window.</td></tr>';
     }
 
+    function renderComparisonItem(title, lines, toneClass) {
+      return ''
+        + '<div class="comparison-item">'
+        + (toneClass ? '<span class="signal-pill ' + toneClass + '">' + escapeHtml(title) + '</span>' : '<strong>' + escapeHtml(title) + '</strong>')
+        + lines.map(function (line) {
+          return '<span>' + escapeHtml(line) + '</span>';
+        }).join('')
+        + '</div>';
+    }
+
+    function renderFileDiffCollection(items, emptyLabel) {
+      if (!Array.isArray(items) || items.length === 0) {
+        return '<div class="empty-state">' + escapeHtml(emptyLabel) + '</div>';
+      }
+
+      return items.map(function (entry) {
+        const riskShift = String(entry.before.risk).toUpperCase() + ' -> ' + String(entry.after.risk).toUpperCase();
+        return renderComparisonItem(entry.path, [
+          'Findings ' + formatSignedNumber(entry.findingsDelta.change) + ' · Amplification ' + formatSignedNumber(entry.amplificationDelta.change, 'x') + ' · Cache ' + formatSignedNumber(entry.cacheEfficiencyDelta.change, ' pts'),
+          'Tokens ' + formatSignedCompact(entry.tokenDelta.change, ' tokens') + ' · Risk ' + riskShift
+        ]);
+      }).join('');
+    }
+
+    function setDiffMetric(valueId, detailId, delta, favorableDirection, changeLabel, detailLabel) {
+      const value = document.getElementById(valueId);
+      const detail = document.getElementById(detailId);
+      if (!value || !detail) {
+        return;
+      }
+
+      value.textContent = changeLabel;
+      value.className = deltaToneClass(delta.change, favorableDirection);
+      detail.textContent = detailLabel;
+    }
+
+    function renderHistory(state) {
+      const history = state.history || {
+        snapshots: [],
+        baselineId: undefined,
+        activeComparison: undefined,
+        diffMode: 'previous',
+        settings: {
+          enabled: false,
+          retentionDays: 30,
+          maxSnapshots: 500,
+          snapshotOnScan: true,
+          snapshotOnDashboardOpen: true,
+          baseline: 'latest'
+        }
+      };
+      const snapshots = Array.isArray(history.snapshots) ? history.snapshots : [];
+      const latestSnapshot = snapshots[0];
+      const snapshotCount = document.getElementById('history-snapshot-count');
+      const baseline = document.getElementById('history-baseline');
+      const latest = document.getElementById('history-latest');
+      const retention = document.getElementById('history-retention');
+      const rows = document.getElementById('history-rows');
+      if (!snapshotCount || !baseline || !latest || !retention || !rows) {
+        return;
+      }
+
+      snapshotCount.textContent = formatNumber(snapshots.length);
+      baseline.textContent = formatHistoryBaselineLabel(history);
+      latest.textContent = latestSnapshot ? formatIsoDate(latestSnapshot.createdAt) : '--';
+      retention.textContent = history.settings.retentionDays + 'd / ' + formatNumber(history.settings.maxSnapshots) + ' max';
+
+      rows.innerHTML = snapshots.length === 0
+        ? '<tr><td colspan="8" class="muted">No runtime snapshots have been saved yet.</td></tr>'
+        : snapshots.map(function (snapshot) {
+          const isBaseline = snapshot.id === history.baselineId;
+          return ''
+            + '<tr>'
+            + '  <td>' + escapeHtml(formatIsoDate(snapshot.createdAt)) + (isBaseline ? '<div class="muted">Baseline</div>' : '') + '</td>'
+            + '  <td>' + escapeHtml(snapshot.workspace) + '</td>'
+            + '  <td>' + escapeHtml(formatCompact(snapshot.summary.totalTokens, ' tokens')) + '</td>'
+            + '  <td>' + escapeHtml(formatCurrency(snapshot.summary.runtimeCost)) + '</td>'
+            + '  <td>' + escapeHtml(formatPercent(snapshot.summary.cacheEfficiency)) + '</td>'
+            + '  <td>' + escapeHtml(formatNumber(snapshot.summary.retrievalAmplification, 'x')) + '</td>'
+            + '  <td>' + escapeHtml(formatNumber(snapshot.summary.contextHealth)) + '</td>'
+            + '  <td><div class="table-actions">'
+            + '    <button class="secondary mini-button" data-compare-snapshot="' + escapeHtml(snapshot.id) + '">Compare</button>'
+            + '    <button class="secondary mini-button" data-set-baseline="' + escapeHtml(snapshot.id) + '">Set Baseline</button>'
+            + '  </div></td>'
+            + '</tr>';
+        }).join('');
+    }
+
+    function renderDiff(state) {
+      const history = state.history || {
+        snapshots: [],
+        baselineId: undefined,
+        activeComparison: undefined,
+        diffMode: 'previous',
+        settings: {
+          enabled: false,
+          retentionDays: 30,
+          maxSnapshots: 500,
+          snapshotOnScan: true,
+          snapshotOnDashboardOpen: true,
+          baseline: 'latest'
+        }
+      };
+      const comparison = history.activeComparison;
+      const title = document.getElementById('diff-title');
+      const meta = document.getElementById('diff-meta');
+      const empty = document.getElementById('diff-empty');
+      const shell = document.getElementById('diff-shell');
+      const signals = document.getElementById('diff-signals');
+      const recommendations = document.getElementById('diff-recommendations');
+      const regressions = document.getElementById('diff-regressions');
+      const improvements = document.getElementById('diff-improvements');
+      if (!title || !meta || !empty || !shell || !signals || !recommendations || !regressions || !improvements) {
+        return;
+      }
+
+      title.textContent = formatDiffModeLabel(history);
+
+      if (!history.settings.enabled) {
+        meta.textContent = 'Enable runtime history to compare local runtime behavior over time.';
+        empty.textContent = 'Runtime history is disabled for this workspace.';
+        empty.classList.remove('hidden');
+        shell.classList.add('hidden');
+        signals.innerHTML = renderComparisonItem('Disabled', ['Turn on tokenlint.history.enabled to generate diff signals.'], 'signal-info');
+        recommendations.innerHTML = renderComparisonItem('Action', ['Enable runtime history and save at least two snapshots.']);
+        regressions.innerHTML = '<div class="empty-state">No file-level regressions available.</div>';
+        improvements.innerHTML = '<div class="empty-state">No file-level improvements available.</div>';
+        return;
+      }
+
+      if (!comparison) {
+        meta.textContent = 'Save or retain more runtime snapshots to compute this comparison mode.';
+        empty.textContent = 'Save at least two runtime snapshots to compare cost, retrieval amplification, cache efficiency, and context health over time.';
+        empty.classList.remove('hidden');
+        shell.classList.add('hidden');
+        signals.innerHTML = renderComparisonItem('Waiting', ['No regression signals are available yet.'], 'signal-info');
+        recommendations.innerHTML = renderComparisonItem('Next Step', ['Capture at least two runtime snapshots to unlock diff analysis.']);
+        regressions.innerHTML = '<div class="empty-state">No file-level regressions available.</div>';
+        improvements.innerHTML = '<div class="empty-state">No file-level improvements available.</div>';
+        return;
+      }
+
+      meta.textContent = formatIsoDate(comparison.before.createdAt) + ' -> ' + formatIsoDate(comparison.after.createdAt);
+      empty.classList.add('hidden');
+      shell.classList.remove('hidden');
+
+      setDiffMetric(
+        'diff-tokens',
+        'diff-tokens-detail',
+        comparison.summary.totalTokens,
+        'down',
+        formatSignedCompact(comparison.summary.totalTokens.change, ' tokens'),
+        formatCompact(comparison.summary.totalTokens.before, ' tokens') + ' -> ' + formatCompact(comparison.summary.totalTokens.after, ' tokens')
+      );
+      setDiffMetric(
+        'diff-cost',
+        'diff-cost-detail',
+        comparison.summary.runtimeCost,
+        'down',
+        formatSignedCurrency(comparison.summary.runtimeCost.change),
+        formatCurrency(comparison.summary.runtimeCost.before) + ' -> ' + formatCurrency(comparison.summary.runtimeCost.after)
+      );
+      setDiffMetric(
+        'diff-cache',
+        'diff-cache-detail',
+        comparison.summary.cacheEfficiency,
+        'up',
+        formatSignedNumber(comparison.summary.cacheEfficiency.change, ' pts'),
+        formatPercent(comparison.summary.cacheEfficiency.before) + ' -> ' + formatPercent(comparison.summary.cacheEfficiency.after)
+      );
+      setDiffMetric(
+        'diff-retrieval',
+        'diff-retrieval-detail',
+        comparison.summary.retrievalAmplification,
+        'down',
+        formatSignedNumber(comparison.summary.retrievalAmplification.change, 'x'),
+        formatNumber(comparison.summary.retrievalAmplification.before, 'x') + ' -> ' + formatNumber(comparison.summary.retrievalAmplification.after, 'x')
+      );
+      setDiffMetric(
+        'diff-health',
+        'diff-health-detail',
+        comparison.summary.contextHealth,
+        'up',
+        formatSignedNumber(comparison.summary.contextHealth.change, ' pts'),
+        formatNumber(comparison.summary.contextHealth.before) + ' -> ' + formatNumber(comparison.summary.contextHealth.after)
+      );
+      setDiffMetric(
+        'diff-stability',
+        'diff-stability-detail',
+        comparison.summary.promptStability,
+        'up',
+        formatSignedNumber(comparison.summary.promptStability.change, ' pts'),
+        formatPercent(comparison.summary.promptStability.before) + ' -> ' + formatPercent(comparison.summary.promptStability.after)
+      );
+
+      signals.innerHTML = comparison.regressions.length === 0
+        ? renderComparisonItem('Stable', ['No material regression signals were detected.'], 'signal-info')
+        : comparison.regressions.map(function (signal) {
+          return renderComparisonItem(String(signal.severity).toUpperCase(), [signal.metric, signal.message], 'signal-' + signal.severity);
+        }).join('');
+      recommendations.innerHTML = (comparison.recommendations.length === 0
+        ? [renderComparisonItem('No Action', ['No new runtime recommendations were generated for this comparison.'])]
+        : comparison.recommendations.map(function (recommendation) {
+          return renderComparisonItem('Recommendation', [recommendation]);
+        })
+      ).join('');
+      regressions.innerHTML = renderFileDiffCollection(comparison.highestRegressions, 'No file-level regressions were detected.');
+      improvements.innerHTML = renderFileDiffCollection(comparison.highestImprovements, 'No file-level improvements were detected.');
+    }
+
     function render(state) {
       currentState = state;
       renderSummary(state);
@@ -2093,6 +2407,8 @@ export class RuntimeDashboardPanel {
       renderLatest(state);
       renderHighlights(state);
       renderWorkspaces(state);
+      renderHistory(state);
+      renderDiff(state);
       renderSettings(state);
       renderSessions(state);
       setSection(activeSection);
@@ -2130,7 +2446,7 @@ export class RuntimeDashboardPanel {
 
     document.addEventListener('click', function (event) {
       const target = event.target;
-      const button = target && target.closest ? target.closest('button[data-command], .session-toggle') : null;
+      const button = target && target.closest ? target.closest('button[data-command], button[data-compare-snapshot], button[data-set-baseline], .session-toggle') : null;
       if (!button) {
         return;
       }
@@ -2145,6 +2461,16 @@ export class RuntimeDashboardPanel {
         const isHidden = detailRow.classList.contains('hidden');
         detailRow.classList.toggle('hidden', !isHidden);
         button.textContent = isHidden ? '▼' : '▶';
+        return;
+      }
+
+      if (button.dataset.compareSnapshot) {
+        vscode.postMessage({ command: 'compareSnapshot', snapshotId: button.dataset.compareSnapshot });
+        return;
+      }
+
+      if (button.dataset.setBaseline) {
+        vscode.postMessage({ command: 'setHistoryBaseline', snapshotId: button.dataset.setBaseline });
         return;
       }
 
@@ -2208,7 +2534,21 @@ export class RuntimeDashboardPanel {
         workspace: 'All workspaces',
         timeWindowDays: 7
       },
-      activeSection: 'overview'
+      activeSection: 'overview',
+      history: {
+        snapshots: [],
+        baselineId: undefined,
+        activeComparison: undefined,
+        diffMode: 'previous',
+        settings: {
+          enabled: false,
+          retentionDays: 30,
+          maxSnapshots: 500,
+          snapshotOnScan: true,
+          snapshotOnDashboardOpen: true,
+          baseline: 'latest'
+        }
+      }
     });
   </script>
 </body>

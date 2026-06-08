@@ -55,6 +55,20 @@ describe('runtime dashboard panel', () => {
 
   it('creates the dashboard panel, renders observability chrome, and posts state updates', () => {
     const provider = new RuntimeDashboardPanel('/ext' as never);
+    const history = {
+      snapshots: [],
+      baselineId: undefined,
+      activeComparison: undefined,
+      diffMode: 'previous' as const,
+      settings: {
+        enabled: true,
+        retentionDays: 30,
+        maxSnapshots: 500,
+        snapshotOnScan: true,
+        snapshotOnDashboardOpen: true,
+        baseline: 'latest'
+      }
+    };
     const state = {
       generatedAt: 1_718_000_000_000,
       latestSession: {
@@ -123,7 +137,8 @@ describe('runtime dashboard panel', () => {
         workspace: 'All workspaces',
         timeWindowDays: 7
       },
-      activeSection: 'overview' as const
+      activeSection: 'overview' as const,
+      history
     };
 
     provider.show(state as never);
@@ -137,6 +152,8 @@ describe('runtime dashboard panel', () => {
     expect(panelMocks.webview.html).toContain('AI Runtime Observability Platform');
     expect(panelMocks.webview.html).toContain('Overview');
     expect(panelMocks.webview.html).toContain('Workspaces');
+    expect(panelMocks.webview.html).toContain('History');
+    expect(panelMocks.webview.html).toContain('Diff');
     expect(panelMocks.webview.html).toContain('Settings');
     expect(panelMocks.webview.html).toContain('Export CSV');
     expect(panelMocks.webview.html).toContain('Latest Session');
@@ -154,6 +171,20 @@ describe('runtime dashboard panel', () => {
   it('forwards webview messages to the registered handler', () => {
     const messages: unknown[] = [];
     const provider = new RuntimeDashboardPanel('/ext' as never);
+    const history = {
+      snapshots: [],
+      baselineId: undefined,
+      activeComparison: undefined,
+      diffMode: 'previous' as const,
+      settings: {
+        enabled: false,
+        retentionDays: 30,
+        maxSnapshots: 500,
+        snapshotOnScan: true,
+        snapshotOnDashboardOpen: true,
+        baseline: 'latest'
+      }
+    };
     provider.setMessageHandler(message => {
       messages.push(message);
     });
@@ -197,7 +228,8 @@ describe('runtime dashboard panel', () => {
         workspace: 'All workspaces',
         timeWindowDays: 7
       },
-      activeSection: 'overview' as const
+      activeSection: 'overview' as const,
+      history
     } as never);
 
     panelMocks.getMessageHandler()?.({
@@ -252,7 +284,8 @@ describe('runtime dashboard panel', () => {
         workspace: 'All workspaces',
         timeWindowDays: 7
       },
-      activeSection: 'overview' as const
+      activeSection: 'overview' as const,
+      history
     } as never);
 
     expect(panelMocks.createWebviewPanel).toHaveBeenCalledTimes(2);
