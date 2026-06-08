@@ -191,7 +191,6 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
     }
 
     .pulse-list,
-    .nav-list,
     .utility-list {
       display: flex;
       flex-direction: column;
@@ -213,25 +212,6 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
     .pulse-row strong {
       font-size: 12px;
       font-weight: 760;
-    }
-
-    .nav-button {
-      background: color-mix(in srgb, var(--vscode-editor-background) 88%, var(--vscode-sideBar-background) 12%);
-      border: 1px solid var(--vscode-panel-border, transparent);
-    }
-
-    .nav-button strong {
-      display: block;
-      font-size: 13px;
-      font-weight: 760;
-      margin-bottom: 4px;
-    }
-
-    .nav-button span {
-      display: block;
-      font-size: 12px;
-      color: var(--vscode-descriptionForeground);
-      line-height: 1.4;
     }
 
     .utility-list button {
@@ -278,9 +258,12 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
 <body>
   <div class="shell">
     <section class="card">
-      <span class="eyebrow">Runtime Navigation</span>
-      <div class="title">TokenLint</div>
-      <p class="subtitle">AI runtime observability for prompts, skills, MCP workflows, and cognitive security.</p>
+      <span class="eyebrow">Cost Dashboard</span>
+      <div class="title">TokenLint Cost Tracker</div>
+      <p class="subtitle">Click below to open the full Cost Dashboard.</p>
+      <div class="utility-list" style="margin-top: 12px;">
+        <button data-command="openRuntimeDashboard" data-section="overview">Open Dashboard</button>
+      </div>
     </section>
 
     <section class="card">
@@ -294,18 +277,6 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
       <div class="mini-note">Retrieval: <span id="budget-retrieval">--</span></div>
       <div class="mini-note">Highest risk: <span id="budget-highest-risk">Not analyzed yet</span></div>
       <div class="mini-note" id="budget-amplification">Runtime amplification: --</div>
-    </section>
-
-    <section class="card">
-      <span class="eyebrow">Runtime Sections</span>
-      <div class="nav-list">
-        <button class="nav-button" data-command="openRuntimeDashboard" data-section="overview"><strong>Overview</strong><span>KPI cards, latest runtime pulse, and top operational signals.</span></button>
-        <button class="nav-button" data-command="openRuntimeDashboard" data-section="sessions"><strong>Sessions</strong><span>Expandable runtime activity with session-level drilldowns.</span></button>
-        <button class="nav-button" data-command="openRuntimeDashboard" data-section="models"><strong>Models</strong><span>Model concentration, cost distribution, and optimization story.</span></button>
-        <button class="nav-button" data-command="openRuntimeDashboard" data-section="workspaces"><strong>Workspaces</strong><span>Cross-workspace cost and risk concentration.</span></button>
-        <button class="nav-button" data-command="openRuntimeDashboard" data-section="analysis"><strong>Analysis</strong><span>Spend, cache, retrieval, and context composition trends.</span></button>
-        <button class="nav-button" data-command="openRuntimeDashboard" data-section="settings"><strong>Settings</strong><span>Filters, exports, and runtime artifact policy.</span></button>
-      </div>
     </section>
 
     <section class="card">

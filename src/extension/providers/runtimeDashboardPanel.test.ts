@@ -53,7 +53,7 @@ describe('runtime dashboard panel', () => {
     panelMocks.panel.reveal.mockClear();
   });
 
-  it('creates the dashboard panel, renders observability chrome, and posts state updates', () => {
+  it('creates the dashboard panel, renders cost tracker chrome, and posts state updates', () => {
     const provider = new RuntimeDashboardPanel('/ext' as never);
     const history = {
       snapshots: [],
@@ -145,20 +145,18 @@ describe('runtime dashboard panel', () => {
 
     expect(panelMocks.createWebviewPanel).toHaveBeenCalledWith(
       'tokenlint.runtimeDashboard',
-      'TokenLint Runtime Dashboard',
+      'TokenLint Cost & Token Tracker',
       1,
       { enableScripts: true, retainContextWhenHidden: true }
     );
-    expect(panelMocks.webview.html).toContain('AI Runtime Observability Platform');
-    expect(panelMocks.webview.html).toContain('Overview');
-    expect(panelMocks.webview.html).toContain('Workspaces');
-    expect(panelMocks.webview.html).toContain('History');
-    expect(panelMocks.webview.html).toContain('Diff');
-    expect(panelMocks.webview.html).toContain('Settings');
-    expect(panelMocks.webview.html).toContain('Export CSV');
+    expect(panelMocks.webview.html).toContain('TokenLint Cost & Token Tracker');
     expect(panelMocks.webview.html).toContain('Latest Session');
-    expect(panelMocks.webview.html).toContain('Estimated Waste');
-    expect(panelMocks.webview.html).toContain('Context Composition');
+    expect(panelMocks.webview.html).toContain('All Sessions');
+    expect(panelMocks.webview.html).toContain('Aggregate');
+    expect(panelMocks.webview.html).toContain('Export Selected View');
+    expect(panelMocks.webview.html).toContain('Session Activity');
+    expect(panelMocks.webview.html).toContain('Workspace Spend');
+    expect(panelMocks.webview.html).toContain('Optimization Suggestions');
     expect(panelMocks.webview.postMessage).toHaveBeenLastCalledWith({
       type: 'tokenlint.runtimeDashboard',
       payload: state

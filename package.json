@@ -49,7 +49,7 @@
       },
       {
         "command": "tokenlint.openRuntimeDashboard",
-        "title": "TokenLint: Open Runtime Dashboard"
+        "title": "TokenLint: Open Cost Dashboard"
       },
       {
         "command": "tokenlint.saveRuntimeSnapshot",

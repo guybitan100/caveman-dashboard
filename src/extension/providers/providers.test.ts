@@ -123,6 +123,15 @@ vi.mock('vscode', () => ({
   },
   commands: {
     executeCommand: providerMocks.executeCommand
+  },
+  workspace: {
+    asRelativePath: vi.fn((uri: { toString?: () => string } | string) => {
+      if (typeof uri === 'string') {
+        return uri;
+      }
+
+      return uri?.toString ? uri.toString() : '';
+    })
   }
 }));
 
@@ -259,10 +268,10 @@ describe('extension providers', () => {
     provider.resolveWebviewView(webviewView as never);
 
     expect(webviewView.webview.options).toEqual({ enableScripts: true });
+    expect(webviewView.webview.html).toContain('TokenLint Cost Tracker');
+    expect(webviewView.webview.html).toContain('Cost Dashboard');
+    expect(webviewView.webview.html).toContain('Open Dashboard');
     expect(webviewView.webview.html).toContain('Context Pulse');
-    expect(webviewView.webview.html).toContain('Runtime Sections');
-    expect(webviewView.webview.html).toContain('Overview');
-    expect(webviewView.webview.html).toContain('Sessions');
     expect(webviewView.webview.html).toContain('Apply All Safe Fixes');
     expect(webviewView.webview.html).toContain('Show Before / After Graph');
     expect(webviewView.webview.html).toContain("acquireVsCodeApi()");

@@ -11,6 +11,7 @@ import { TokenLintDiagnosticProvider } from '../providers/diagnosticProvider';
 
 import {
   RuntimeDashboardDiffMode,
+  RuntimeDashboardExportView,
   RuntimeDashboardFilterState,
   RuntimeDashboardHistorySettings,
   RuntimeDashboardMessage,
@@ -187,13 +188,18 @@ export class RuntimeObservabilityController {
       case 'updateFilter':
         this.filter = {
           workspace: message.workspace?.trim() || allWorkspacesLabel,
-          timeWindowDays: normalizeTimeWindow(message.timeWindowDays)
+          timeWindowDays: normalizeTimeWindow(message.timeWindowDays),
+          favoritesOnly: Boolean(message.favoritesOnly)
         };
         this.syncView(this.buildViewState());
         return;
 
       case 'exportView':
-        await this.exportView(message.format);
+        await this.exportView(message.format, message.view);
+        return;
+
+      case 'toggleFavorite':
+        await this.toggleFavorite(message.sessionId);
         return;
 
       case 'saveRuntimeSnapshot':
@@ -236,7 +242,29 @@ export class RuntimeObservabilityController {
       case 'analyzeRetrievalAmplification':
         await this.analyzeRetrievalAmplification();
         return;
+
+      case 'runAnalyzeWorkspace':
+        await vscode.commands.executeCommand('tokenlint.analyzeWorkspaceBudget');
+        return;
+
+      case 'importTelemetry':
+        vscode.window.showInformationMessage('TokenLint: Telemetry import is not available yet.');
+        return;
+
+      case 'openSettings':
+        await vscode.commands.executeCommand('workbench.action.openSettings', 'tokenlint');
+        return;
     }
+  }
+
+  private async toggleFavorite(sessionId: string): Promise<void> {
+    const session = await this.sessionManager.toggleFavorite(sessionId);
+    if (!session) {
+      vscode.window.showInformationMessage('TokenLint: The selected session is no longer available.');
+      return;
+    }
+
+    this.syncView(this.buildViewState());
   }
 
   private buildViewState(): RuntimeDashboardViewState {
@@ -244,7 +272,8 @@ export class RuntimeObservabilityController {
       ...this.sessionManager.getDashboardState(this.filter),
       filter: { ...this.filter },
       activeSection: this.activeSection,
-      history: this.buildHistoryState()
+      history: this.buildHistoryState(),
+      currentWorkspace: resolveWorkspaceName()
     };
   }
 
@@ -376,14 +405,14 @@ export class RuntimeObservabilityController {
     const latest = viewState.latestSession;
 
     if (!latest) {
-      this.statusBar.text = 'TokenLint Runtime: awaiting telemetry';
-      this.statusBar.tooltip = 'Open the TokenLint Runtime Dashboard to inspect runtime observability once telemetry is available.';
+      this.statusBar.text = 'TokenLint Cost: awaiting telemetry';
+      this.statusBar.tooltip = 'Open the TokenLint Cost Dashboard to inspect runtime cost, credits, and cache efficiency once telemetry is available.';
       return;
     }
 
     const contextTokens = latest.promptTokens + latest.completionTokens;
     this.statusBar.text = [
-      'TokenLint Runtime',
+      'TokenLint Cost',
       `Context: ${formatCompactNumber(contextTokens)}`,
       `Cache: ${latest.cacheEfficiency.toFixed(0)}%`,
       `Cost: $${latest.estimatedCost.toFixed(2)}`,
@@ -395,19 +424,19 @@ export class RuntimeObservabilityController {
       `Model: ${latest.model}`,
       `Reasoning risk: ${viewState.summary.reasoningRisk.toUpperCase()}`,
       `Context health: ${viewState.summary.contextHealth}/100`,
-      'Open the TokenLint Runtime Dashboard for full analytics.'
+      'Open the TokenLint Cost Dashboard for full analytics.'
     ].join('\n');
   }
 
-  private async exportView(format: 'csv' | 'json'): Promise<void> {
+  private async exportView(format: 'csv' | 'json', view: RuntimeDashboardExportView = 'all'): Promise<void> {
     const viewState = this.buildViewState();
     const content = format === 'json'
-      ? JSON.stringify(viewState, null, 2)
-      : toCsv(viewState.sessions);
+      ? JSON.stringify(buildExportPayload(viewState, view), null, 2)
+      : toCsvForView(viewState, view);
     const language = format === 'json' ? 'json' : 'csv';
     const fileName = format === 'json'
-      ? 'tokenlint-runtime-report.json'
-      : 'tokenlint-runtime-report.csv';
+      ? `tokenlint-runtime-${view}.json`
+      : `tokenlint-runtime-${view}.csv`;
     const document = await this.prepareArtifactDocument({
       bucket: 'exports',
       fileName,
@@ -440,16 +469,7 @@ function createDefaultFilter(): RuntimeDashboardFilterState {
 }
 
 function normalizeTimeWindow(value: number | undefined): number {
-  const rounded = Math.round(value ?? 7);
-  if (rounded <= 1) {
-    return 1;
-  }
-
-  if (rounded >= 30) {
-    return 30;
-  }
-
-  return 7;
+  return Math.min(365, Math.max(1, Math.round(value ?? 7)));
 }
 
 function formatCompactNumber(value: number): string {
@@ -481,7 +501,60 @@ function buildFallbackBudget(session: AISession): BudgetResult {
   };
 }
 
-function toCsv(sessions: RuntimeDashboardViewState['sessions']): string {
+function buildExportPayload(viewState: RuntimeDashboardViewState, view: RuntimeDashboardExportView) {
+  switch (view) {
+    case 'latest':
+      return {
+        view,
+        generatedAt: viewState.generatedAt,
+        currentWorkspace: viewState.currentWorkspace,
+        filter: viewState.filter,
+        summary: viewState.summary,
+        latestSession: viewState.latestSession
+      };
+
+    case 'aggregate':
+      return {
+        view,
+        generatedAt: viewState.generatedAt,
+        currentWorkspace: viewState.currentWorkspace,
+        filter: viewState.filter,
+        summary: viewState.summary,
+        costByModel: viewState.costByModel,
+        workspaces: buildWorkspaceExportRows(viewState.sessions),
+        cacheBreakdown: viewState.cacheBreakdown,
+        retrievalAmplification: viewState.retrievalAmplification,
+        cacheEfficiencyTrend: viewState.cacheEfficiencyTrend
+      };
+
+    case 'all':
+    default:
+      return {
+        view,
+        generatedAt: viewState.generatedAt,
+        currentWorkspace: viewState.currentWorkspace,
+        filter: viewState.filter,
+        summary: viewState.summary,
+        sessions: viewState.sessions
+      };
+  }
+}
+
+function toCsvForView(viewState: RuntimeDashboardViewState, view: RuntimeDashboardExportView): string {
+  switch (view) {
+    case 'latest':
+      return toSessionCsv(viewState.latestSession ? [viewState.latestSession] : []);
+
+    case 'aggregate':
+      return toAggregateCsv(viewState);
+
+    case 'all':
+    default:
+      return toSessionCsv(viewState.sessions);
+  }
+}
+
+function toSessionCsv(sessions: RuntimeDashboardViewState['sessions']): string {
   const lines = [
     ['lastActive', 'source', 'workspace', 'title', 'model', 'cost', 'credits', 'cacheEfficiency', 'cacheSavings', 'promptTokens', 'completionTokens'].join(',')
   ];
@@ -503,6 +576,75 @@ function toCsv(sessions: RuntimeDashboardViewState['sessions']): string {
   }
 
   return lines.join('\n');
+}
+
+function toAggregateCsv(viewState: RuntimeDashboardViewState): string {
+  const workspaceRows = buildWorkspaceExportRows(viewState.sessions);
+  const lines = [
+    ['section', 'key', 'value1', 'value2', 'value3', 'value4'].join(','),
+    ['summary', 'sessions', String(viewState.summary.sessions), '', '', ''].join(','),
+    ['summary', 'totalCost', viewState.summary.totalCost.toFixed(4), '', '', ''].join(','),
+    ['summary', 'totalCredits', viewState.summary.totalCredits.toFixed(2), '', '', ''].join(','),
+    ['summary', 'averageCacheEfficiency', viewState.summary.averageCacheEfficiency.toFixed(1), '', '', ''].join(','),
+    ['summary', 'averageRetrievalAmplification', viewState.summary.averageRetrievalAmplification.toFixed(2), '', '', ''].join(','),
+    ['summary', 'contextHealth', viewState.summary.contextHealth.toFixed(1), '', '', ''].join(',')
+  ];
+
+  for (const workspace of workspaceRows) {
+    lines.push([
+      'workspace',
+      escapeCsv(workspace.workspace),
+      String(workspace.sessions),
+      workspace.cost.toFixed(4),
+      workspace.credits.toFixed(2),
+      workspace.cacheEfficiency.toFixed(1)
+    ].join(','));
+  }
+
+  for (const model of viewState.costByModel) {
+    lines.push([
+      'model',
+      escapeCsv(model.model),
+      model.cost.toFixed(4),
+      model.percent.toFixed(1),
+      '',
+      ''
+    ].join(','));
+  }
+
+  return lines.join('\n');
+}
+
+function buildWorkspaceExportRows(sessions: AISession[]) {
+  const rows = new Map<string, {
+    workspace: string;
+    sessions: number;
+    cost: number;
+    credits: number;
+    cacheEfficiency: number;
+  }>();
+
+  for (const session of sessions) {
+    const row = rows.get(session.workspace) ?? {
+      workspace: session.workspace,
+      sessions: 0,
+      cost: 0,
+      credits: 0,
+      cacheEfficiency: 0
+    };
+    row.sessions += 1;
+    row.cost += session.estimatedCost;
+    row.credits += session.credits;
+    row.cacheEfficiency += session.cacheEfficiency;
+    rows.set(session.workspace, row);
+  }
+
+  return [...rows.values()]
+    .map(row => ({
+      ...row,
+      cacheEfficiency: row.sessions === 0 ? 0 : row.cacheEfficiency / row.sessions
+    }))
+    .sort((left, right) => right.cost - left.cost);
 }
 
 function escapeCsv(value: string): string {
