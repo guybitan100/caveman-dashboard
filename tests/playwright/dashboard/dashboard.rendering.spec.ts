@@ -74,6 +74,62 @@ test.describe('runtime dashboard rendering', () => {
     expect(messages.at(-1)).toEqual({ command: 'refreshView' });
 
     await clearPostedMessages(page);
+    await page.locator(dashboardSelectors.timeWindowSelect).selectOption('today');
+    messages = await getPostedMessages(page);
+    expect(messages.at(-1)).toEqual({
+      command: 'updateFilter',
+      workspace: 'All workspaces',
+      timeWindowDays: 1,
+      favoritesOnly: false
+    });
+
+    await clearPostedMessages(page);
+    await page.locator(dashboardSelectors.timeWindowSelect).selectOption('7d');
+    messages = await getPostedMessages(page);
+    expect(messages.at(-1)).toEqual({
+      command: 'updateFilter',
+      workspace: 'All workspaces',
+      timeWindowDays: 7,
+      favoritesOnly: false
+    });
+
+    await clearPostedMessages(page);
+    await page.locator(dashboardSelectors.timeWindowSelect).selectOption('month');
+    messages = await getPostedMessages(page);
+    expect(messages.at(-1)).toEqual({
+      command: 'updateFilter',
+      workspace: 'All workspaces',
+      timeWindowDays: new Date().getUTCDate(),
+      favoritesOnly: false
+    });
+
+    await clearPostedMessages(page);
+    await page.locator(dashboardSelectors.timeWindowSelect).selectOption('30d');
+    messages = await getPostedMessages(page);
+    expect(messages.at(-1)).toEqual({
+      command: 'updateFilter',
+      workspace: 'All workspaces',
+      timeWindowDays: 30,
+      favoritesOnly: false
+    });
+
+    await clearPostedMessages(page);
+    await page.locator(dashboardSelectors.timeWindowSelect).selectOption('custom');
+    await expect(page.locator(dashboardSelectors.customWindowControls)).toBeVisible();
+    messages = await getPostedMessages(page);
+    expect(messages).toEqual([]);
+    await page.locator(dashboardSelectors.customStartInput).fill('2099-06-01');
+    await page.locator(dashboardSelectors.customEndInput).fill('2099-06-05');
+    await page.locator(dashboardSelectors.applyCustomWindow).click();
+    messages = await getPostedMessages(page);
+    expect(messages.at(-1)).toEqual({
+      command: 'updateFilter',
+      workspace: 'All workspaces',
+      timeWindowDays: 5,
+      favoritesOnly: false
+    });
+
+    await clearPostedMessages(page);
     await page.locator(dashboardSelectors.tabAll).click();
     await expect.poll(async () => getActiveTab(page)).toBe('all');
     messages = await getPostedMessages(page);
@@ -83,6 +139,20 @@ test.describe('runtime dashboard rendering', () => {
 
     await page.locator(sessionExpandSelector(seeded[0].session.id)).click();
     await expect(page.locator(sessionDetailRowSelector(seeded[0].session.id))).not.toHaveClass(/hidden/);
+
+    await clearPostedMessages(page);
+    await page.locator(dashboardSelectors.tabLatest).click();
+    await expect.poll(async () => getActiveTab(page)).toBe('latest');
+    messages = await getPostedMessages(page);
+    expect(messages.at(-1)).toEqual({ command: 'selectView', view: 'latest' });
+    await expect(page.locator(dashboardSelectors.sectionLatest)).toHaveClass(/active/);
+
+    await clearPostedMessages(page);
+    await page.locator(dashboardSelectors.tabAll).click();
+    await expect.poll(async () => getActiveTab(page)).toBe('all');
+    messages = await getPostedMessages(page);
+    expect(messages.at(-1)).toEqual({ command: 'selectView', view: 'all' });
+    await expect(page.locator(dashboardSelectors.sectionAll)).toHaveClass(/active/);
 
     await clearPostedMessages(page);
     await page.locator(sessionFavoriteSelector(seeded[0].session.id)).click();
@@ -95,7 +165,7 @@ test.describe('runtime dashboard rendering', () => {
     expect(messages.at(-1)).toEqual({
       command: 'updateFilter',
       workspace: 'api-contract-tests',
-      timeWindowDays: 30,
+      timeWindowDays: 5,
       favoritesOnly: false
     });
 
@@ -105,7 +175,7 @@ test.describe('runtime dashboard rendering', () => {
     expect(messages.at(-1)).toEqual({
       command: 'updateFilter',
       workspace: 'api-contract-tests',
-      timeWindowDays: 30,
+      timeWindowDays: 5,
       favoritesOnly: true
     });
 
@@ -113,18 +183,6 @@ test.describe('runtime dashboard rendering', () => {
     await page.locator(dashboardSelectors.exportCsv).click();
     messages = await getPostedMessages(page);
     expect(messages.at(-1)).toEqual({ command: 'exportView', format: 'csv', view: 'all' });
-
-    await clearPostedMessages(page);
-    await page.locator(dashboardSelectors.timeWindowSelect).selectOption('custom');
-    await expect(page.locator(dashboardSelectors.customWindowControls)).toBeVisible();
-    await page.locator(dashboardSelectors.applyCustomWindow).click();
-    messages = await getPostedMessages(page);
-    expect(messages.at(-1)).toEqual({
-      command: 'updateFilter',
-      workspace: 'api-contract-tests',
-      timeWindowDays: 7,
-      favoritesOnly: false
-    });
 
     await clearPostedMessages(page);
     await page.locator(dashboardSelectors.tabAggregate).click();
