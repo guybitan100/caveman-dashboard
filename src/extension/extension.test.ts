@@ -10,7 +10,10 @@ const extensionMocks = vi.hoisted(() => {
           };
         }
       | undefined,
-    saveHandler: undefined as ((document: { fileName: string }) => void) | undefined
+    saveHandler: undefined as ((document: { fileName: string }) => void) | undefined,
+    activeEditorHandler: undefined as (() => void) | undefined,
+    visibleEditorsHandler: undefined as (() => void) | undefined,
+    configurationHandler: undefined as ((event: { affectsConfiguration: (section: string) => boolean }) => void) | undefined
   };
 
   const diagnosticsInstance = {
@@ -20,7 +23,18 @@ const extensionMocks = vi.hoisted(() => {
   };
   const statusBar = {
     text: '',
-    show: vi.fn()
+    show: vi.fn(),
+    command: undefined as string | undefined,
+    tooltip: undefined as string | undefined,
+    backgroundColor: undefined as unknown
+  };
+  const budgetController = {
+    refresh: vi.fn().mockResolvedValue(undefined),
+    invalidateWorkspaceEstimate: vi.fn(),
+    showCopilotBudget: vi.fn().mockResolvedValue(undefined),
+    analyzeOpenFilesBudget: vi.fn().mockResolvedValue(undefined),
+    analyzeWorkspaceBudget: vi.fn().mockResolvedValue(undefined),
+    setCopilotBudget: vi.fn().mockResolvedValue(undefined)
   };
 
   class MockTokenLintDiagnosticProvider {
@@ -39,11 +53,27 @@ const extensionMocks = vi.hoisted(() => {
     static readonly providedCodeActionKinds = ['quickfix'];
   }
 
+  class MockCopilotBudgetController {
+    constructor(statusBarItem: typeof statusBar) {
+      statusBarItem.text = 'TokenLint: Budget meter';
+      statusBarItem.command = 'tokenlint.showCopilotBudget';
+      statusBarItem.show();
+    }
+
+    refresh = budgetController.refresh;
+    invalidateWorkspaceEstimate = budgetController.invalidateWorkspaceEstimate;
+    showCopilotBudget = budgetController.showCopilotBudget;
+    analyzeOpenFilesBudget = budgetController.analyzeOpenFilesBudget;
+    analyzeWorkspaceBudget = budgetController.analyzeWorkspaceBudget;
+    setCopilotBudget = budgetController.setCopilotBudget;
+  }
+
   return {
     state,
     commandHandlers,
     diagnosticsInstance,
     statusBar,
+    budgetController,
     registerWebviewViewProvider: vi.fn(() => ({ dispose: vi.fn() })),
     registerCommand: vi.fn((command: string, handler: () => Promise<void>) => {
       commandHandlers.set(command, handler);
@@ -53,6 +83,18 @@ const extensionMocks = vi.hoisted(() => {
     registerCodeActionsProvider: vi.fn(() => ({ dispose: vi.fn() })),
     onDidSaveTextDocument: vi.fn((handler: (document: { fileName: string }) => void) => {
       state.saveHandler = handler;
+      return { dispose: vi.fn() };
+    }),
+    onDidChangeActiveTextEditor: vi.fn((handler: () => void) => {
+      state.activeEditorHandler = handler;
+      return { dispose: vi.fn() };
+    }),
+    onDidChangeVisibleTextEditors: vi.fn((handler: () => void) => {
+      state.visibleEditorsHandler = handler;
+      return { dispose: vi.fn() };
+    }),
+    onDidChangeConfiguration: vi.fn((handler: (event: { affectsConfiguration: (section: string) => boolean }) => void) => {
+      state.configurationHandler = handler;
       return { dispose: vi.fn() };
     }),
     createStatusBarItem: vi.fn(() => statusBar),
@@ -68,6 +110,7 @@ const extensionMocks = vi.hoisted(() => {
     MockTokenLintDiagnosticProvider,
     MockTokenLintSidebarProvider,
     MockTokenLintCodeActionProvider,
+    MockCopilotBudgetController,
     StatusBarAlignment: { Left: 1 }
   };
 });
@@ -78,7 +121,9 @@ vi.mock('vscode', () => ({
       return extensionMocks.state.activeTextEditor;
     },
     createStatusBarItem: extensionMocks.createStatusBarItem,
-    registerWebviewViewProvider: extensionMocks.registerWebviewViewProvider
+    registerWebviewViewProvider: extensionMocks.registerWebviewViewProvider,
+    onDidChangeActiveTextEditor: extensionMocks.onDidChangeActiveTextEditor,
+    onDidChangeVisibleTextEditors: extensionMocks.onDidChangeVisibleTextEditors
   },
   commands: {
     registerCommand: extensionMocks.registerCommand
@@ -88,7 +133,8 @@ vi.mock('vscode', () => ({
     registerCodeActionsProvider: extensionMocks.registerCodeActionsProvider
   },
   workspace: {
-    onDidSaveTextDocument: extensionMocks.onDidSaveTextDocument
+    onDidSaveTextDocument: extensionMocks.onDidSaveTextDocument,
+    onDidChangeConfiguration: extensionMocks.onDidChangeConfiguration
   },
   StatusBarAlignment: extensionMocks.StatusBarAlignment
 }));
@@ -111,6 +157,10 @@ vi.mock('./providers/sidebarProvider', () => ({
 
 vi.mock('./utils/scanFilter', () => ({
   shouldAnalyzeFile: extensionMocks.shouldAnalyzeFile
+}));
+
+vi.mock('./utils/copilotBudget', () => ({
+  CopilotBudgetController: extensionMocks.MockCopilotBudgetController
 }));
 
 vi.mock('./commands/scanCurrentFile', () => ({
@@ -148,6 +198,9 @@ describe('extension activation', () => {
     extensionMocks.commandHandlers.clear();
     extensionMocks.state.activeTextEditor = undefined;
     extensionMocks.state.saveHandler = undefined;
+    extensionMocks.state.activeEditorHandler = undefined;
+    extensionMocks.state.visibleEditorsHandler = undefined;
+    extensionMocks.state.configurationHandler = undefined;
     extensionMocks.statusBar.text = '';
     extensionMocks.statusBar.show.mockReset();
     extensionMocks.registerWebviewViewProvider.mockClear();
@@ -155,6 +208,9 @@ describe('extension activation', () => {
     extensionMocks.registerHoverProvider.mockClear();
     extensionMocks.registerCodeActionsProvider.mockClear();
     extensionMocks.onDidSaveTextDocument.mockClear();
+    extensionMocks.onDidChangeActiveTextEditor.mockClear();
+    extensionMocks.onDidChangeVisibleTextEditors.mockClear();
+    extensionMocks.onDidChangeConfiguration.mockClear();
     extensionMocks.createStatusBarItem.mockClear();
     extensionMocks.scanCurrentFile.mockReset();
     extensionMocks.scanWorkspace.mockReset();
@@ -168,13 +224,21 @@ describe('extension activation', () => {
     extensionMocks.diagnosticsInstance.scan.mockReset();
     extensionMocks.diagnosticsInstance.getCached.mockReset();
     extensionMocks.diagnosticsInstance.dispose.mockReset();
+    extensionMocks.budgetController.refresh.mockReset();
+    extensionMocks.budgetController.refresh.mockResolvedValue(undefined);
+    extensionMocks.budgetController.invalidateWorkspaceEstimate.mockReset();
+    extensionMocks.budgetController.showCopilotBudget.mockReset();
+    extensionMocks.budgetController.showCopilotBudget.mockResolvedValue(undefined);
+    extensionMocks.budgetController.analyzeOpenFilesBudget.mockReset();
+    extensionMocks.budgetController.analyzeOpenFilesBudget.mockResolvedValue(undefined);
+    extensionMocks.budgetController.analyzeWorkspaceBudget.mockReset();
+    extensionMocks.budgetController.analyzeWorkspaceBudget.mockResolvedValue(undefined);
+    extensionMocks.budgetController.setCopilotBudget.mockReset();
+    extensionMocks.budgetController.setCopilotBudget.mockResolvedValue(undefined);
   });
 
   it('registers providers, commands, and status bar wiring', async () => {
     const context = { extensionUri: 'ext-uri', subscriptions: [] as unknown[] };
-    extensionMocks.diagnosticsInstance.getCached.mockReturnValue({
-      metrics: { findingCount: 3, totalTokens: 30 }
-    });
     extensionMocks.state.activeTextEditor = {
       document: {
         fileName: 'prompt.md'
@@ -183,13 +247,13 @@ describe('extension activation', () => {
 
     activate(context as never);
 
-    expect(extensionMocks.statusBar.text).toBe('TokenLint: Ready');
+    expect(extensionMocks.statusBar.text).toBe('TokenLint: Budget meter');
     expect(extensionMocks.statusBar.show).toHaveBeenCalled();
     expect(extensionMocks.registerWebviewViewProvider).toHaveBeenCalledWith(
       'tokenlint.sidebar',
       expect.any(extensionMocks.MockTokenLintSidebarProvider)
     );
-    expect(extensionMocks.registerCommand).toHaveBeenCalledTimes(7);
+    expect(extensionMocks.registerCommand).toHaveBeenCalledTimes(11);
     expect(extensionMocks.registerHoverProvider).toHaveBeenCalledWith(
       expect.arrayContaining([
         { scheme: 'file', language: 'markdown' },
@@ -204,23 +268,32 @@ describe('extension activation', () => {
       expect.any(extensionMocks.MockTokenLintCodeActionProvider),
       { providedCodeActionKinds: ['quickfix'] }
     );
+    expect(extensionMocks.budgetController.refresh).toHaveBeenCalledWith({ forceWorkspaceRefresh: true });
 
     await extensionMocks.commandHandlers.get('tokenlint.scanCurrentFile')?.();
     expect(extensionMocks.scanCurrentFile).toHaveBeenCalledWith(extensionMocks.diagnosticsInstance);
-    expect(extensionMocks.statusBar.text).toBe('TokenLint: 3 findings | 30 tokens');
-
-    extensionMocks.diagnosticsInstance.getCached.mockReturnValue(undefined);
-    await extensionMocks.commandHandlers.get('tokenlint.scanCurrentFile')?.();
-    expect(extensionMocks.statusBar.text).toBe('TokenLint: 3 findings | 30 tokens');
-
-    extensionMocks.state.activeTextEditor = undefined;
-    await extensionMocks.commandHandlers.get('tokenlint.scanCurrentFile')?.();
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith();
 
     await extensionMocks.commandHandlers.get('tokenlint.scanWorkspace')?.();
     expect(extensionMocks.scanWorkspace).toHaveBeenCalledWith(extensionMocks.diagnosticsInstance);
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ forceWorkspaceRefresh: true });
+
+    await extensionMocks.commandHandlers.get('tokenlint.scanCurrentFile')?.();
 
     await extensionMocks.commandHandlers.get('tokenlint.scanOrFix')?.();
     expect(extensionMocks.scanOrFix).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.setCopilotBudget')?.();
+    expect(extensionMocks.budgetController.setCopilotBudget).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.analyzeOpenFilesBudget')?.();
+    expect(extensionMocks.budgetController.analyzeOpenFilesBudget).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.showCopilotBudget')?.();
+    expect(extensionMocks.budgetController.showCopilotBudget).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.analyzeWorkspaceBudget')?.();
+    expect(extensionMocks.budgetController.analyzeWorkspaceBudget).toHaveBeenCalled();
 
     await extensionMocks.commandHandlers.get('tokenlint.generateReport')?.();
     expect(extensionMocks.generateReport).toHaveBeenCalled();
@@ -234,7 +307,7 @@ describe('extension activation', () => {
     await extensionMocks.commandHandlers.get('tokenlint.showFixGraph')?.();
     expect(extensionMocks.showFixGraph).toHaveBeenCalled();
 
-    expect(context.subscriptions.length).toBe(12);
+    expect(context.subscriptions.length).toBe(20);
   });
 
   it('updates diagnostics on save for both ignored and analyzable files', () => {
@@ -247,6 +320,8 @@ describe('extension activation', () => {
     extensionMocks.shouldAnalyzeFile.mockReturnValue(false);
     extensionMocks.state.saveHandler?.(ignoredDocument);
     expect(extensionMocks.diagnosticsInstance.scan).toHaveBeenCalledWith(ignoredDocument);
+    expect(extensionMocks.budgetController.invalidateWorkspaceEstimate).toHaveBeenCalledTimes(1);
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ forceWorkspaceRefresh: true });
 
     extensionMocks.shouldAnalyzeFile.mockReturnValue(true);
     extensionMocks.diagnosticsInstance.scan.mockReturnValue({
@@ -255,7 +330,26 @@ describe('extension activation', () => {
     extensionMocks.state.saveHandler?.(analyzedDocument);
 
     expect(extensionMocks.diagnosticsInstance.scan).toHaveBeenCalledWith(analyzedDocument);
-    expect(extensionMocks.statusBar.text).toBe('TokenLint: 4 findings | 44 tokens');
+    expect(extensionMocks.budgetController.invalidateWorkspaceEstimate).toHaveBeenCalledTimes(2);
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ forceWorkspaceRefresh: true });
+  });
+
+  it('refreshes the budget meter on editor and configuration changes', () => {
+    const context = { extensionUri: 'ext-uri', subscriptions: [] as unknown[] };
+
+    activate(context as never);
+    extensionMocks.budgetController.refresh.mockClear();
+
+    extensionMocks.state.activeEditorHandler?.();
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith();
+
+    extensionMocks.state.visibleEditorsHandler?.();
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith();
+
+    extensionMocks.state.configurationHandler?.({
+      affectsConfiguration: (section: string) => section === 'tokenlint.copilotBudget'
+    });
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ forceWorkspaceRefresh: true });
   });
 
   it('deactivate is a no-op', () => {

@@ -2,6 +2,10 @@
 
 TokenLint is a compiler-style VS Code extension for prompts, AI skills, MCP workflows, and cognitive security.
 
+## Product Positioning
+
+AI Context Budget Manager for GitHub Copilot and Agentic AI.
+
 ## What This MVP Includes
 
 - Real VS Code extension entrypoint
@@ -29,13 +33,24 @@ TokenLint now adds a dedicated Activity Bar icon in VS Code.
 
 The sidebar includes:
 
+- Copilot Context Budget card with current file, open files, workspace estimate, usage, and risk
 - Scan / Fix... quick action
 - Scan Current File
 - Scan Workspace
+- Analyze Open Files Budget
+- Analyze Workspace Budget
 - Generate Report
 - Show IR
 - Apply All Safe Fixes
 - Show Before / After Graph
+
+## Copilot Budget Meter
+
+TokenLint includes a real-time Copilot budget meter in the status bar and sidebar.
+
+- Status bar examples: `TokenLint: 42.3k / 128k - 33%`, `TokenLint: 91k / 128k - HIGH`, `TokenLint: 122k / 128k - CRITICAL`
+- Sidebar budget card shows the current file tokens, open file tokens, workspace estimate, retrieval estimate, configured budget, usage percent, and risk level
+- Workspace budget analysis opens a markdown report with estimated token totals, runtime amplification, and highest-risk files
 
 ## Fix Engine
 
@@ -60,10 +75,22 @@ TokenLint includes a safe fix engine.
 - `TokenLint: Scan / Fix...`
 - `TokenLint: Scan Current File`
 - `TokenLint: Scan Workspace`
+- `TokenLint: Set Copilot Budget`
+- `TokenLint: Analyze Open Files Budget`
+- `TokenLint: Show Copilot Budget`
+- `TokenLint: Analyze Workspace Budget`
 - `TokenLint: Generate Report`
 - `TokenLint: Show IR`
 - `TokenLint: Apply All Safe Fixes`
 - `TokenLint: Show Before / After Graph`
+
+## Settings
+
+- `tokenlint.copilotBudget`: default `128000`
+- `tokenlint.warningThresholdPercent`: default `70`
+- `tokenlint.criticalThresholdPercent`: default `90`
+- `tokenlint.includeWorkspaceEstimate`: default `true`
+- `tokenlint.includeRetrievalAmplification`: default `true`
 
 ## Scan Scope
 

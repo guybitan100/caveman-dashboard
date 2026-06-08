@@ -4,7 +4,7 @@ import { TokenLintDiagnosticProvider } from './providers/diagnosticProvider';
 import { createHoverProvider } from './providers/hoverProvider';
 import { TokenLintCodeActionProvider } from './providers/codeActionProvider';
 import { TokenLintSidebarProvider } from './providers/sidebarProvider';
-import { shouldAnalyzeFile } from './utils/scanFilter';
+import { CopilotBudgetController, shouldIncludeBudgetFile } from './utils/copilotBudget';
 
 import { scanCurrentFile } from './commands/scanCurrentFile';
 import { scanWorkspace } from './commands/scanWorkspace';
@@ -19,8 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
   const sidebarProvider = new TokenLintSidebarProvider(context.extensionUri);
 
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-  statusBar.text = 'TokenLint: Ready';
-  statusBar.show();
+  const budgetController = new CopilotBudgetController(statusBar, sidebarProvider);
 
   const supportedSelectors: vscode.DocumentSelector = [
     { scheme: 'file', language: 'markdown' },
@@ -39,21 +38,32 @@ export function activate(context: vscode.ExtensionContext) {
     ),
     vscode.commands.registerCommand('tokenlint.scanCurrentFile', async () => {
       await scanCurrentFile(diagnostics);
-      const editor = vscode.window.activeTextEditor;
-      if (editor) {
-        const cached = diagnostics.getCached(editor.document);
-        if (cached) {
-          statusBar.text = `TokenLint: ${cached.metrics.findingCount} findings | ${cached.metrics.totalTokens} tokens`;
-        }
-      }
+      await budgetController.refresh();
     }),
 
     vscode.commands.registerCommand('tokenlint.scanWorkspace', async () => {
       await scanWorkspace(diagnostics);
+      await budgetController.refresh({ forceWorkspaceRefresh: true });
     }),
 
     vscode.commands.registerCommand('tokenlint.scanOrFix', async () => {
       await scanOrFix();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.setCopilotBudget', async () => {
+      await budgetController.setCopilotBudget();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.analyzeOpenFilesBudget', async () => {
+      await budgetController.analyzeOpenFilesBudget();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.showCopilotBudget', async () => {
+      await budgetController.showCopilotBudget();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.analyzeWorkspaceBudget', async () => {
+      await budgetController.analyzeWorkspaceBudget();
     }),
 
     vscode.commands.registerCommand('tokenlint.generateReport', async () => {
@@ -83,18 +93,38 @@ export function activate(context: vscode.ExtensionContext) {
     ),
 
     diagnostics,
-    statusBar
+    statusBar,
+    vscode.workspace.onDidSaveTextDocument(document => {
+      diagnostics.scan(document);
+
+      if (shouldIncludeBudgetFile(document.fileName)) {
+        budgetController.invalidateWorkspaceEstimate();
+        void budgetController.refresh({ forceWorkspaceRefresh: true });
+        return;
+      }
+
+      void budgetController.refresh();
+    }),
+    vscode.window.onDidChangeActiveTextEditor(() => {
+      void budgetController.refresh();
+    }),
+    vscode.window.onDidChangeVisibleTextEditors(() => {
+      void budgetController.refresh();
+    }),
+    vscode.workspace.onDidChangeConfiguration(event => {
+      if (
+        event.affectsConfiguration('tokenlint.copilotBudget')
+        || event.affectsConfiguration('tokenlint.warningThresholdPercent')
+        || event.affectsConfiguration('tokenlint.criticalThresholdPercent')
+        || event.affectsConfiguration('tokenlint.includeWorkspaceEstimate')
+        || event.affectsConfiguration('tokenlint.includeRetrievalAmplification')
+      ) {
+        void budgetController.refresh({ forceWorkspaceRefresh: true });
+      }
+    })
   );
 
-  vscode.workspace.onDidSaveTextDocument(document => {
-    if (!shouldAnalyzeFile(document.fileName)) {
-      diagnostics.scan(document);
-      return;
-    }
-
-    const result = diagnostics.scan(document);
-    statusBar.text = `TokenLint: ${result.metrics.findingCount} findings | ${result.metrics.totalTokens} tokens`;
-  });
+  void budgetController.refresh({ forceWorkspaceRefresh: true });
 }
 
 export function deactivate() {}

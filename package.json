@@ -36,6 +36,22 @@
         "title": "TokenLint: Scan / Fix..."
       },
       {
+        "command": "tokenlint.setCopilotBudget",
+        "title": "TokenLint: Set Copilot Budget"
+      },
+      {
+        "command": "tokenlint.analyzeOpenFilesBudget",
+        "title": "TokenLint: Analyze Open Files Budget"
+      },
+      {
+        "command": "tokenlint.showCopilotBudget",
+        "title": "TokenLint: Show Copilot Budget"
+      },
+      {
+        "command": "tokenlint.analyzeWorkspaceBudget",
+        "title": "TokenLint: Analyze Workspace Budget"
+      },
+      {
         "command": "tokenlint.generateReport",
         "title": "TokenLint: Generate Report"
       },
@@ -74,6 +90,31 @@
           "type": "boolean",
           "default": true,
           "description": "Enable AI skill and prompt security scanner"
+        },
+        "tokenlint.copilotBudget": {
+          "type": "number",
+          "default": 128000,
+          "description": "Configured GitHub Copilot context budget in tokens"
+        },
+        "tokenlint.warningThresholdPercent": {
+          "type": "number",
+          "default": 70,
+          "description": "Usage percentage that marks the Copilot budget meter as high risk"
+        },
+        "tokenlint.criticalThresholdPercent": {
+          "type": "number",
+          "default": 90,
+          "description": "Usage percentage that marks the Copilot budget meter as critical"
+        },
+        "tokenlint.includeWorkspaceEstimate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include the workspace-wide context estimate in the Copilot budget meter"
+        },
+        "tokenlint.includeRetrievalAmplification": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include retrieval amplification estimates when calculating Copilot context pressure"
         }
       }
     },
@@ -114,24 +155,34 @@
           "group": "tokenlint@3"
         },
         {
-          "command": "tokenlint.applyAllSafeFixes",
+          "command": "tokenlint.showCopilotBudget",
           "when": "view == tokenlint.sidebar",
           "group": "tokenlint@4"
         },
         {
-          "command": "tokenlint.generateReport",
+          "command": "tokenlint.analyzeWorkspaceBudget",
           "when": "view == tokenlint.sidebar",
           "group": "tokenlint@5"
         },
         {
-          "command": "tokenlint.showIR",
+          "command": "tokenlint.applyAllSafeFixes",
           "when": "view == tokenlint.sidebar",
           "group": "tokenlint@6"
         },
         {
-          "command": "tokenlint.showFixGraph",
+          "command": "tokenlint.generateReport",
           "when": "view == tokenlint.sidebar",
           "group": "tokenlint@7"
+        },
+        {
+          "command": "tokenlint.showIR",
+          "when": "view == tokenlint.sidebar",
+          "group": "tokenlint@8"
+        },
+        {
+          "command": "tokenlint.showFixGraph",
+          "when": "view == tokenlint.sidebar",
+          "group": "tokenlint@9"
         }
       ]
     }

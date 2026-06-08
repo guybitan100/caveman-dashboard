@@ -248,6 +248,7 @@ describe('extension providers', () => {
       webview: {
         options: undefined,
         html: '',
+        postMessage: vi.fn().mockResolvedValue(true),
         onDidReceiveMessage(callback: (message: { command: string }) => Promise<void>) {
           handler = callback;
         }
@@ -258,14 +259,48 @@ describe('extension providers', () => {
     provider.resolveWebviewView(webviewView as never);
 
     expect(webviewView.webview.options).toEqual({ enableScripts: true });
+    expect(webviewView.webview.html).toContain('Copilot Context Budget');
     expect(webviewView.webview.html).toContain('Apply All Safe Fixes');
     expect(webviewView.webview.html).toContain('Show Before / After Graph');
     expect(webviewView.webview.html).toContain("acquireVsCodeApi()");
+
+    provider.updateBudget({
+      budget: {
+        budgetTokens: 128000,
+        usedTokens: 42000,
+        usagePercent: 32.8,
+        currentFileTokens: 8420,
+        openFilesTokens: 31700,
+        workspaceTokens: 112900,
+        estimatedRetrievalTokens: 15000,
+        estimatedFinalContext: 42000,
+        risk: 'low'
+      },
+      workspaceAnalysis: {
+        filesScanned: 3,
+        estimatedTokens: 20000,
+        estimatedRetrievalTokens: 15000,
+        estimatedFinalContext: 35000,
+        estimatedRuntimeAmplification: 1.75,
+        highestRiskFiles: ['agent.yaml'],
+        fileEstimates: []
+      }
+    });
+    expect(webviewView.webview.postMessage).toHaveBeenLastCalledWith({
+      type: 'tokenlint.budget',
+      payload: expect.objectContaining({
+        budget: expect.objectContaining({ usedTokens: 42000 })
+      })
+    });
 
     const commands = [
       ['scanOrFix', 'tokenlint.scanOrFix'],
       ['scanCurrentFile', 'tokenlint.scanCurrentFile'],
       ['scanWorkspace', 'tokenlint.scanWorkspace'],
+      ['showCopilotBudget', 'tokenlint.showCopilotBudget'],
+      ['analyzeOpenFilesBudget', 'tokenlint.analyzeOpenFilesBudget'],
+      ['analyzeWorkspaceBudget', 'tokenlint.analyzeWorkspaceBudget'],
+      ['setCopilotBudget', 'tokenlint.setCopilotBudget'],
       ['generateReport', 'tokenlint.generateReport'],
       ['showIR', 'tokenlint.showIR'],
       ['applyAllSafeFixes', 'tokenlint.applyAllSafeFixes'],
