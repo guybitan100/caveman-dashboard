@@ -34,12 +34,14 @@ export interface RuntimeDashboardHistoryState {
 export interface RuntimeDashboardViewState extends RuntimeDashboardState {
   filter: RuntimeDashboardFilterState;
   activeSection: RuntimeDashboardSection;
+  activeView?: RuntimeDashboardExportView;
   history: RuntimeDashboardHistoryState;
   currentWorkspace?: string;
 }
 
 export type RuntimeDashboardMessage =
   | { command: 'refreshView' }
+  | { command: 'selectView'; view: RuntimeDashboardExportView }
   | { command: 'updateFilter'; workspace?: string; timeWindowDays?: number; favoritesOnly?: boolean }
   | { command: 'exportView'; format: 'csv' | 'json'; view?: RuntimeDashboardExportView }
   | { command: 'toggleFavorite'; sessionId: string }
@@ -967,6 +969,7 @@ export class RuntimeDashboardPanel {
     let currentState = null;
     let activeTab = typeof persisted.activeTab === 'string' ? persisted.activeTab : 'all';
     let lastSectionFromState = typeof persisted.lastSectionFromState === 'string' ? persisted.lastSectionFromState : '';
+    let lastViewFromState = typeof persisted.lastViewFromState === 'string' ? persisted.lastViewFromState : '';
     let timeWindowKey = typeof persisted.timeWindowKey === 'string' ? persisted.timeWindowKey : '';
     let customStart = typeof persisted.customStart === 'string' ? persisted.customStart : '';
     let customEnd = typeof persisted.customEnd === 'string' ? persisted.customEnd : '';
@@ -976,6 +979,7 @@ export class RuntimeDashboardPanel {
       vscode.setState({
         activeTab,
         lastSectionFromState,
+        lastViewFromState,
         timeWindowKey,
         customStart,
         customEnd,
@@ -1756,8 +1760,15 @@ export class RuntimeDashboardPanel {
     function render(state) {
       currentState = state;
 
-      if (state.activeSection && state.activeSection !== lastSectionFromState) {
+      if (state.activeView && state.activeView !== lastViewFromState) {
+        activeTab = state.activeView;
+        lastViewFromState = state.activeView;
+      } else if (state.activeSection && state.activeSection !== lastSectionFromState) {
         activeTab = mapSectionToTab(state.activeSection);
+        lastSectionFromState = state.activeSection;
+      }
+
+      if (state.activeSection) {
         lastSectionFromState = state.activeSection;
       }
 
@@ -1853,6 +1864,8 @@ export class RuntimeDashboardPanel {
       const tabButton = event.target.closest('[data-tab]');
       if (tabButton) {
         activeTab = tabButton.dataset.tab;
+        lastViewFromState = activeTab;
+        vscode.postMessage({ command: 'selectView', view: activeTab });
         render(currentState);
         return;
       }

@@ -38,6 +38,7 @@ export class RuntimeObservabilityController {
   private readonly statusBar: vscode.StatusBarItem;
   private filter = createDefaultFilter();
   private activeSection: RuntimeDashboardSection = 'overview';
+  private activeView: RuntimeDashboardExportView = 'all';
   private activeDiffMode: RuntimeDashboardDiffMode = 'previous';
   private selectedSnapshotId: string | undefined;
   private latestBudgetSnapshot: RuntimeBudgetSnapshot | undefined;
@@ -90,16 +91,37 @@ export class RuntimeObservabilityController {
     this.syncView(this.buildViewState());
   }
 
-  async openRuntimeDashboard(section: RuntimeDashboardSection = this.activeSection): Promise<void> {
+  async openRuntimeDashboard(
+    section: RuntimeDashboardSection = this.activeSection,
+    view: RuntimeDashboardExportView = this.activeView
+  ): Promise<void> {
     this.activeSection = section;
+    this.activeView = view;
     this.captureHistorySnapshot('dashboard');
     const viewState = this.buildViewState();
     this.updateStatusBar(viewState);
     this.panel.show(viewState);
   }
 
+  async showLatestSession(): Promise<void> {
+    await this.openRuntimeDashboard('overview', 'latest');
+  }
+
+  async showAggregateView(): Promise<void> {
+    await this.openRuntimeDashboard('analysis', 'aggregate');
+  }
+
+  async exportCostViewAsCsv(): Promise<void> {
+    await this.exportView('csv', this.activeView);
+  }
+
+  async exportCostViewAsJson(): Promise<void> {
+    await this.exportView('json', this.activeView);
+  }
+
   async showRuntimeHistory(): Promise<void> {
     this.activeSection = 'history';
+    this.activeView = 'aggregate';
     const viewState = this.buildViewState();
     this.updateStatusBar(viewState);
     this.panel.show(viewState);
@@ -183,6 +205,10 @@ export class RuntimeObservabilityController {
     switch (message.command) {
       case 'refreshView':
         this.syncView(this.buildViewState());
+        return;
+
+      case 'selectView':
+        this.activeView = message.view;
         return;
 
       case 'updateFilter':
@@ -272,6 +298,7 @@ export class RuntimeObservabilityController {
       ...this.sessionManager.getDashboardState(this.filter),
       filter: { ...this.filter },
       activeSection: this.activeSection,
+      activeView: this.activeView,
       history: this.buildHistoryState(),
       currentWorkspace: resolveWorkspaceName()
     };
@@ -377,6 +404,7 @@ export class RuntimeObservabilityController {
     this.activeDiffMode = mode;
     this.selectedSnapshotId = snapshotId;
     this.activeSection = 'diff';
+    this.activeView = 'aggregate';
 
     const viewState = this.buildViewState();
     this.updateStatusBar(viewState);

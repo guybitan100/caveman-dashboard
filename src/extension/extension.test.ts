@@ -39,6 +39,10 @@ const extensionMocks = vi.hoisted(() => {
   };
   const runtimeController = {
     openRuntimeDashboard: vi.fn().mockResolvedValue(undefined),
+    showLatestSession: vi.fn().mockResolvedValue(undefined),
+    showAggregateView: vi.fn().mockResolvedValue(undefined),
+    exportCostViewAsCsv: vi.fn().mockResolvedValue(undefined),
+    exportCostViewAsJson: vi.fn().mockResolvedValue(undefined),
     saveRuntimeSnapshot: vi.fn().mockResolvedValue(undefined),
     showRuntimeHistory: vi.fn().mockResolvedValue(undefined),
     diffRuntimeAgainstPrevious: vi.fn().mockResolvedValue(undefined),
@@ -85,6 +89,10 @@ const extensionMocks = vi.hoisted(() => {
 
   class MockRuntimeObservabilityController {
     openRuntimeDashboard = runtimeController.openRuntimeDashboard;
+    showLatestSession = runtimeController.showLatestSession;
+    showAggregateView = runtimeController.showAggregateView;
+    exportCostViewAsCsv = runtimeController.exportCostViewAsCsv;
+    exportCostViewAsJson = runtimeController.exportCostViewAsJson;
     saveRuntimeSnapshot = runtimeController.saveRuntimeSnapshot;
     showRuntimeHistory = runtimeController.showRuntimeHistory;
     diffRuntimeAgainstPrevious = runtimeController.diffRuntimeAgainstPrevious;
@@ -274,6 +282,14 @@ describe('extension activation', () => {
     extensionMocks.budgetController.setCopilotBudget.mockResolvedValue(undefined);
     extensionMocks.runtimeController.openRuntimeDashboard.mockReset();
     extensionMocks.runtimeController.openRuntimeDashboard.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.showLatestSession.mockReset();
+    extensionMocks.runtimeController.showLatestSession.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.showAggregateView.mockReset();
+    extensionMocks.runtimeController.showAggregateView.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.exportCostViewAsCsv.mockReset();
+    extensionMocks.runtimeController.exportCostViewAsCsv.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.exportCostViewAsJson.mockReset();
+    extensionMocks.runtimeController.exportCostViewAsJson.mockResolvedValue(undefined);
     extensionMocks.runtimeController.saveRuntimeSnapshot.mockReset();
     extensionMocks.runtimeController.saveRuntimeSnapshot.mockResolvedValue(undefined);
     extensionMocks.runtimeController.showRuntimeHistory.mockReset();
@@ -311,7 +327,7 @@ describe('extension activation', () => {
       'tokenlint.sidebar',
       expect.any(extensionMocks.MockTokenLintSidebarProvider)
     );
-    expect(extensionMocks.registerCommand).toHaveBeenCalledTimes(21);
+    expect(extensionMocks.registerCommand).toHaveBeenCalledTimes(25);
     expect(extensionMocks.registerHoverProvider).toHaveBeenCalledWith(
       expect.arrayContaining([
         { scheme: 'file', language: 'markdown' },
@@ -352,6 +368,18 @@ describe('extension activation', () => {
 
     await extensionMocks.commandHandlers.get('tokenlint.openRuntimeDashboard')?.();
     expect(extensionMocks.runtimeController.openRuntimeDashboard).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.showLatestSession')?.();
+    expect(extensionMocks.runtimeController.showLatestSession).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.showAggregateView')?.();
+    expect(extensionMocks.runtimeController.showAggregateView).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.exportCostViewCsv')?.();
+    expect(extensionMocks.runtimeController.exportCostViewAsCsv).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.exportCostViewJson')?.();
+    expect(extensionMocks.runtimeController.exportCostViewAsJson).toHaveBeenCalled();
 
     await extensionMocks.commandHandlers.get('tokenlint.saveRuntimeSnapshot')?.();
     expect(extensionMocks.runtimeController.saveRuntimeSnapshot).toHaveBeenCalled();
@@ -395,7 +423,7 @@ describe('extension activation', () => {
     await extensionMocks.commandHandlers.get('tokenlint.showFixGraph')?.();
     expect(extensionMocks.showFixGraph).toHaveBeenCalled();
 
-    expect(context.subscriptions.length).toBe(30);
+    expect(context.subscriptions.length).toBe(34);
   });
 
   it('updates diagnostics on save for both ignored and analyzable files', () => {

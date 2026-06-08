@@ -75,6 +75,22 @@ export function activate(context: vscode.ExtensionContext) {
       await runtimeObservability.openRuntimeDashboard(section);
     }),
 
+    vscode.commands.registerCommand('tokenlint.showLatestSession', async () => {
+      await runtimeObservability.showLatestSession();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.showAggregateView', async () => {
+      await runtimeObservability.showAggregateView();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.exportCostViewCsv', async () => {
+      await runtimeObservability.exportCostViewAsCsv();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.exportCostViewJson', async () => {
+      await runtimeObservability.exportCostViewAsJson();
+    }),
+
     vscode.commands.registerCommand('tokenlint.saveRuntimeSnapshot', async () => {
       await runtimeObservability.saveRuntimeSnapshot();
     }),
