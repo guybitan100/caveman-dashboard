@@ -297,6 +297,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:playwright": "playwright test",
+    "test:playwright:visual": "playwright test tests/playwright/regression",
     "validate:mcp-runtime": "playwright test tests/playwright/runtime tests/playwright/telemetry tests/playwright/history tests/playwright/dashboard",
     "package": "vsce package",
     "release:local": "node ./scripts/release-local-extension.mjs"
