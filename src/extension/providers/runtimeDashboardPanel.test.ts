@@ -122,7 +122,8 @@ describe('runtime dashboard panel', () => {
       filter: {
         workspace: 'All workspaces',
         timeWindowDays: 7
-      }
+      },
+      activeSection: 'overview' as const
     };
 
     provider.show(state as never);
@@ -134,6 +135,9 @@ describe('runtime dashboard panel', () => {
       { enableScripts: true, retainContextWhenHidden: true }
     );
     expect(panelMocks.webview.html).toContain('AI Runtime Observability Platform');
+    expect(panelMocks.webview.html).toContain('Overview');
+    expect(panelMocks.webview.html).toContain('Workspaces');
+    expect(panelMocks.webview.html).toContain('Settings');
     expect(panelMocks.webview.html).toContain('Export CSV');
     expect(panelMocks.webview.html).toContain('Latest Session');
     expect(panelMocks.webview.html).toContain('Estimated Waste');
@@ -192,7 +196,8 @@ describe('runtime dashboard panel', () => {
       filter: {
         workspace: 'All workspaces',
         timeWindowDays: 7
-      }
+      },
+      activeSection: 'overview' as const
     } as never);
 
     panelMocks.getMessageHandler()?.({
@@ -246,7 +251,8 @@ describe('runtime dashboard panel', () => {
       filter: {
         workspace: 'All workspaces',
         timeWindowDays: 7
-      }
+      },
+      activeSection: 'overview' as const
     } as never);
 
     expect(panelMocks.createWebviewPanel).toHaveBeenCalledTimes(2);

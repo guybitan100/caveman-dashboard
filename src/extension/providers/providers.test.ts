@@ -243,13 +243,13 @@ describe('extension providers', () => {
   });
 
   it('sidebar provider renders html and routes every supported webview command', async () => {
-    let handler: ((message: { command: string }) => Promise<void>) | undefined;
+    let handler: ((message: { command: string; section?: string }) => Promise<void>) | undefined;
     const webviewView = {
       webview: {
         options: undefined,
         html: '',
         postMessage: vi.fn().mockResolvedValue(true),
-        onDidReceiveMessage(callback: (message: { command: string }) => Promise<void>) {
+        onDidReceiveMessage(callback: (message: { command: string; section?: string }) => Promise<void>) {
           handler = callback;
         }
       }
@@ -259,8 +259,10 @@ describe('extension providers', () => {
     provider.resolveWebviewView(webviewView as never);
 
     expect(webviewView.webview.options).toEqual({ enableScripts: true });
-    expect(webviewView.webview.html).toContain('Copilot Context Budget');
-    expect(webviewView.webview.html).toContain('Open Runtime Dashboard');
+    expect(webviewView.webview.html).toContain('Context Pulse');
+    expect(webviewView.webview.html).toContain('Runtime Sections');
+    expect(webviewView.webview.html).toContain('Overview');
+    expect(webviewView.webview.html).toContain('Sessions');
     expect(webviewView.webview.html).toContain('Apply All Safe Fixes');
     expect(webviewView.webview.html).toContain('Show Before / After Graph');
     expect(webviewView.webview.html).toContain("acquireVsCodeApi()");
@@ -296,25 +298,21 @@ describe('extension providers', () => {
 
     const commands = [
       ['scanOrFix', 'tokenlint.scanOrFix'],
-      ['scanCurrentFile', 'tokenlint.scanCurrentFile'],
-      ['scanWorkspace', 'tokenlint.scanWorkspace'],
       ['showCopilotBudget', 'tokenlint.showCopilotBudget'],
-      ['openRuntimeDashboard', 'tokenlint.openRuntimeDashboard'],
-      ['showCostAnalysis', 'tokenlint.showCostAnalysis'],
-      ['analyzeCacheEfficiency', 'tokenlint.analyzeCacheEfficiency'],
-      ['analyzeRetrievalAmplification', 'tokenlint.analyzeRetrievalAmplification'],
-      ['analyzeOpenFilesBudget', 'tokenlint.analyzeOpenFilesBudget'],
-      ['analyzeWorkspaceBudget', 'tokenlint.analyzeWorkspaceBudget'],
+      ['openRuntimeDashboard', 'tokenlint.openRuntimeDashboard', 'overview'],
       ['setCopilotBudget', 'tokenlint.setCopilotBudget'],
       ['generateReport', 'tokenlint.generateReport'],
-      ['showIR', 'tokenlint.showIR'],
       ['applyAllSafeFixes', 'tokenlint.applyAllSafeFixes'],
       ['showFixGraph', 'tokenlint.showFixGraph']
     ] as const;
 
-    for (const [messageCommand, vscodeCommand] of commands) {
-      await handler?.({ command: messageCommand });
-      expect(providerMocks.executeCommand).toHaveBeenLastCalledWith(vscodeCommand);
+    for (const [messageCommand, vscodeCommand, section] of commands) {
+      await handler?.({ command: messageCommand, section });
+      if (section) {
+        expect(providerMocks.executeCommand).toHaveBeenLastCalledWith(vscodeCommand, section);
+      } else {
+        expect(providerMocks.executeCommand).toHaveBeenLastCalledWith(vscodeCommand);
+      }
     }
   });
 

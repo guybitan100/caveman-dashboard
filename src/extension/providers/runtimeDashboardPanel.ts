@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 
 import { RuntimeDashboardState } from '../../runtime/session/sessionModels';
 
+export type RuntimeDashboardSection = 'overview' | 'sessions' | 'models' | 'workspaces' | 'analysis' | 'settings';
+
 export interface RuntimeDashboardFilterState {
   workspace: string;
   timeWindowDays: number;
@@ -9,6 +11,7 @@ export interface RuntimeDashboardFilterState {
 
 export interface RuntimeDashboardViewState extends RuntimeDashboardState {
   filter: RuntimeDashboardFilterState;
+  activeSection: RuntimeDashboardSection;
 }
 
 export type RuntimeDashboardMessage =
@@ -108,7 +111,7 @@ export class RuntimeDashboardPanel {
     body {
       margin: 0;
       padding: 24px;
-      font-family: var(--vscode-font-family);
+      font-family: 'Inter', 'SF Pro Text', 'SF Pro Display', 'Segoe UI', var(--vscode-font-family);
       color: var(--text);
       background:
         radial-gradient(circle at 100% 0%, rgba(93, 183, 255, 0.16), transparent 28%),
@@ -119,6 +122,121 @@ export class RuntimeDashboardPanel {
     .shell {
       max-width: 1380px;
       margin: 0 auto;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 232px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .nav-rail {
+      position: sticky;
+      top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .nav-card {
+      background: linear-gradient(180deg, var(--panel), var(--panel-strong));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .nav-eyebrow {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .nav-title {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 760;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-copy {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .nav-button {
+      width: 100%;
+      text-align: left;
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .nav-button.active {
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 24%, var(--panel) 76%), color-mix(in srgb, var(--accent) 10%, var(--panel-strong) 90%));
+      border-color: color-mix(in srgb, var(--accent) 40%, var(--border) 60%);
+      transform: none;
+    }
+
+    .nav-button strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 760;
+      letter-spacing: -0.01em;
+      margin-bottom: 4px;
+    }
+
+    .nav-button span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .nav-pulse {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .nav-pulse-item {
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-pulse-item strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 16px;
+      font-weight: 760;
+    }
+
+    .nav-pulse-item span {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .content-shell {
+      min-width: 0;
     }
 
     .topbar {
@@ -630,17 +748,59 @@ export class RuntimeDashboardPanel {
       color: var(--muted);
     }
 
+    .dashboard-section {
+      display: none;
+      margin-bottom: 18px;
+    }
+
+    .dashboard-section.active {
+      display: block;
+    }
+
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .workspace-card {
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .workspace-card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 18px;
+      letter-spacing: -0.03em;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
     .muted { color: var(--muted); }
     .hidden { display: none; }
 
     @media (max-width: 1200px) {
+      .app-shell,
       .chart-grid,
       .chart-grid--wide,
       .spotlight-grid,
       .actions-layout,
       .detail-grid,
-      .donut-layout {
+      .donut-layout,
+      .workspace-grid,
+      .settings-grid {
         grid-template-columns: 1fr;
+      }
+
+      .nav-rail {
+        position: static;
       }
     }
 
@@ -657,6 +817,33 @@ export class RuntimeDashboardPanel {
 </head>
 <body>
   <div class="shell">
+    <div class="app-shell">
+      <aside class="nav-rail">
+        <section class="nav-card">
+          <span class="nav-eyebrow">Runtime Views</span>
+          <h2 class="nav-title">Observability</h2>
+          <p class="nav-copy">Move through the runtime like an intelligence console instead of a report page.</p>
+        </section>
+        <section class="nav-card nav-list">
+          <button class="nav-button active" data-section-nav="overview"><strong>Overview</strong><span>KPI cards, latest runtime pulse, and top operational signals.</span></button>
+          <button class="nav-button" data-section-nav="sessions"><strong>Sessions</strong><span>Activity stream with expandable runtime drilldowns.</span></button>
+          <button class="nav-button" data-section-nav="models"><strong>Models</strong><span>Model mix, cost distribution, and optimization story.</span></button>
+          <button class="nav-button" data-section-nav="workspaces"><strong>Workspaces</strong><span>Cross-workspace concentration, cost, and cache behavior.</span></button>
+          <button class="nav-button" data-section-nav="analysis"><strong>Analysis</strong><span>Trend views for spend, cache, retrieval, and context composition.</span></button>
+          <button class="nav-button" data-section-nav="settings"><strong>Settings</strong><span>Filters, artifact policy, and export behavior.</span></button>
+        </section>
+        <section class="nav-card">
+          <span class="nav-eyebrow">Live Pulse</span>
+          <div class="nav-pulse">
+            <div class="nav-pulse-item"><span>Health</span><strong id="nav-health">0 / 100</strong></div>
+            <div class="nav-pulse-item"><span>Risk</span><strong id="nav-risk">LOW</strong></div>
+            <div class="nav-pulse-item"><span>Waste</span><strong id="nav-waste">0%</strong></div>
+            <div class="nav-pulse-item"><span>Cache</span><strong id="nav-cache">0%</strong></div>
+          </div>
+        </section>
+      </aside>
+
+      <main class="content-shell">
     <div class="topbar">
       <div class="title-wrap">
         <h1>AI Runtime Observability Platform</h1>
@@ -677,232 +864,278 @@ export class RuntimeDashboardPanel {
       </div>
     </div>
 
-    <div class="summary-grid">
-      <div class="card summary-card">
-        <span class="kpi-label">Sessions</span>
-        <strong id="summary-sessions">0</strong>
-        <small id="summary-workspaces">No recorded workspaces yet</small>
-      </div>
-      <div class="card summary-card">
-        <span class="kpi-label">Cost</span>
-        <strong id="summary-cost">$0.00</strong>
-        <small>Estimated runtime spend</small>
-      </div>
-      <div class="card summary-card">
-        <span class="kpi-label">Credits</span>
-        <strong id="summary-credits">0</strong>
-        <small>Provider consumption projection</small>
-      </div>
-      <div class="card summary-card">
-        <span class="kpi-label">Cache Efficiency</span>
-        <strong id="summary-cache">0%</strong>
-        <small id="summary-cache-detail">Prompt reuse quality</small>
-      </div>
-      <div class="card summary-card">
-        <span class="kpi-label">Estimated Savings</span>
-        <strong id="summary-savings">$0.00</strong>
-        <small>Cache-driven spend reduction</small>
-      </div>
-      <div class="card summary-card">
-        <span class="kpi-label">Estimated Waste</span>
-        <strong id="summary-waste">0%</strong>
-        <small>Noisy retrieval and prompt bloat</small>
-      </div>
-      <div class="card summary-card">
-        <span class="kpi-label">Context Health</span>
-        <strong id="summary-health">0 / 100</strong>
-        <small id="summary-generated">Updated just now</small>
-      </div>
-      <div class="card summary-card">
-        <span class="kpi-label">Cognitive Pressure</span>
-        <strong id="summary-risk" class="risk-low-text">LOW</strong>
-        <small id="summary-pressure-detail">Reasoning risk posture</small>
-      </div>
-    </div>
-
-    <div class="chart-grid">
-      <section class="card chart-card">
-        <header>
-          <div>
-            <span class="section-label">Spend</span>
-            <h2 class="section-title">Cost Over Time</h2>
-          </div>
-          <span class="section-copy">Daily AI runtime spend across the active filter.</span>
-        </header>
-        <div id="cost-over-time" class="chart-surface"></div>
-      </section>
-      <section class="card chart-card">
-        <header>
-          <div>
-            <span class="section-label">Cache</span>
-            <h2 class="section-title">Cache Efficiency Trend</h2>
-          </div>
-          <span class="section-copy">How stable prompts stay over repeated runtime sessions.</span>
-        </header>
-        <div id="cache-efficiency-trend" class="chart-surface"></div>
-      </section>
-      <section class="card chart-card">
-        <header>
-          <div>
-            <span class="section-label">Retrieval</span>
-            <h2 class="section-title">Retrieval Amplification</h2>
-          </div>
-          <span class="section-copy">How much retrieval inflates the active context window.</span>
-        </header>
-        <div id="retrieval-amplification" class="chart-surface"></div>
-      </section>
-      <section class="card chart-card">
-        <header>
-          <div>
-            <span class="section-label">Composition</span>
-            <h2 class="section-title">Context Composition</h2>
-          </div>
-          <span class="section-copy">System prompt, memory, retrieval, tool output, user input, and completion mix.</span>
-        </header>
-        <div id="context-composition" class="chart-surface"></div>
-      </section>
-    </div>
-
-    <div class="chart-grid chart-grid--wide">
-      <section class="card chart-card">
-        <header>
-          <div>
-            <span class="section-label">Model Mix</span>
-            <h2 class="section-title">Cost by Model</h2>
-          </div>
-          <span class="section-copy">Where runtime spend concentrates across model families.</span>
-        </header>
-        <div id="cost-by-model" class="chart-surface"></div>
-      </section>
-      <section class="card chart-card">
-        <header>
-          <div>
-            <span class="section-label">Runtime Health</span>
-            <h2 class="section-title">Optimization Recommendations</h2>
-          </div>
-          <span class="section-copy">Enterprise heuristics for savings, waste reduction, and reasoning stability.</span>
-        </header>
-        <div id="optimization-recommendations" class="chart-surface"></div>
-      </section>
-      <section class="card chart-card">
-        <header>
-          <div>
-            <span class="section-label">Cache</span>
-            <h2 class="section-title">Cache Usage Breakdown</h2>
-          </div>
-          <span class="section-copy">Prompt volume versus cache read and cache creation activity.</span>
-        </header>
-        <div id="cache-breakdown" class="chart-surface"></div>
-      </section>
-    </div>
-
-    <div id="latest-empty" class="empty-state hidden">Run TokenLint scan or budget actions to generate a simulated runtime session.</div>
-
-    <div id="latest-shell">
-      <div class="spotlight-grid">
-        <section class="card">
-          <div class="spotlight-head">
-            <div>
-              <span class="section-label">Latest Session</span>
-              <h2 id="latest-title" class="section-title">No session recorded</h2>
-            </div>
-            <span id="latest-last-active" class="section-copy">Waiting for telemetry</span>
-          </div>
-          <div class="spotlight-meta">
-            <span id="latest-source" class="source-pill">SIMULATED</span>
-            <span id="latest-workspace" class="workspace-pill">All workspaces</span>
-            <span id="latest-risk" class="risk-pill risk-low">LOW</span>
-          </div>
-          <div class="stat-grid">
-            <div class="stat-box"><span class="section-label">Model</span><strong id="latest-model">--</strong><div id="latest-window" class="muted">--</div></div>
-            <div class="stat-box"><span class="section-label">Runtime Cost</span><strong id="latest-cost">--</strong><div id="latest-credits" class="muted">--</div></div>
-            <div class="stat-box"><span class="section-label">Prompt / Completion</span><strong id="latest-tokens">--</strong><div id="latest-cache" class="muted">--</div></div>
-            <div class="stat-box"><span class="section-label">Throughput</span><strong id="latest-requests">--</strong><div id="latest-latency" class="muted">--</div></div>
-          </div>
-        </section>
-        <section class="card">
-          <div class="spotlight-head">
-            <div>
-              <span class="section-label">Health</span>
-              <h2 class="section-title">Runtime Health Metrics</h2>
-            </div>
-            <span class="section-copy">Cache reuse, retrieval sprawl, saturation, and stability.</span>
-          </div>
-          <div class="health-bars">
-            <div class="bar-row">
-              <div class="bar-head"><span>Cache Efficiency</span><span id="latest-cache-efficiency">--</span></div>
-              <div class="bar-track"><div id="latest-cache-bar" class="bar-fill"></div></div>
-            </div>
-            <div class="bar-row">
-              <div class="bar-head"><span>Retrieval Amplification</span><span id="latest-amplification">--</span></div>
-              <div class="bar-track"><div id="latest-amplification-bar" class="bar-fill"></div></div>
-            </div>
-            <div class="bar-row">
-              <div class="bar-head"><span>Context Pressure</span><span id="latest-pressure">--</span></div>
-              <div class="bar-track"><div id="latest-pressure-bar" class="bar-fill"></div></div>
-            </div>
-            <div class="bar-row">
-              <div class="bar-head"><span>Prompt Stability</span><span id="latest-stability">--</span></div>
-              <div class="bar-track"><div id="latest-stability-bar" class="bar-fill"></div></div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <div class="actions-layout">
-        <section class="card">
-          <div class="spotlight-head">
-            <div>
-              <span class="section-label">Deep Analysis</span>
-              <h2 class="section-title">Drilldowns</h2>
-            </div>
-            <span class="section-copy">Open adjacent reports for cost, cache, and retrieval analysis.</span>
-          </div>
-          <div class="button-stack">
-            <button class="secondary" data-command="showCostAnalysis">Show Cost Analysis</button>
-            <button class="secondary" data-command="analyzeCacheEfficiency">Analyze Cache Efficiency</button>
-            <button class="secondary" data-command="analyzeRetrievalAmplification">Analyze Retrieval Amplification</button>
-          </div>
-        </section>
-        <section class="card">
-          <div class="spotlight-head">
-            <div>
-              <span class="section-label">Live Intelligence</span>
-              <h2 class="section-title">Runtime Highlights</h2>
-            </div>
-            <span class="section-copy">The highest-signal insights in the current runtime window.</span>
-          </div>
-          <ul id="runtime-highlights" class="insight-list"></ul>
-        </section>
-      </div>
-    </div>
-
-    <section class="card table-card">
-      <div class="table-header">
-        <div>
-          <span class="section-label">Activity Stream</span>
-          <h2 class="section-title">Session Activity Table</h2>
+    <section id="section-overview" class="dashboard-section active">
+      <div class="summary-grid">
+        <div class="card summary-card">
+          <span class="kpi-label">Sessions</span>
+          <strong id="summary-sessions">0</strong>
+          <small id="summary-workspaces">No recorded workspaces yet</small>
         </div>
-        <span class="section-copy">Expandable runtime events for AI sessions, prompts, and agent runs.</span>
+        <div class="card summary-card">
+          <span class="kpi-label">Cost</span>
+          <strong id="summary-cost">$0.00</strong>
+          <small>Estimated runtime spend</small>
+        </div>
+        <div class="card summary-card">
+          <span class="kpi-label">Credits</span>
+          <strong id="summary-credits">0</strong>
+          <small>Provider consumption projection</small>
+        </div>
+        <div class="card summary-card">
+          <span class="kpi-label">Cache Efficiency</span>
+          <strong id="summary-cache">0%</strong>
+          <small id="summary-cache-detail">Prompt reuse quality</small>
+        </div>
+        <div class="card summary-card">
+          <span class="kpi-label">Estimated Savings</span>
+          <strong id="summary-savings">$0.00</strong>
+          <small>Cache-driven spend reduction</small>
+        </div>
+        <div class="card summary-card">
+          <span class="kpi-label">Estimated Waste</span>
+          <strong id="summary-waste">0%</strong>
+          <small>Noisy retrieval and prompt bloat</small>
+        </div>
+        <div class="card summary-card">
+          <span class="kpi-label">Context Health</span>
+          <strong id="summary-health">0 / 100</strong>
+          <small id="summary-generated">Updated just now</small>
+        </div>
+        <div class="card summary-card">
+          <span class="kpi-label">Cognitive Pressure</span>
+          <strong id="summary-risk" class="risk-low-text">LOW</strong>
+          <small id="summary-pressure-detail">Reasoning risk posture</small>
+        </div>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Last Active</th>
-            <th>Source</th>
-            <th>Workspace</th>
-            <th>Title</th>
-            <th>Model</th>
-            <th>Cost</th>
-            <th>Credits</th>
-            <th>Cache</th>
-            <th>Latency</th>
-            <th>Risk</th>
-          </tr>
-        </thead>
-        <tbody id="session-rows"></tbody>
-      </table>
+
+      <div id="latest-empty" class="empty-state hidden">Run TokenLint scan or budget actions to generate a simulated runtime session.</div>
+
+      <div id="latest-shell">
+        <div class="spotlight-grid">
+          <section class="card">
+            <div class="spotlight-head">
+              <div>
+                <span class="section-label">Latest Session</span>
+                <h2 id="latest-title" class="section-title">No session recorded</h2>
+              </div>
+              <span id="latest-last-active" class="section-copy">Waiting for telemetry</span>
+            </div>
+            <div class="spotlight-meta">
+              <span id="latest-source" class="source-pill">SIMULATED</span>
+              <span id="latest-workspace" class="workspace-pill">All workspaces</span>
+              <span id="latest-risk" class="risk-pill risk-low">LOW</span>
+            </div>
+            <div class="stat-grid">
+              <div class="stat-box"><span class="section-label">Model</span><strong id="latest-model">--</strong><div id="latest-window" class="muted">--</div></div>
+              <div class="stat-box"><span class="section-label">Runtime Cost</span><strong id="latest-cost">--</strong><div id="latest-credits" class="muted">--</div></div>
+              <div class="stat-box"><span class="section-label">Prompt / Completion</span><strong id="latest-tokens">--</strong><div id="latest-cache" class="muted">--</div></div>
+              <div class="stat-box"><span class="section-label">Throughput</span><strong id="latest-requests">--</strong><div id="latest-latency" class="muted">--</div></div>
+            </div>
+          </section>
+          <section class="card">
+            <div class="spotlight-head">
+              <div>
+                <span class="section-label">Health</span>
+                <h2 class="section-title">Runtime Health Metrics</h2>
+              </div>
+              <span class="section-copy">Cache reuse, retrieval sprawl, saturation, and stability.</span>
+            </div>
+            <div class="health-bars">
+              <div class="bar-row">
+                <div class="bar-head"><span>Cache Efficiency</span><span id="latest-cache-efficiency">--</span></div>
+                <div class="bar-track"><div id="latest-cache-bar" class="bar-fill"></div></div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-head"><span>Retrieval Amplification</span><span id="latest-amplification">--</span></div>
+                <div class="bar-track"><div id="latest-amplification-bar" class="bar-fill"></div></div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-head"><span>Context Pressure</span><span id="latest-pressure">--</span></div>
+                <div class="bar-track"><div id="latest-pressure-bar" class="bar-fill"></div></div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-head"><span>Prompt Stability</span><span id="latest-stability">--</span></div>
+                <div class="bar-track"><div id="latest-stability-bar" class="bar-fill"></div></div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="actions-layout">
+          <section class="card">
+            <div class="spotlight-head">
+              <div>
+                <span class="section-label">Deep Analysis</span>
+                <h2 class="section-title">Drilldowns</h2>
+              </div>
+              <span class="section-copy">Open dedicated runtime analysis panels for cost, cache, and retrieval investigations.</span>
+            </div>
+            <div class="button-stack">
+              <button class="secondary" data-command="showCostAnalysis">Show Cost Analysis</button>
+              <button class="secondary" data-command="analyzeCacheEfficiency">Analyze Cache Efficiency</button>
+              <button class="secondary" data-command="analyzeRetrievalAmplification">Analyze Retrieval Amplification</button>
+            </div>
+          </section>
+          <section class="card">
+            <div class="spotlight-head">
+              <div>
+                <span class="section-label">Live Intelligence</span>
+                <h2 class="section-title">Runtime Highlights</h2>
+              </div>
+              <span class="section-copy">The highest-signal insights in the current runtime window.</span>
+            </div>
+            <ul id="runtime-highlights" class="insight-list"></ul>
+          </section>
+        </div>
+      </div>
     </section>
+
+    <section id="section-analysis" class="dashboard-section">
+      <div class="chart-grid">
+        <section class="card chart-card">
+          <header>
+            <div>
+              <span class="section-label">Spend</span>
+              <h2 class="section-title">Cost Over Time</h2>
+            </div>
+            <span class="section-copy">Daily AI runtime spend across the active filter.</span>
+          </header>
+          <div id="cost-over-time" class="chart-surface"></div>
+        </section>
+        <section class="card chart-card">
+          <header>
+            <div>
+              <span class="section-label">Cache</span>
+              <h2 class="section-title">Cache Efficiency Trend</h2>
+            </div>
+            <span class="section-copy">How stable prompts stay over repeated runtime sessions.</span>
+          </header>
+          <div id="cache-efficiency-trend" class="chart-surface"></div>
+        </section>
+        <section class="card chart-card">
+          <header>
+            <div>
+              <span class="section-label">Retrieval</span>
+              <h2 class="section-title">Retrieval Amplification</h2>
+            </div>
+            <span class="section-copy">How much retrieval inflates the active context window.</span>
+          </header>
+          <div id="retrieval-amplification" class="chart-surface"></div>
+        </section>
+        <section class="card chart-card">
+          <header>
+            <div>
+              <span class="section-label">Composition</span>
+              <h2 class="section-title">Context Composition</h2>
+            </div>
+            <span class="section-copy">System prompt, memory, retrieval, tool output, user input, and completion mix.</span>
+          </header>
+          <div id="context-composition" class="chart-surface"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="section-models" class="dashboard-section">
+      <div class="chart-grid chart-grid--wide">
+        <section class="card chart-card">
+          <header>
+            <div>
+              <span class="section-label">Model Mix</span>
+              <h2 class="section-title">Cost by Model</h2>
+            </div>
+            <span class="section-copy">Where runtime spend concentrates across model families.</span>
+          </header>
+          <div id="cost-by-model" class="chart-surface"></div>
+        </section>
+        <section class="card chart-card">
+          <header>
+            <div>
+              <span class="section-label">Runtime Health</span>
+              <h2 class="section-title">Optimization Recommendations</h2>
+            </div>
+            <span class="section-copy">Enterprise heuristics for savings, waste reduction, and reasoning stability.</span>
+          </header>
+          <div id="optimization-recommendations" class="chart-surface"></div>
+        </section>
+        <section class="card chart-card">
+          <header>
+            <div>
+              <span class="section-label">Cache</span>
+              <h2 class="section-title">Cache Usage Breakdown</h2>
+            </div>
+            <span class="section-copy">Prompt volume versus cache read and cache creation activity.</span>
+          </header>
+          <div id="cache-breakdown" class="chart-surface"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="section-workspaces" class="dashboard-section">
+      <div class="card">
+        <div class="spotlight-head">
+          <div>
+            <span class="section-label">Workspaces</span>
+            <h2 class="section-title">Workspace Runtime Overview</h2>
+          </div>
+          <span class="section-copy">Cross-workspace runtime concentration, spend, and cache behavior.</span>
+        </div>
+        <div id="workspace-summary" class="workspace-grid"></div>
+      </div>
+    </section>
+
+    <section id="section-sessions" class="dashboard-section">
+      <section class="card table-card">
+        <div class="table-header">
+          <div>
+            <span class="section-label">Activity Stream</span>
+            <h2 class="section-title">Session Activity Table</h2>
+          </div>
+          <span class="section-copy">Expandable runtime events for AI sessions, prompts, and agent runs.</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Last Active</th>
+              <th>Source</th>
+              <th>Workspace</th>
+              <th>Title</th>
+              <th>Model</th>
+              <th>Cost</th>
+              <th>Credits</th>
+              <th>Cache</th>
+              <th>Latency</th>
+              <th>Risk</th>
+            </tr>
+          </thead>
+          <tbody id="session-rows"></tbody>
+        </table>
+      </section>
+    </section>
+
+    <section id="section-settings" class="dashboard-section">
+      <div class="settings-grid">
+        <section class="card">
+          <span class="section-label">Filters</span>
+          <h2 class="section-title">Runtime Defaults</h2>
+          <ul class="insight-list">
+            <li>Workspace filter: <span id="settings-workspace">All workspaces</span></li>
+            <li>Time window: <span id="settings-window">7 days</span></li>
+            <li>Exports: CSV and JSON snapshots written to <strong>.tokenlint/exports/</strong></li>
+          </ul>
+        </section>
+        <section class="card">
+          <span class="section-label">Storage</span>
+          <h2 class="section-title">Artifact Policy</h2>
+          <ul class="insight-list">
+            <li>Runtime analytics are stored under <strong>.tokenlint/</strong> and ignored by Git.</li>
+            <li>Deep cost, cache, and retrieval analysis opens in dedicated webview panels.</li>
+            <li>Markdown-style runtime diagnostics are no longer the default runtime UX.</li>
+          </ul>
+        </section>
+      </div>
+    </section>
+      </main>
+    </div>
   </div>
 
   <script nonce="${nonce}">
@@ -920,6 +1153,8 @@ export class RuntimeDashboardPanel {
     const shortDateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
     const palette = ['var(--accent)', 'var(--teal)', 'var(--violet)', 'var(--amber)', 'var(--rose)', 'var(--lime)'];
     let currentState = null;
+    let activeSection = 'overview';
+    const dashboardSections = ['overview', 'analysis', 'models', 'workspaces', 'sessions', 'settings'];
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -1016,6 +1251,10 @@ export class RuntimeDashboardPanel {
       document.getElementById('summary-cache-detail').textContent = 'Stable prompt region ' + formatPercent(state.summary.stablePromptRegions);
       document.getElementById('summary-generated').textContent = 'Updated ' + formatDate(state.generatedAt);
       document.getElementById('summary-pressure-detail').textContent = 'Context pressure ' + formatPercent(state.summary.averageContextPressure);
+      document.getElementById('nav-health').textContent = formatNumber(state.summary.contextHealth) + ' / 100';
+      document.getElementById('nav-risk').textContent = String(state.summary.reasoningRisk).toUpperCase();
+      document.getElementById('nav-waste').textContent = formatPercent(state.summary.estimatedWaste);
+      document.getElementById('nav-cache').textContent = formatPercent(state.summary.averageCacheEfficiency);
     }
 
     function renderFilters(state) {
@@ -1382,6 +1621,75 @@ export class RuntimeDashboardPanel {
       }).join('');
     }
 
+    function renderWorkspaces(state) {
+      const container = document.getElementById('workspace-summary');
+      if (!container) {
+        return;
+      }
+
+      const aggregates = new Map();
+      state.sessions.forEach(function (session) {
+        const current = aggregates.get(session.workspace) || {
+          workspace: session.workspace,
+          sessions: 0,
+          cost: 0,
+          cacheEfficiency: 0,
+          retrievalAmplification: 0
+        };
+        current.sessions += 1;
+        current.cost += session.estimatedCost;
+        current.cacheEfficiency += session.cacheEfficiency;
+        current.retrievalAmplification += session.retrievalAmplification;
+        aggregates.set(session.workspace, current);
+      });
+
+      const entries = Array.from(aggregates.values())
+        .sort(function (left, right) {
+          return right.cost - left.cost;
+        });
+
+      container.innerHTML = entries.length === 0
+        ? '<div class="empty-state">No workspace runtime activity is available in the selected time window.</div>'
+        : entries.map(function (entry) {
+          const averageCache = entry.sessions === 0 ? 0 : entry.cacheEfficiency / entry.sessions;
+          const averageAmplification = entry.sessions === 0 ? 0 : entry.retrievalAmplification / entry.sessions;
+          return ''
+            + '<div class="workspace-card">'
+            + '  <span class="section-label">Workspace</span>'
+            + '  <strong>' + escapeHtml(entry.workspace) + '</strong>'
+            + '  <div class="muted">' + escapeHtml(String(entry.sessions)) + ' sessions · ' + escapeHtml(formatCurrency(entry.cost)) + '</div>'
+            + '  <div class="muted">Cache ' + escapeHtml(formatPercent(averageCache)) + ' · Retrieval ' + escapeHtml(formatNumber(averageAmplification, 'x')) + '</div>'
+            + '</div>';
+        }).join('');
+    }
+
+    function renderSettings(state) {
+      const workspace = document.getElementById('settings-workspace');
+      const windowLabel = document.getElementById('settings-window');
+      if (workspace) {
+        workspace.textContent = state.filter.workspace;
+      }
+      if (windowLabel) {
+        windowLabel.textContent = state.filter.timeWindowDays === 1
+          ? '24 hours'
+          : String(state.filter.timeWindowDays) + ' days';
+      }
+    }
+
+    function setSection(section) {
+      const nextSection = dashboardSections.includes(section) ? section : 'overview';
+      activeSection = nextSection;
+      dashboardSections.forEach(function (name) {
+        const sectionElement = document.getElementById('section-' + name);
+        if (sectionElement) {
+          sectionElement.classList.toggle('active', name === nextSection);
+        }
+      });
+      Array.from(document.querySelectorAll('[data-section-nav]')).forEach(function (button) {
+        button.classList.toggle('active', button.dataset.sectionNav === nextSection);
+      });
+    }
+
     function buildCacheTooltip(session) {
       const cacheIndicator = cacheIndicatorClass(session.cacheEfficiency);
       const guidance = cacheIndicator === 'high'
@@ -1541,7 +1849,10 @@ export class RuntimeDashboardPanel {
       renderCharts(state);
       renderLatest(state);
       renderHighlights(state);
+      renderWorkspaces(state);
+      renderSettings(state);
       renderSessions(state);
+      setSection(activeSection);
     }
 
     document.getElementById('refresh-view').addEventListener('click', function () {
@@ -1599,8 +1910,17 @@ export class RuntimeDashboardPanel {
       }
     });
 
+    Array.from(document.querySelectorAll('[data-section-nav]')).forEach(function (button) {
+      button.addEventListener('click', function () {
+        setSection(button.dataset.sectionNav || 'overview');
+      });
+    });
+
     window.addEventListener('message', function (event) {
       if (event.data && event.data.type === 'tokenlint.runtimeDashboard') {
+        if (event.data.payload && event.data.payload.activeSection) {
+          activeSection = event.data.payload.activeSection;
+        }
         render(event.data.payload);
       }
     });
@@ -1644,7 +1964,8 @@ export class RuntimeDashboardPanel {
       filter: {
         workspace: 'All workspaces',
         timeWindowDays: 7
-      }
+      },
+      activeSection: 'overview'
     });
   </script>
 </body>

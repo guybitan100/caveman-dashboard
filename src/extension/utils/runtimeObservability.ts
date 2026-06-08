@@ -9,8 +9,11 @@ import {
   RuntimeDashboardFilterState,
   RuntimeDashboardMessage,
   RuntimeDashboardPanel,
+  RuntimeDashboardSection,
   RuntimeDashboardViewState
 } from '../providers/runtimeDashboardPanel';
+import { RuntimeAnalysisPanel } from '../providers/runtimeAnalysisPanel';
+import { prepareRuntimeArtifactDocument } from './runtimeArtifacts';
 
 const defaultFilter: RuntimeDashboardFilterState = {
   workspace: 'All workspaces',
@@ -24,16 +27,20 @@ type RuntimeBudgetSnapshot = {
 
 export class RuntimeObservabilityController {
   private readonly panel: RuntimeDashboardPanel;
+  private readonly analysisPanel: RuntimeAnalysisPanel;
   private readonly sessionManager: RuntimeSessionManager;
   private readonly statusBar: vscode.StatusBarItem;
   private filter = { ...defaultFilter };
+  private activeSection: RuntimeDashboardSection = 'overview';
 
   constructor(
     context: vscode.ExtensionContext,
     panel = new RuntimeDashboardPanel(context.extensionUri),
+    analysisPanel = new RuntimeAnalysisPanel(context.extensionUri),
     statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99)
   ) {
     this.panel = panel;
+    this.analysisPanel = analysisPanel;
     this.statusBar = statusBar;
     this.sessionManager = new RuntimeSessionManager(
       new RuntimeSessionStore(context.globalState)
@@ -64,13 +71,15 @@ export class RuntimeObservabilityController {
     this.syncView(this.buildViewState());
   }
 
-  async openRuntimeDashboard(): Promise<void> {
+  async openRuntimeDashboard(section: RuntimeDashboardSection = this.activeSection): Promise<void> {
+    this.activeSection = section;
     const viewState = this.buildViewState();
     this.updateStatusBar(viewState);
     this.panel.show(viewState);
   }
 
   async showCostAnalysis(): Promise<void> {
+    this.activeSection = 'analysis';
     const viewState = this.buildViewState();
     const latest = viewState.latestSession;
 
@@ -78,32 +87,11 @@ export class RuntimeObservabilityController {
       vscode.window.showInformationMessage('TokenLint: No runtime sessions available yet.');
       return;
     }
-
-    const document = await vscode.workspace.openTextDocument({
-      language: 'markdown',
-      content: [
-        '# Runtime Cost Analysis',
-        '',
-        `- Workspace: ${latest.workspace}`,
-        `- Session Title: ${latest.title}`,
-        `- Model: ${latest.model}`,
-        `- Prompt Tokens: ${latest.promptTokens}`,
-        `- Completion Tokens: ${latest.completionTokens}`,
-        `- Estimated Cost: $${latest.estimatedCost.toFixed(4)}`,
-        `- Credits: ${latest.credits.toFixed(2)}`,
-        `- Estimated Savings: $${latest.cacheSavings.toFixed(4)}`,
-        `- Cache Efficiency: ${latest.cacheEfficiency.toFixed(1)}%`,
-        '',
-        `Aggregate cost in the selected window: $${viewState.summary.totalCost.toFixed(2)}`,
-        `Aggregate savings in the selected window: $${viewState.summary.estimatedSavings.toFixed(2)}`,
-        `Highest-cost model in the selected window: ${viewState.costByModel[0]?.model ?? 'N/A'}`
-      ].join('\n')
-    });
-
-    await vscode.window.showTextDocument(document, vscode.ViewColumn.Beside);
+    this.analysisPanel.show('cost', viewState);
   }
 
   async analyzeCacheEfficiency(): Promise<void> {
+    this.activeSection = 'analysis';
     const viewState = this.buildViewState();
     const latest = viewState.latestSession;
 
@@ -111,29 +99,11 @@ export class RuntimeObservabilityController {
       vscode.window.showInformationMessage('TokenLint: No runtime sessions available yet.');
       return;
     }
-
-    const document = await vscode.workspace.openTextDocument({
-      language: 'markdown',
-      content: [
-        '# Cache Efficiency Analysis',
-        '',
-        `- Average Cache Efficiency: ${viewState.summary.averageCacheEfficiency.toFixed(1)}%`,
-        `- Estimated Savings: $${viewState.summary.estimatedSavings.toFixed(2)}`,
-        `- Total Prompt Tokens: ${viewState.cacheBreakdown.totalTokens}`,
-        `- Latest Session Cache Read Tokens: ${latest.cacheReadTokens}`,
-        `- Latest Session Cache Create Tokens: ${latest.cacheCreateTokens}`,
-        `- Prompt Stability: ${latest.promptStability.toFixed(1)}%`,
-        '',
-        latest.promptStability < 55
-          ? 'High context mutation detected. Prompt regions are volatile and cache reuse is being eroded.'
-          : 'Prompt stability is healthy enough to sustain useful cache reuse across repeated runtime sessions.'
-      ].join('\n')
-    });
-
-    await vscode.window.showTextDocument(document, vscode.ViewColumn.Beside);
+    this.analysisPanel.show('cache', viewState);
   }
 
   async analyzeRetrievalAmplification(): Promise<void> {
+    this.activeSection = 'analysis';
     const viewState = this.buildViewState();
     const latest = viewState.latestSession;
 
@@ -141,25 +111,7 @@ export class RuntimeObservabilityController {
       vscode.window.showInformationMessage('TokenLint: No runtime sessions available yet.');
       return;
     }
-
-    const document = await vscode.workspace.openTextDocument({
-      language: 'markdown',
-      content: [
-        '# Retrieval Amplification Analysis',
-        '',
-        `- Latest Retrieval Amplification: ${latest.retrievalAmplification.toFixed(2)}x`,
-        `- Average Retrieval Amplification: ${viewState.summary.averageRetrievalAmplification.toFixed(2)}x`,
-        `- Peak Retrieval Amplification: ${Math.max(0, ...viewState.retrievalAmplification.map(point => point.amplification)).toFixed(2)}x`,
-        `- Context Pressure: ${latest.contextPressure.toFixed(1)}%`,
-        `- Retrieval Files: ${latest.retrievalFiles.join(', ') || 'None'}`,
-        '',
-        latest.retrievalAmplification >= 4
-          ? 'Cognitive overload risk detected: retrieval breadth is dominating the final context window.'
-          : 'Retrieval overhead is present but still within a moderate runtime profile.'
-      ].join('\n')
-    });
-
-    await vscode.window.showTextDocument(document, vscode.ViewColumn.Beside);
+    this.analysisPanel.show('retrieval', viewState);
   }
 
   private async handlePanelMessage(message: RuntimeDashboardMessage): Promise<void> {
@@ -197,8 +149,18 @@ export class RuntimeObservabilityController {
   private buildViewState(): RuntimeDashboardViewState {
     return {
       ...this.sessionManager.getDashboardState(this.filter),
-      filter: { ...this.filter }
+      filter: { ...this.filter },
+      activeSection: this.activeSection
     };
+  }
+
+  private async prepareArtifactDocument(input: {
+    bucket: 'analytics' | 'exports';
+    fileName: string;
+    language: string;
+    content: string;
+  }): Promise<vscode.TextDocument> {
+    return await prepareRuntimeArtifactDocument(input);
   }
 
   private syncView(viewState: RuntimeDashboardViewState): void {
@@ -220,7 +182,8 @@ export class RuntimeObservabilityController {
       'TokenLint Runtime',
       `Context: ${formatCompactNumber(contextTokens)}`,
       `Cache: ${latest.cacheEfficiency.toFixed(0)}%`,
-      `Cost: $${latest.estimatedCost.toFixed(2)}`
+      `Cost: $${latest.estimatedCost.toFixed(2)}`,
+      `Health: ${Math.round(viewState.summary.contextHealth)}`
     ].join('  ');
     this.statusBar.tooltip = [
       `Title: ${latest.title}`,
@@ -238,7 +201,15 @@ export class RuntimeObservabilityController {
       ? JSON.stringify(viewState, null, 2)
       : toCsv(viewState.sessions);
     const language = format === 'json' ? 'json' : 'csv';
-    const document = await vscode.workspace.openTextDocument({ language, content });
+    const fileName = format === 'json'
+      ? 'tokenlint-runtime-report.json'
+      : 'tokenlint-runtime-report.csv';
+    const document = await this.prepareArtifactDocument({
+      bucket: 'exports',
+      fileName,
+      language,
+      content
+    });
     await vscode.window.showTextDocument(document, vscode.ViewColumn.Beside);
   }
 }

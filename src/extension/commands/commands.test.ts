@@ -32,6 +32,7 @@ const commandMocks = vi.hoisted(() => {
     getDiagnostics: vi.fn(),
     analyze: vi.fn(),
     buildMarkdownReport: vi.fn(),
+    prepareRuntimeArtifactDocument: vi.fn(),
     shouldAnalyzeFile: vi.fn(),
     getSkipReason: vi.fn(),
     parseToIR: vi.fn()
@@ -81,6 +82,10 @@ vi.mock('../../reporting/markdownReport', () => ({
   buildMarkdownReport: commandMocks.buildMarkdownReport
 }));
 
+vi.mock('../utils/runtimeArtifacts', () => ({
+  prepareRuntimeArtifactDocument: commandMocks.prepareRuntimeArtifactDocument
+}));
+
 vi.mock('../../core/parser/parser', () => ({
   parseToIR: commandMocks.parseToIR
 }));
@@ -109,6 +114,7 @@ describe('extension commands', () => {
     commandMocks.getDiagnostics.mockReset();
     commandMocks.analyze.mockReset();
     commandMocks.buildMarkdownReport.mockReset();
+    commandMocks.prepareRuntimeArtifactDocument.mockReset();
     commandMocks.shouldAnalyzeFile.mockReset();
     commandMocks.getSkipReason.mockReset();
     commandMocks.parseToIR.mockReset();
@@ -195,8 +201,8 @@ describe('extension commands', () => {
     commandMocks.findFiles.mockResolvedValue([firstFile, secondFile]);
     commandMocks.shouldAnalyzeFile.mockImplementation((fileName: string) => fileName === firstFile.fsPath);
     commandMocks.openTextDocument
-      .mockResolvedValueOnce(firstDoc)
-      .mockResolvedValueOnce(reportDoc);
+      .mockResolvedValueOnce(firstDoc);
+    commandMocks.prepareRuntimeArtifactDocument.mockResolvedValue(reportDoc);
     commandMocks.analyze.mockReturnValue({ metrics: { findingCount: 1, totalTokens: 12 } });
     commandMocks.buildMarkdownReport.mockReturnValue('# report');
 
@@ -213,7 +219,9 @@ describe('extension commands', () => {
         result: { metrics: { findingCount: 1, totalTokens: 12 } }
       }
     ]);
-    expect(commandMocks.openTextDocument).toHaveBeenLastCalledWith({
+    expect(commandMocks.prepareRuntimeArtifactDocument).toHaveBeenCalledWith({
+      bucket: 'exports',
+      fileName: 'tokenlint-report.md',
       language: 'markdown',
       content: '# report'
     });

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { analyze } from '../../core/engine/engine';
 import { buildMarkdownReport } from '../../reporting/markdownReport';
 import { shouldAnalyzeFile, workspaceScanGlob } from '../utils/scanFilter';
+import { prepareRuntimeArtifactDocument } from '../utils/runtimeArtifacts';
 
 export async function generateReport() {
   const files = await vscode.workspace.findFiles(workspaceScanGlob, '**/node_modules/**');
@@ -19,7 +20,9 @@ export async function generateReport() {
 
   const report = buildMarkdownReport(results);
 
-  const doc = await vscode.workspace.openTextDocument({
+  const doc = await prepareRuntimeArtifactDocument({
+    bucket: 'exports',
+    fileName: 'tokenlint-report.md',
     language: 'markdown',
     content: report
   });

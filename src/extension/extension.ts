@@ -6,6 +6,7 @@ import { TokenLintCodeActionProvider } from './providers/codeActionProvider';
 import { TokenLintSidebarProvider } from './providers/sidebarProvider';
 import { CopilotBudgetController, shouldIncludeBudgetFile } from './utils/copilotBudget';
 import { RuntimeObservabilityController } from './utils/runtimeObservability';
+import { ensureGitIgnoreRules } from './utils/runtimeArtifacts';
 
 import { scanCurrentFile } from './commands/scanCurrentFile';
 import { scanWorkspace } from './commands/scanWorkspace';
@@ -19,6 +20,8 @@ export function activate(context: vscode.ExtensionContext) {
   const diagnostics = new TokenLintDiagnosticProvider();
   const sidebarProvider = new TokenLintSidebarProvider(context.extensionUri);
   const runtimeObservability = new RuntimeObservabilityController(context);
+
+  void ensureGitIgnoreRules();
 
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
   const budgetController = new CopilotBudgetController(
@@ -68,8 +71,8 @@ export function activate(context: vscode.ExtensionContext) {
       await budgetController.showCopilotBudget();
     }),
 
-    vscode.commands.registerCommand('tokenlint.openRuntimeDashboard', async () => {
-      await runtimeObservability.openRuntimeDashboard();
+    vscode.commands.registerCommand('tokenlint.openRuntimeDashboard', async (section) => {
+      await runtimeObservability.openRuntimeDashboard(section);
     }),
 
     vscode.commands.registerCommand('tokenlint.showCostAnalysis', async () => {

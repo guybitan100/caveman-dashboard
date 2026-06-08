@@ -45,3 +45,10 @@ test-results
 **/*.tmp
 *.vsix
 /out/
+
+# TokenLint Runtime Analytics
+.tokenlint/
+
+# TokenLint Generated Reports
+tokenlint-report.json
+tokenlint-runtime-report.json

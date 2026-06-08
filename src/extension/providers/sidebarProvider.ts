@@ -43,7 +43,7 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
           break;
 
         case 'openRuntimeDashboard':
-          await vscode.commands.executeCommand('tokenlint.openRuntimeDashboard');
+          await vscode.commands.executeCommand('tokenlint.openRuntimeDashboard', message.section ?? 'overview');
           break;
 
         case 'showCostAnalysis':
@@ -117,34 +117,37 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      font-family: var(--vscode-font-family);
+      font-family: 'Inter', 'SF Pro Text', 'SF Pro Display', 'Segoe UI', var(--vscode-font-family);
       color: var(--vscode-foreground);
       padding: 14px;
       line-height: 1.45;
+      background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--vscode-textLink-foreground, #4ea1ff) 18%, transparent), transparent 36%),
+        linear-gradient(180deg, color-mix(in srgb, var(--vscode-editor-background) 88%, #08111f 12%), color-mix(in srgb, var(--vscode-sideBar-background) 84%, #08111f 16%));
     }
 
-    .title {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 4px;
+    .shell {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
-    .subtitle {
-      color: var(--vscode-descriptionForeground);
-      font-size: 12px;
-      margin-bottom: 16px;
-      line-height: 1.4;
+    .card {
+      border: 1px solid var(--vscode-panel-border, transparent);
+      border-radius: 14px;
+      padding: 14px;
+      background: color-mix(in srgb, var(--vscode-editor-background) 82%, var(--vscode-sideBar-background) 18%);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
     }
 
     button {
       width: 100%;
-      margin-bottom: 8px;
-      padding: 8px 10px;
+      padding: 10px 12px;
       border: 1px solid var(--vscode-button-border, transparent);
       background: var(--vscode-button-background);
       color: var(--vscode-button-foreground);
       cursor: pointer;
-      border-radius: 4px;
+      border-radius: 10px;
       text-align: left;
     }
 
@@ -157,67 +160,82 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
       color: var(--vscode-button-secondaryForeground);
     }
 
-    .section {
-      margin-top: 18px;
+    .eyebrow {
+      display: block;
       margin-bottom: 8px;
       font-size: 11px;
       text-transform: uppercase;
       color: var(--vscode-descriptionForeground);
-      letter-spacing: 0.08em;
+      letter-spacing: 0.12em;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 760;
+      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--vscode-descriptionForeground);
+      font-size: 12px;
+      line-height: 1.45;
+      margin: 0;
     }
 
     .note {
       font-size: 12px;
       color: var(--vscode-descriptionForeground);
       line-height: 1.4;
-      margin-top: 12px;
+      margin-top: 10px;
     }
 
-    .card {
-      border: 1px solid var(--vscode-panel-border, transparent);
-      border-radius: 8px;
-      padding: 12px;
-      background: color-mix(in srgb, var(--vscode-editor-background) 82%, var(--vscode-sideBar-background) 18%);
-      margin-bottom: 16px;
-    }
-
-    .card-title {
-      font-size: 14px;
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-
-    .metric-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .pulse-list,
+    .nav-list,
+    .utility-list {
+      display: flex;
+      flex-direction: column;
       gap: 8px;
-      margin-bottom: 12px;
     }
 
-    .metric {
-      padding: 8px;
-      border-radius: 6px;
+    .pulse-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--vscode-editor-background) 88%, var(--vscode-sideBar-background) 12%);
+      border: 1px solid var(--vscode-panel-border, transparent);
+      font-size: 12px;
+    }
+
+    .pulse-row strong {
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    .nav-button {
       background: color-mix(in srgb, var(--vscode-editor-background) 88%, var(--vscode-sideBar-background) 12%);
       border: 1px solid var(--vscode-panel-border, transparent);
     }
 
-    .metric span {
+    .nav-button strong {
       display: block;
-      font-size: 11px;
-      color: var(--vscode-descriptionForeground);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+      font-size: 13px;
+      font-weight: 760;
       margin-bottom: 4px;
     }
 
-    .metric strong {
+    .nav-button span {
       display: block;
-      font-size: 13px;
-      font-weight: 700;
+      font-size: 12px;
+      color: var(--vscode-descriptionForeground);
+      line-height: 1.4;
     }
 
-    .metric-wide {
-      grid-column: 1 / -1;
+    .utility-list button {
+      text-align: center;
     }
 
     .risk-pill {
@@ -253,93 +271,55 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
     .mini-note {
       font-size: 11px;
       color: var(--vscode-descriptionForeground);
-      margin-top: 8px;
-    }
-
-    .budget-actions {
-      margin-top: 10px;
+      margin-top: 2px;
     }
   </style>
 </head>
 <body>
-  <div class="title">TokenLint</div>
-  <div class="subtitle">
-    AI context and runtime intelligence for prompts, skills, MCP workflows, and cognitive security.
-  </div>
+  <div class="shell">
+    <section class="card">
+      <span class="eyebrow">Runtime Navigation</span>
+      <div class="title">TokenLint</div>
+      <p class="subtitle">AI runtime observability for prompts, skills, MCP workflows, and cognitive security.</p>
+    </section>
 
-  <div class="card">
-    <div class="card-title">Copilot Context Budget</div>
-    <div class="metric-grid">
-      <div class="metric">
-        <span>Current File</span>
-        <strong id="budget-current-file">--</strong>
+    <section class="card">
+      <span class="eyebrow">Context Pulse</span>
+      <div class="pulse-list">
+        <div class="pulse-row"><span>Current File</span><strong id="budget-current-file">--</strong></div>
+        <div class="pulse-row"><span>Final Context</span><strong id="budget-final-context">--</strong></div>
+        <div class="pulse-row"><span>Usage</span><strong id="budget-usage">--</strong></div>
+        <div class="pulse-row"><span>Risk</span><strong id="budget-risk" class="risk-pill risk-low">LOW</strong></div>
       </div>
-      <div class="metric">
-        <span>Open Files</span>
-        <strong id="budget-open-files">--</strong>
-      </div>
-      <div class="metric">
-        <span>Workspace Estimate</span>
-        <strong id="budget-workspace">--</strong>
-      </div>
-      <div class="metric">
-        <span>Configured Budget</span>
-        <strong id="budget-configured">--</strong>
-      </div>
-      <div class="metric">
-        <span>Usage</span>
-        <strong id="budget-usage">--</strong>
-      </div>
-      <div class="metric">
-        <span>Risk</span>
-        <strong id="budget-risk" class="risk-pill risk-low">LOW</strong>
-      </div>
-      <div class="metric metric-wide">
-        <span>Estimated Retrieval Tokens</span>
-        <strong id="budget-retrieval">--</strong>
-      </div>
-      <div class="metric metric-wide">
-        <span>Estimated Final Context</span>
-        <strong id="budget-final-context">--</strong>
-      </div>
-      <div class="metric metric-wide">
-        <span>Highest Risk Files</span>
-        <strong id="budget-highest-risk">--</strong>
-      </div>
-    </div>
+      <div class="mini-note">Retrieval: <span id="budget-retrieval">--</span></div>
+      <div class="mini-note">Highest risk: <span id="budget-highest-risk">Not analyzed yet</span></div>
+      <div class="mini-note" id="budget-amplification">Runtime amplification: --</div>
+    </section>
 
-    <div class="budget-actions">
-      <button class="secondary" data-command="showCopilotBudget">Show Copilot Budget</button>
-      <button data-command="analyzeOpenFilesBudget">Analyze Open Files Budget</button>
-      <button data-command="analyzeWorkspaceBudget">Analyze Workspace Budget</button>
-      <button class="secondary" data-command="setCopilotBudget">Set Copilot Budget</button>
-    </div>
+    <section class="card">
+      <span class="eyebrow">Runtime Sections</span>
+      <div class="nav-list">
+        <button class="nav-button" data-command="openRuntimeDashboard" data-section="overview"><strong>Overview</strong><span>KPI cards, latest runtime pulse, and top operational signals.</span></button>
+        <button class="nav-button" data-command="openRuntimeDashboard" data-section="sessions"><strong>Sessions</strong><span>Expandable runtime activity with session-level drilldowns.</span></button>
+        <button class="nav-button" data-command="openRuntimeDashboard" data-section="models"><strong>Models</strong><span>Model concentration, cost distribution, and optimization story.</span></button>
+        <button class="nav-button" data-command="openRuntimeDashboard" data-section="workspaces"><strong>Workspaces</strong><span>Cross-workspace cost and risk concentration.</span></button>
+        <button class="nav-button" data-command="openRuntimeDashboard" data-section="analysis"><strong>Analysis</strong><span>Spend, cache, retrieval, and context composition trends.</span></button>
+        <button class="nav-button" data-command="openRuntimeDashboard" data-section="settings"><strong>Settings</strong><span>Filters, exports, and runtime artifact policy.</span></button>
+      </div>
+    </section>
 
-    <div class="mini-note" id="budget-amplification">Runtime amplification: --</div>
-  </div>
-
-  <div class="section">Runtime</div>
-  <button class="secondary" data-command="openRuntimeDashboard">Open Runtime Dashboard</button>
-  <button data-command="showCostAnalysis">Show Cost Analysis</button>
-  <button data-command="analyzeCacheEfficiency">Analyze Cache Efficiency</button>
-  <button data-command="analyzeRetrievalAmplification">Analyze Retrieval Amplification</button>
-
-  <div class="section">Scan</div>
-  <button class="secondary" data-command="scanOrFix">Scan / Fix...</button>
-  <button data-command="scanCurrentFile">Scan Current File</button>
-  <button data-command="scanWorkspace">Scan Workspace</button>
-
-  <div class="section">Reports</div>
-  <button class="secondary" data-command="generateReport">Generate Report</button>
-  <button class="secondary" data-command="showIR">Show IR</button>
-
-  <div class="section">Fixes</div>
-  <button data-command="applyAllSafeFixes">Apply All Safe Fixes</button>
-  <button class="secondary" data-command="showFixGraph">Show Before / After Graph</button>
-
-  <div class="note">
-    Safe automatic fixes currently remove exact duplicate instructions.
-    Use the graph preview to compare the current file against the projected safe-fix result.
+    <section class="card">
+      <span class="eyebrow">Utilities</span>
+      <div class="utility-list">
+        <button class="secondary" data-command="scanOrFix">Scan / Fix...</button>
+        <button class="secondary" data-command="generateReport">Generate Report</button>
+        <button class="secondary" data-command="showCopilotBudget">Show Copilot Budget</button>
+        <button class="secondary" data-command="setCopilotBudget">Set Copilot Budget</button>
+        <button class="secondary" data-command="applyAllSafeFixes">Apply All Safe Fixes</button>
+        <button class="secondary" data-command="showFixGraph">Show Before / After Graph</button>
+      </div>
+      <div class="note">Cost, cache, and retrieval drilldowns now open from the dashboard as dedicated runtime panels instead of markdown editors.</div>
+    </section>
   </div>
 
   <script nonce="${nonce}">
@@ -348,9 +328,6 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
 
     const budgetElements = {
       currentFile: document.getElementById('budget-current-file'),
-      openFiles: document.getElementById('budget-open-files'),
-      workspace: document.getElementById('budget-workspace'),
-      configured: document.getElementById('budget-configured'),
       usage: document.getElementById('budget-usage'),
       risk: document.getElementById('budget-risk'),
       retrieval: document.getElementById('budget-retrieval'),
@@ -381,9 +358,6 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
       const risk = budget && budget.risk ? budget.risk : 'low';
 
       budgetElements.currentFile.textContent = formatTokens(budget && budget.currentFileTokens);
-      budgetElements.openFiles.textContent = formatTokens(budget && budget.openFilesTokens);
-      budgetElements.workspace.textContent = formatTokens(budget && budget.workspaceTokens);
-      budgetElements.configured.textContent = formatTokens(budget && budget.budgetTokens);
       budgetElements.usage.textContent = formatUsage(budget && budget.usagePercent);
       budgetElements.retrieval.textContent = formatTokens(budget && budget.estimatedRetrievalTokens);
       budgetElements.finalContext.textContent = formatTokens(budget && budget.estimatedFinalContext);
@@ -399,7 +373,7 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
 
     document.querySelectorAll('button[data-command]').forEach(btn => {
       btn.addEventListener('click', () => {
-        vscode.postMessage({ command: btn.dataset.command });
+        vscode.postMessage({ command: btn.dataset.command, section: btn.dataset.section });
       });
     });
 

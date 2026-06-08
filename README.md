@@ -85,6 +85,7 @@ TokenLint now includes a dedicated runtime dashboard built with a VS Code webvie
 - Session activity table with workspace filters, time-window filters, CSV or JSON export, latency, risk, cache indicators, and expandable runtime drilldowns
 - Expandable session drilldowns for prompt breakdown, retrieval chunks, tool calls, cache regions, context composition, model efficiency suggestions, and optimization guidance
 - Markdown drill-down commands for cost analysis, cache efficiency analysis, and retrieval amplification analysis
+- Runtime analytics artifacts and exports are written under `.tokenlint/analytics/` and `.tokenlint/exports/`, and TokenLint bootstraps `.gitignore` with ignore rules for `.tokenlint/`
 - Phase 1 simulated telemetry derived from Copilot budget state, visible files, workspace analysis, and prompt-shape heuristics
 
 This positions TokenLint as AI Context & Runtime Intelligence rather than a simple token counter.
