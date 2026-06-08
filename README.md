@@ -71,6 +71,7 @@ The sidebar includes:
 TokenLint includes a real-time Copilot budget meter in the status bar and sidebar.
 
 - Status bar examples: `TokenLint: 42.3k / 128k - 33%`, `TokenLint: 91k / 128k - HIGH`, `TokenLint: 122k / 128k - CRITICAL`
+- Runtime status bar examples: `TokenLint Runtime  Context: 82.0k  Cache: 71%  Cost: $0.18`
 - Sidebar budget card shows the current file tokens, open file tokens, workspace estimate, retrieval estimate, configured budget, usage percent, and risk level
 - Workspace budget analysis opens a markdown report with estimated token totals, runtime amplification, and highest-risk files
 
@@ -78,9 +79,11 @@ TokenLint includes a real-time Copilot budget meter in the status bar and sideba
 
 TokenLint now includes a dedicated runtime dashboard built with a VS Code webview panel.
 
-- Latest session view with model, cost, credits, tokens, cache reuse, retrieval amplification, context pressure, and prompt stability
-- All sessions view with workspace filters, time-window filters, and CSV or JSON export
-- Aggregate analytics view for cache efficiency, retrieval amplification, context pressure, and prompt volatility
+- Top KPI cards for sessions, cost, credits, cache efficiency, estimated savings, estimated waste, context health, and cognitive pressure
+- Graph-heavy analytics for cost over time, cache efficiency trend, retrieval amplification, context composition, cost by model, and cache usage breakdown
+- Latest session spotlight with model, cost, credits, tokens, cache reuse, retrieval amplification, context pressure, and prompt stability
+- Session activity table with workspace filters, time-window filters, CSV or JSON export, latency, risk, cache indicators, and expandable runtime drilldowns
+- Expandable session drilldowns for prompt breakdown, retrieval chunks, tool calls, cache regions, context composition, model efficiency suggestions, and optimization guidance
 - Markdown drill-down commands for cost analysis, cache efficiency analysis, and retrieval amplification analysis
 - Phase 1 simulated telemetry derived from Copilot budget state, visible files, workspace analysis, and prompt-shape heuristics
 
@@ -172,6 +175,8 @@ Then press F5 in VS Code to open the Extension Development Host.
 Runtime Path
 VS Code Extension
   ↓
+Static Compiler Analysis
+  ↓
 Telemetry Collector
   ↓
 Session Engine
@@ -181,6 +186,8 @@ Cost Engine
 Cache Engine
   ↓
 Runtime Dashboard
+  ↓
+Optimization Engine
 
 Compiler Path
 Source Files

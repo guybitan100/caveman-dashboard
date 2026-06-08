@@ -18,7 +18,12 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onView:tokenlint.sidebar",
+    "onCommand:tokenlint.openRuntimeDashboard",
+    "onCommand:tokenlint.showCostAnalysis",
+    "onCommand:tokenlint.analyzeCacheEfficiency",
+    "onCommand:tokenlint.analyzeRetrievalAmplification"
   ],
   "main": "./out/extension/extension.js",
   "contributes": {

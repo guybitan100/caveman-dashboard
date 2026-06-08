@@ -25,19 +25,26 @@ type RuntimeBudgetSnapshot = {
 export class RuntimeObservabilityController {
   private readonly panel: RuntimeDashboardPanel;
   private readonly sessionManager: RuntimeSessionManager;
+  private readonly statusBar: vscode.StatusBarItem;
   private filter = { ...defaultFilter };
 
   constructor(
     context: vscode.ExtensionContext,
-    panel = new RuntimeDashboardPanel(context.extensionUri)
+    panel = new RuntimeDashboardPanel(context.extensionUri),
+    statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99)
   ) {
     this.panel = panel;
+    this.statusBar = statusBar;
     this.sessionManager = new RuntimeSessionManager(
       new RuntimeSessionStore(context.globalState)
     );
+    this.statusBar.command = 'tokenlint.openRuntimeDashboard';
+    this.statusBar.show();
+    context.subscriptions.push(this.statusBar);
     this.panel.setMessageHandler(message => {
       void this.handlePanelMessage(message);
     });
+    this.updateStatusBar(this.buildViewState());
   }
 
   async captureBudgetSnapshot(snapshot: RuntimeBudgetSnapshot): Promise<void> {
@@ -54,11 +61,13 @@ export class RuntimeObservabilityController {
     });
 
     await this.sessionManager.recordTelemetry(telemetry);
-    this.panel.update(this.buildViewState());
+    this.syncView(this.buildViewState());
   }
 
   async openRuntimeDashboard(): Promise<void> {
-    this.panel.show(this.buildViewState());
+    const viewState = this.buildViewState();
+    this.updateStatusBar(viewState);
+    this.panel.show(viewState);
   }
 
   async showCostAnalysis(): Promise<void> {
@@ -156,7 +165,7 @@ export class RuntimeObservabilityController {
   private async handlePanelMessage(message: RuntimeDashboardMessage): Promise<void> {
     switch (message.command) {
       case 'refreshView':
-        this.panel.update(this.buildViewState());
+        this.syncView(this.buildViewState());
         return;
 
       case 'updateFilter':
@@ -164,7 +173,7 @@ export class RuntimeObservabilityController {
           workspace: message.workspace?.trim() || defaultFilter.workspace,
           timeWindowDays: normalizeTimeWindow(message.timeWindowDays)
         };
-        this.panel.update(this.buildViewState());
+        this.syncView(this.buildViewState());
         return;
 
       case 'exportView':
@@ -190,6 +199,37 @@ export class RuntimeObservabilityController {
       ...this.sessionManager.getDashboardState(this.filter),
       filter: { ...this.filter }
     };
+  }
+
+  private syncView(viewState: RuntimeDashboardViewState): void {
+    this.updateStatusBar(viewState);
+    this.panel.update(viewState);
+  }
+
+  private updateStatusBar(viewState: RuntimeDashboardViewState): void {
+    const latest = viewState.latestSession;
+
+    if (!latest) {
+      this.statusBar.text = 'TokenLint Runtime: awaiting telemetry';
+      this.statusBar.tooltip = 'Open the TokenLint Runtime Dashboard to inspect runtime observability once telemetry is available.';
+      return;
+    }
+
+    const contextTokens = latest.promptTokens + latest.completionTokens;
+    this.statusBar.text = [
+      'TokenLint Runtime',
+      `Context: ${formatCompactNumber(contextTokens)}`,
+      `Cache: ${latest.cacheEfficiency.toFixed(0)}%`,
+      `Cost: $${latest.estimatedCost.toFixed(2)}`
+    ].join('  ');
+    this.statusBar.tooltip = [
+      `Title: ${latest.title}`,
+      `Workspace: ${latest.workspace}`,
+      `Model: ${latest.model}`,
+      `Reasoning risk: ${viewState.summary.reasoningRisk.toUpperCase()}`,
+      `Context health: ${viewState.summary.contextHealth}/100`,
+      'Open the TokenLint Runtime Dashboard for full analytics.'
+    ].join('\n');
   }
 
   private async exportView(format: 'csv' | 'json'): Promise<void> {
@@ -224,6 +264,18 @@ function normalizeTimeWindow(value: number | undefined): number {
   }
 
   return 7;
+}
+
+function formatCompactNumber(value: number): string {
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(1)}M`;
+  }
+
+  if (value >= 1_000) {
+    return `${(value / 1_000).toFixed(1)}k`;
+  }
+
+  return String(Math.round(value));
 }
 
 function toCsv(sessions: RuntimeDashboardViewState['sessions']): string {
