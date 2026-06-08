@@ -187,4 +187,36 @@ describe('runtime session manager', () => {
     ).toBe(44_000);
     expect(filtered.workspaces).toEqual(['All workspaces', 'token-lint', 'api-contract-tests']);
   });
+
+  it('toggles favorites and filters to favorites only', async () => {
+    const first = await manager.recordTelemetry(buildTelemetry({ workspace: 'token-lint' }));
+    await manager.recordTelemetry(buildTelemetry({
+      workspace: 'api-contract-tests',
+      title: 'New session - favorite candidate',
+      startedAt: Date.now() - (50 * 60 * 1000),
+      endedAt: Date.now() - (49 * 60 * 1000)
+    }));
+
+    const toggled = await manager.toggleFavorite(first.id);
+    const filtered = manager.getDashboardState({ favoritesOnly: true, timeWindowDays: 30 });
+
+    expect(toggled).toMatchObject({
+      id: first.id,
+      favorite: true
+    });
+    expect(filtered.sessions).toHaveLength(1);
+    expect(filtered.sessions[0]).toMatchObject({
+      id: first.id,
+      favorite: true
+    });
+
+    const untoggled = await manager.toggleFavorite(first.id);
+    const afterClear = manager.getDashboardState({ favoritesOnly: true, timeWindowDays: 30 });
+
+    expect(untoggled).toMatchObject({
+      id: first.id,
+      favorite: false
+    });
+    expect(afterClear.sessions).toEqual([]);
+  });
 });

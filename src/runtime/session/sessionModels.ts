@@ -1,11 +1,12 @@
 import { BudgetRiskLevel } from '../../core/budget/budgetModels';
 
-export type RuntimeSessionSource = 'vscode' | 'copilot' | 'simulated' | 'sdk';
+export type RuntimeSessionSource = 'vscode' | 'copilot' | 'simulated' | 'sdk' | 'agent' | 'mcp';
 
 export interface AISession {
   id: string;
   workspace: string;
   title: string;
+  favorite?: boolean;
   startedAt: number;
   endedAt?: number;
   model: string;
@@ -146,6 +147,7 @@ export interface RuntimeDashboardState extends RuntimeDashboardData {
 export interface RuntimeDashboardFilter {
   timeWindowDays?: number;
   workspace?: string;
+  favoritesOnly?: boolean;
 }
 
 export const allWorkspacesLabel = 'All workspaces';

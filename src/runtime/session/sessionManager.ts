@@ -41,6 +41,24 @@ export class RuntimeSessionManager {
     return nextSession;
   }
 
+  async toggleFavorite(sessionId: string): Promise<AISession | undefined> {
+    const sessions = this.store.getSessions();
+    const index = sessions.findIndex(session => session.id === sessionId);
+
+    if (index < 0) {
+      return undefined;
+    }
+
+    const nextSession = {
+      ...sessions[index],
+      favorite: !Boolean(sessions[index].favorite)
+    };
+
+    sessions.splice(index, 1, nextSession);
+    await this.store.saveSessions(sessions);
+    return nextSession;
+  }
+
   getDashboardState(filter: RuntimeDashboardFilter = {}): RuntimeDashboardState {
     const sessions = this.filterSessions(filter);
     const stablePromptRegions = sessions.length === 0
@@ -93,10 +111,15 @@ export class RuntimeSessionManager {
   private filterSessions(filter: RuntimeDashboardFilter): AISession[] {
     const workspace = filter.workspace?.trim() || allWorkspacesFilter;
     const timeWindowDays = Math.max(1, Math.round(filter.timeWindowDays ?? 7));
+    const favoritesOnly = Boolean(filter.favoritesOnly);
     const cutoff = Date.now() - timeWindowDays * 24 * 60 * 60 * 1000;
 
     return this.store.getSessions().filter(session => {
       if (getSessionTime(session) < cutoff) {
+        return false;
+      }
+
+      if (favoritesOnly && !session.favorite) {
         return false;
       }
 
@@ -114,6 +137,7 @@ export class RuntimeSessionManager {
       id: createSessionId(telemetry),
       workspace: telemetry.workspace,
       title: normalizeSessionTitle(telemetry.workspace, telemetry.title),
+      favorite: false,
       startedAt: telemetry.startedAt,
       endedAt: telemetry.endedAt ?? telemetry.startedAt,
       model: telemetry.model,
@@ -151,6 +175,7 @@ export class RuntimeSessionManager {
     return {
       ...session,
       title: normalizeSessionTitle(telemetry.workspace, telemetry.title) || session.title,
+      favorite: Boolean(session.favorite),
       endedAt: telemetry.endedAt ?? telemetry.startedAt,
       model: telemetry.model,
       contextWindow: telemetry.contextWindow,
