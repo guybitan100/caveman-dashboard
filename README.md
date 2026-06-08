@@ -1,10 +1,25 @@
 # TokenLint AI Runtime Observability Platform
 
-TokenLint is a VS Code extension for prompts, AI skills, MCP workflows, and cognitive security that now combines compiler-style linting with runtime observability for AI context usage.
+TokenLint is a VS Code extension for prompts, AI skills, MCP workflows, and cognitive security that combines compiler-style linting with runtime observability for AI systems.
 
 ## Product Positioning
 
-AI Runtime Observability Platform for GitHub Copilot, agentic workflows, and cognitive systems.
+AI Runtime Observability Platform and Cognitive Systems Profiler for GitHub Copilot, agentic workflows, and AI context infrastructure.
+
+## What The Dashboard Tracks
+
+- Sessions
+- Token usage
+- Prompt size
+- Completion size
+- Cache creation
+- Cache reuse
+- Runtime cost
+- Credits
+- Workspace activity
+- Retrieval amplification
+- Context pressure
+- Prompt stability
 
 ## What This MVP Includes
 
@@ -68,6 +83,8 @@ TokenLint now includes a dedicated runtime dashboard built with a VS Code webvie
 - Aggregate analytics view for cache efficiency, retrieval amplification, context pressure, and prompt volatility
 - Markdown drill-down commands for cost analysis, cache efficiency analysis, and retrieval amplification analysis
 - Phase 1 simulated telemetry derived from Copilot budget state, visible files, workspace analysis, and prompt-shape heuristics
+
+This positions TokenLint as AI Context & Runtime Intelligence rather than a simple token counter.
 
 ## Fix Engine
 
@@ -152,6 +169,20 @@ Then press F5 in VS Code to open the Extension Development Host.
 ## Architecture
 
 ```text
+Runtime Path
+VS Code Extension
+  ↓
+Telemetry Collector
+  ↓
+Session Engine
+  ↓
+Cost Engine
+  ↓
+Cache Engine
+  ↓
+Runtime Dashboard
+
+Compiler Path
 Source Files
   ↓
 Parser
@@ -166,6 +197,16 @@ Security Passes
   ↓
 Diagnostics / Hover / Quick Fixes / Reports
 ```
+
+## MVP Strategy
+
+### Phase 1
+
+Simulated telemetry based on open files, prompt estimation, retrieval estimation, and token counting.
+
+### Phase 2
+
+SDK-backed integrations for real runtime hooks such as Copilot requests, MCP calls, agent runs, tool executions, and AI SDK traffic.
 
 ## Test Fixture
 

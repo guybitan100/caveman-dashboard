@@ -264,7 +264,7 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
 <body>
   <div class="title">TokenLint</div>
   <div class="subtitle">
-    Compiler-style diagnostics for prompts, skills, MCP workflows, and cognitive security.
+    AI context and runtime intelligence for prompts, skills, MCP workflows, and cognitive security.
   </div>
 
   <div class="card">
