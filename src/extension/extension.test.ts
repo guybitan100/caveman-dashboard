@@ -19,6 +19,7 @@ const extensionMocks = vi.hoisted(() => {
   const diagnosticsInstance = {
     scan: vi.fn(),
     getCached: vi.fn(),
+    getFindingCounts: vi.fn(),
     dispose: vi.fn()
   };
   const statusBar = {
@@ -38,14 +39,22 @@ const extensionMocks = vi.hoisted(() => {
   };
   const runtimeController = {
     openRuntimeDashboard: vi.fn().mockResolvedValue(undefined),
+    saveRuntimeSnapshot: vi.fn().mockResolvedValue(undefined),
+    showRuntimeHistory: vi.fn().mockResolvedValue(undefined),
+    diffRuntimeAgainstPrevious: vi.fn().mockResolvedValue(undefined),
+    diffRuntimeAgainst7Days: vi.fn().mockResolvedValue(undefined),
+    diffRuntimeAgainstBaseline: vi.fn().mockResolvedValue(undefined),
+    clearOldRuntimeHistory: vi.fn().mockResolvedValue(undefined),
     showCostAnalysis: vi.fn().mockResolvedValue(undefined),
     analyzeCacheEfficiency: vi.fn().mockResolvedValue(undefined),
-    analyzeRetrievalAmplification: vi.fn().mockResolvedValue(undefined)
+    analyzeRetrievalAmplification: vi.fn().mockResolvedValue(undefined),
+    refreshView: vi.fn()
   };
 
   class MockTokenLintDiagnosticProvider {
     scan = diagnosticsInstance.scan;
     getCached = diagnosticsInstance.getCached;
+    getFindingCounts = diagnosticsInstance.getFindingCounts;
     dispose = diagnosticsInstance.dispose;
   }
 
@@ -76,9 +85,16 @@ const extensionMocks = vi.hoisted(() => {
 
   class MockRuntimeObservabilityController {
     openRuntimeDashboard = runtimeController.openRuntimeDashboard;
+    saveRuntimeSnapshot = runtimeController.saveRuntimeSnapshot;
+    showRuntimeHistory = runtimeController.showRuntimeHistory;
+    diffRuntimeAgainstPrevious = runtimeController.diffRuntimeAgainstPrevious;
+    diffRuntimeAgainst7Days = runtimeController.diffRuntimeAgainst7Days;
+    diffRuntimeAgainstBaseline = runtimeController.diffRuntimeAgainstBaseline;
+    clearOldRuntimeHistory = runtimeController.clearOldRuntimeHistory;
     showCostAnalysis = runtimeController.showCostAnalysis;
     analyzeCacheEfficiency = runtimeController.analyzeCacheEfficiency;
     analyzeRetrievalAmplification = runtimeController.analyzeRetrievalAmplification;
+    refreshView = runtimeController.refreshView;
   }
 
   return {
@@ -243,6 +259,7 @@ describe('extension activation', () => {
     extensionMocks.shouldAnalyzeFile.mockReset();
     extensionMocks.diagnosticsInstance.scan.mockReset();
     extensionMocks.diagnosticsInstance.getCached.mockReset();
+    extensionMocks.diagnosticsInstance.getFindingCounts.mockReset();
     extensionMocks.diagnosticsInstance.dispose.mockReset();
     extensionMocks.budgetController.refresh.mockReset();
     extensionMocks.budgetController.refresh.mockResolvedValue(undefined);
@@ -257,12 +274,25 @@ describe('extension activation', () => {
     extensionMocks.budgetController.setCopilotBudget.mockResolvedValue(undefined);
     extensionMocks.runtimeController.openRuntimeDashboard.mockReset();
     extensionMocks.runtimeController.openRuntimeDashboard.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.saveRuntimeSnapshot.mockReset();
+    extensionMocks.runtimeController.saveRuntimeSnapshot.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.showRuntimeHistory.mockReset();
+    extensionMocks.runtimeController.showRuntimeHistory.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.diffRuntimeAgainstPrevious.mockReset();
+    extensionMocks.runtimeController.diffRuntimeAgainstPrevious.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.diffRuntimeAgainst7Days.mockReset();
+    extensionMocks.runtimeController.diffRuntimeAgainst7Days.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.diffRuntimeAgainstBaseline.mockReset();
+    extensionMocks.runtimeController.diffRuntimeAgainstBaseline.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.clearOldRuntimeHistory.mockReset();
+    extensionMocks.runtimeController.clearOldRuntimeHistory.mockResolvedValue(undefined);
     extensionMocks.runtimeController.showCostAnalysis.mockReset();
     extensionMocks.runtimeController.showCostAnalysis.mockResolvedValue(undefined);
     extensionMocks.runtimeController.analyzeCacheEfficiency.mockReset();
     extensionMocks.runtimeController.analyzeCacheEfficiency.mockResolvedValue(undefined);
     extensionMocks.runtimeController.analyzeRetrievalAmplification.mockReset();
     extensionMocks.runtimeController.analyzeRetrievalAmplification.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.refreshView.mockReset();
   });
 
   it('registers providers, commands, and status bar wiring', async () => {
@@ -281,7 +311,7 @@ describe('extension activation', () => {
       'tokenlint.sidebar',
       expect.any(extensionMocks.MockTokenLintSidebarProvider)
     );
-    expect(extensionMocks.registerCommand).toHaveBeenCalledTimes(15);
+    expect(extensionMocks.registerCommand).toHaveBeenCalledTimes(21);
     expect(extensionMocks.registerHoverProvider).toHaveBeenCalledWith(
       expect.arrayContaining([
         { scheme: 'file', language: 'markdown' },
@@ -296,15 +326,15 @@ describe('extension activation', () => {
       expect.any(extensionMocks.MockTokenLintCodeActionProvider),
       { providedCodeActionKinds: ['quickfix'] }
     );
-    expect(extensionMocks.budgetController.refresh).toHaveBeenCalledWith({ forceWorkspaceRefresh: true });
+    expect(extensionMocks.budgetController.refresh).toHaveBeenCalledWith({ forceWorkspaceRefresh: true, reason: 'configuration' });
 
     await extensionMocks.commandHandlers.get('tokenlint.scanCurrentFile')?.();
     expect(extensionMocks.scanCurrentFile).toHaveBeenCalledWith(extensionMocks.diagnosticsInstance);
-    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith();
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ reason: 'scan' });
 
     await extensionMocks.commandHandlers.get('tokenlint.scanWorkspace')?.();
     expect(extensionMocks.scanWorkspace).toHaveBeenCalledWith(extensionMocks.diagnosticsInstance);
-    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ forceWorkspaceRefresh: true });
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ forceWorkspaceRefresh: true, reason: 'scan' });
 
     await extensionMocks.commandHandlers.get('tokenlint.scanCurrentFile')?.();
 
@@ -322,6 +352,24 @@ describe('extension activation', () => {
 
     await extensionMocks.commandHandlers.get('tokenlint.openRuntimeDashboard')?.();
     expect(extensionMocks.runtimeController.openRuntimeDashboard).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.saveRuntimeSnapshot')?.();
+    expect(extensionMocks.runtimeController.saveRuntimeSnapshot).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.showRuntimeHistory')?.();
+    expect(extensionMocks.runtimeController.showRuntimeHistory).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.diffRuntimeAgainstPrevious')?.();
+    expect(extensionMocks.runtimeController.diffRuntimeAgainstPrevious).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.diffRuntimeAgainst7Days')?.();
+    expect(extensionMocks.runtimeController.diffRuntimeAgainst7Days).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.diffRuntimeAgainstBaseline')?.();
+    expect(extensionMocks.runtimeController.diffRuntimeAgainstBaseline).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.clearOldRuntimeHistory')?.();
+    expect(extensionMocks.runtimeController.clearOldRuntimeHistory).toHaveBeenCalled();
 
     await extensionMocks.commandHandlers.get('tokenlint.showCostAnalysis')?.();
     expect(extensionMocks.runtimeController.showCostAnalysis).toHaveBeenCalled();
@@ -347,7 +395,7 @@ describe('extension activation', () => {
     await extensionMocks.commandHandlers.get('tokenlint.showFixGraph')?.();
     expect(extensionMocks.showFixGraph).toHaveBeenCalled();
 
-    expect(context.subscriptions.length).toBe(24);
+    expect(context.subscriptions.length).toBe(30);
   });
 
   it('updates diagnostics on save for both ignored and analyzable files', () => {
@@ -361,7 +409,7 @@ describe('extension activation', () => {
     extensionMocks.state.saveHandler?.(ignoredDocument);
     expect(extensionMocks.diagnosticsInstance.scan).toHaveBeenCalledWith(ignoredDocument);
     expect(extensionMocks.budgetController.invalidateWorkspaceEstimate).not.toHaveBeenCalled();
-    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith();
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ reason: 'scan' });
 
     extensionMocks.shouldAnalyzeFile.mockReturnValue(true);
     extensionMocks.diagnosticsInstance.scan.mockReturnValue({
@@ -371,7 +419,7 @@ describe('extension activation', () => {
 
     expect(extensionMocks.diagnosticsInstance.scan).toHaveBeenCalledWith(analyzedDocument);
     expect(extensionMocks.budgetController.invalidateWorkspaceEstimate).toHaveBeenCalledTimes(1);
-    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ forceWorkspaceRefresh: true });
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ forceWorkspaceRefresh: true, reason: 'scan' });
   });
 
   it('refreshes the budget meter on editor and configuration changes', () => {
@@ -381,15 +429,20 @@ describe('extension activation', () => {
     extensionMocks.budgetController.refresh.mockClear();
 
     extensionMocks.state.activeEditorHandler?.();
-    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith();
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ reason: 'focus' });
 
     extensionMocks.state.visibleEditorsHandler?.();
-    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith();
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ reason: 'focus' });
 
     extensionMocks.state.configurationHandler?.({
       affectsConfiguration: (section: string) => section === 'tokenlint.copilotBudget'
     });
-    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ forceWorkspaceRefresh: true });
+    expect(extensionMocks.budgetController.refresh).toHaveBeenLastCalledWith({ forceWorkspaceRefresh: true, reason: 'configuration' });
+
+    extensionMocks.state.configurationHandler?.({
+      affectsConfiguration: (section: string) => section === 'tokenlint.history.enabled'
+    });
+    expect(extensionMocks.runtimeController.refreshView).toHaveBeenCalled();
   });
 
   it('deactivate is a no-op', () => {

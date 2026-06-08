@@ -26,8 +26,14 @@ type SidebarBudgetTarget = {
   updateBudget(payload: TokenLintSidebarBudgetPayload): void;
 };
 
+export type RuntimeBudgetCaptureReason = 'scan' | 'focus' | 'manual' | 'configuration';
+
+export type RuntimeBudgetCapturePayload = TokenLintSidebarBudgetPayload & {
+  reason: RuntimeBudgetCaptureReason;
+};
+
 type RuntimeBudgetTarget = {
-  captureBudgetSnapshot(payload: TokenLintSidebarBudgetPayload): Promise<void> | void;
+  captureBudgetSnapshot(payload: RuntimeBudgetCapturePayload): Promise<void> | void;
 };
 
 type BudgetSettings = {
@@ -41,6 +47,7 @@ type BudgetSettings = {
 type RefreshOptions = {
   includeWorkspaceEstimate?: boolean;
   forceWorkspaceRefresh?: boolean;
+  reason?: RuntimeBudgetCaptureReason;
 };
 
 const defaultCopilotBudget = 128_000;
@@ -71,9 +78,10 @@ export class CopilotBudgetController {
 
   async refresh(options: RefreshOptions = {}): Promise<BudgetResult> {
     const result = await this.calculateCurrentBudget(options);
-    const payload = {
+    const payload: RuntimeBudgetCapturePayload = {
       budget: result,
-      workspaceAnalysis: this.workspaceAnalysis
+      workspaceAnalysis: this.workspaceAnalysis,
+      reason: options.reason ?? 'focus'
     };
 
     this.applyStatusBarState(result);
@@ -89,7 +97,7 @@ export class CopilotBudgetController {
   }
 
   async showCopilotBudget(): Promise<BudgetResult> {
-    const result = await this.refresh();
+    const result = await this.refresh({ reason: 'manual' });
 
     vscode.window.showInformationMessage([
       `TokenLint Copilot budget: ${formatDetailedTokens(result.usedTokens)} / ${formatDetailedTokens(result.budgetTokens)} tokens`,
@@ -101,7 +109,7 @@ export class CopilotBudgetController {
   }
 
   async analyzeOpenFilesBudget(): Promise<BudgetResult> {
-    const result = await this.refresh({ includeWorkspaceEstimate: false });
+    const result = await this.refresh({ includeWorkspaceEstimate: false, reason: 'manual' });
 
     vscode.window.showInformationMessage(
       `TokenLint open files budget: ${formatDetailedTokens(result.usedTokens)} / ${formatDetailedTokens(result.budgetTokens)} tokens (${formatUsagePercent(result.usagePercent)}, ${result.risk.toUpperCase()}).`
@@ -112,7 +120,7 @@ export class CopilotBudgetController {
 
   async analyzeWorkspaceBudget(): Promise<WorkspaceBudgetAnalysis | undefined> {
     const analysis = await this.getWorkspaceAnalysis(true);
-    const result = await this.refresh({ includeWorkspaceEstimate: true });
+    const result = await this.refresh({ includeWorkspaceEstimate: true, reason: 'manual' });
 
     if (!analysis) {
       vscode.window.showInformationMessage(
@@ -156,7 +164,7 @@ export class CopilotBudgetController {
       .getConfiguration('tokenlint')
       .update('copilotBudget', budgetTokens, vscode.ConfigurationTarget.Workspace);
 
-    await this.refresh();
+    await this.refresh({ reason: 'manual' });
 
     vscode.window.showInformationMessage(
       `TokenLint Copilot budget set to ${formatDetailedTokens(budgetTokens)} tokens.`

@@ -52,6 +52,30 @@
         "title": "TokenLint: Open Runtime Dashboard"
       },
       {
+        "command": "tokenlint.saveRuntimeSnapshot",
+        "title": "TokenLint: Save Runtime Snapshot"
+      },
+      {
+        "command": "tokenlint.showRuntimeHistory",
+        "title": "TokenLint: Show Runtime History"
+      },
+      {
+        "command": "tokenlint.diffRuntimeAgainstPrevious",
+        "title": "TokenLint: Diff Runtime Against Previous Snapshot"
+      },
+      {
+        "command": "tokenlint.diffRuntimeAgainst7Days",
+        "title": "TokenLint: Diff Runtime Against 7 Days Ago"
+      },
+      {
+        "command": "tokenlint.diffRuntimeAgainstBaseline",
+        "title": "TokenLint: Diff Runtime Against Baseline"
+      },
+      {
+        "command": "tokenlint.clearOldRuntimeHistory",
+        "title": "TokenLint: Clear Old Runtime History"
+      },
+      {
         "command": "tokenlint.showCostAnalysis",
         "title": "TokenLint: Show Cost Analysis"
       },
@@ -141,6 +165,38 @@
             30
           ],
           "description": "Default runtime dashboard time window in days"
+        },
+        "tokenlint.history.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable local runtime history snapshots and diff analysis."
+        },
+        "tokenlint.history.retentionDays": {
+          "type": "number",
+          "default": 30,
+          "minimum": 1,
+          "description": "How many days of runtime snapshots to retain locally."
+        },
+        "tokenlint.history.maxSnapshots": {
+          "type": "number",
+          "default": 500,
+          "minimum": 1,
+          "description": "Maximum number of runtime snapshots to retain locally."
+        },
+        "tokenlint.history.snapshotOnScan": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically save a runtime snapshot after scan-driven budget refreshes."
+        },
+        "tokenlint.history.snapshotOnDashboardOpen": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically save a runtime snapshot when the runtime dashboard opens."
+        },
+        "tokenlint.history.baseline": {
+          "type": "string",
+          "default": "latest",
+          "description": "Baseline strategy for runtime diffs. Use 'latest' or a saved snapshot id."
         }
       }
     },

@@ -1,23 +1,50 @@
 import * as vscode from 'vscode';
 
+import { RuntimeComparison, RuntimeSnapshot } from '../../runtime/history/runtimeComparison';
 import { RuntimeDashboardState } from '../../runtime/session/sessionModels';
 
-export type RuntimeDashboardSection = 'overview' | 'sessions' | 'models' | 'workspaces' | 'analysis' | 'settings';
+export type RuntimeDashboardSection = 'overview' | 'sessions' | 'models' | 'workspaces' | 'analysis' | 'history' | 'diff' | 'settings';
+export type RuntimeDashboardDiffMode = 'previous' | 'sevenDays' | 'baseline' | 'snapshot';
 
 export interface RuntimeDashboardFilterState {
   workspace: string;
   timeWindowDays: number;
 }
 
+export interface RuntimeDashboardHistorySettings {
+  enabled: boolean;
+  retentionDays: number;
+  maxSnapshots: number;
+  snapshotOnScan: boolean;
+  snapshotOnDashboardOpen: boolean;
+  baseline: string;
+}
+
+export interface RuntimeDashboardHistoryState {
+  snapshots: RuntimeSnapshot[];
+  baselineId?: string;
+  activeComparison?: RuntimeComparison;
+  diffMode: RuntimeDashboardDiffMode;
+  settings: RuntimeDashboardHistorySettings;
+}
+
 export interface RuntimeDashboardViewState extends RuntimeDashboardState {
   filter: RuntimeDashboardFilterState;
   activeSection: RuntimeDashboardSection;
+  history: RuntimeDashboardHistoryState;
 }
 
 export type RuntimeDashboardMessage =
   | { command: 'refreshView' }
   | { command: 'updateFilter'; workspace?: string; timeWindowDays?: number }
   | { command: 'exportView'; format: 'csv' | 'json' }
+  | { command: 'saveRuntimeSnapshot' }
+  | { command: 'clearOldRuntimeHistory' }
+  | { command: 'diffAgainstPrevious' }
+  | { command: 'diffAgainstSevenDays' }
+  | { command: 'diffAgainstBaseline' }
+  | { command: 'compareSnapshot'; snapshotId: string }
+  | { command: 'setHistoryBaseline'; snapshotId: string }
   | { command: 'showCostAnalysis' }
   | { command: 'analyzeCacheEfficiency' }
   | { command: 'analyzeRetrievalAmplification' };
@@ -783,6 +810,73 @@ export class RuntimeDashboardPanel {
       gap: 16px;
     }
 
+    .table-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .mini-button {
+      width: auto;
+      padding: 7px 10px;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .comparison-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .comparison-item {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .comparison-item strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      letter-spacing: -0.01em;
+    }
+
+    .comparison-item span,
+    .comparison-item small {
+      display: block;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .signal-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 74px;
+      margin-bottom: 8px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .signal-info {
+      color: var(--accent);
+    }
+
+    .signal-warning {
+      color: var(--amber);
+    }
+
+    .signal-critical {
+      color: var(--rose);
+    }
+
     .muted { color: var(--muted); }
     .hidden { display: none; }
 
@@ -830,6 +924,8 @@ export class RuntimeDashboardPanel {
           <button class="nav-button" data-section-nav="models"><strong>Models</strong><span>Model mix, cost distribution, and optimization story.</span></button>
           <button class="nav-button" data-section-nav="workspaces"><strong>Workspaces</strong><span>Cross-workspace concentration, cost, and cache behavior.</span></button>
           <button class="nav-button" data-section-nav="analysis"><strong>Analysis</strong><span>Trend views for spend, cache, retrieval, and context composition.</span></button>
+          <button class="nav-button" data-section-nav="history"><strong>History</strong><span>Local runtime snapshots, baselines, and retention controls.</span></button>
+          <button class="nav-button" data-section-nav="diff"><strong>Diff</strong><span>Regression deltas for cost, retrieval, cache, and context health.</span></button>
           <button class="nav-button" data-section-nav="settings"><strong>Settings</strong><span>Filters, artifact policy, and export behavior.</span></button>
         </section>
         <section class="nav-card">
@@ -1112,6 +1208,149 @@ export class RuntimeDashboardPanel {
       </section>
     </section>
 
+    <section id="section-history" class="dashboard-section">
+      <div class="actions-layout">
+        <section class="card">
+          <div class="spotlight-head">
+            <div>
+              <span class="section-label">Runtime History</span>
+              <h2 class="section-title">Snapshot Store</h2>
+            </div>
+            <span class="section-copy">Local JSON snapshots under <strong>.tokenlint/history/</strong> and <strong>.tokenlint/snapshots/</strong>.</span>
+          </div>
+          <div class="stat-grid">
+            <div class="stat-box"><span class="section-label">Snapshots</span><strong id="history-snapshot-count">0</strong><div class="muted">Saved runtime checkpoints</div></div>
+            <div class="stat-box"><span class="section-label">Baseline</span><strong id="history-baseline">Latest snapshot</strong><div class="muted">Comparison anchor</div></div>
+            <div class="stat-box"><span class="section-label">Latest</span><strong id="history-latest">--</strong><div class="muted">Newest snapshot time</div></div>
+            <div class="stat-box"><span class="section-label">Retention</span><strong id="history-retention">30d / 500 max</strong><div class="muted">Automatic pruning policy</div></div>
+          </div>
+          <div class="button-stack">
+            <button class="primary" data-command="saveRuntimeSnapshot">Save Runtime Snapshot</button>
+            <button class="secondary" data-command="clearOldRuntimeHistory">Clear Old History</button>
+          </div>
+        </section>
+        <section class="card">
+          <div class="spotlight-head">
+            <div>
+              <span class="section-label">Diff Launchers</span>
+              <h2 class="section-title">Comparison Modes</h2>
+            </div>
+            <span class="section-copy">Compare the newest runtime snapshot against the previous run, a 7-day checkpoint, or a configured baseline.</span>
+          </div>
+          <div class="button-stack">
+            <button class="secondary" data-command="diffAgainstPrevious">Diff Against Previous Snapshot</button>
+            <button class="secondary" data-command="diffAgainstSevenDays">Diff Against 7 Days Ago</button>
+            <button class="secondary" data-command="diffAgainstBaseline">Diff Against Baseline</button>
+          </div>
+        </section>
+      </div>
+      <section class="card table-card">
+        <div class="table-header">
+          <div>
+            <span class="section-label">Snapshot Timeline</span>
+            <h2 class="section-title">Saved Runtime Sessions</h2>
+          </div>
+          <span class="section-copy">Compare any saved checkpoint to the latest session or promote it to the runtime baseline.</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Created</th>
+              <th>Workspace</th>
+              <th>Total Tokens</th>
+              <th>Cost</th>
+              <th>Cache</th>
+              <th>Retrieval</th>
+              <th>Health</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="history-rows"></tbody>
+        </table>
+      </section>
+    </section>
+
+    <section id="section-diff" class="dashboard-section">
+      <div id="diff-empty" class="empty-state">Save at least two runtime snapshots to compare cost, retrieval amplification, cache efficiency, and context health over time.</div>
+      <div id="diff-shell" class="hidden">
+        <section class="card">
+          <div class="spotlight-head">
+            <div>
+              <span class="section-label">Runtime Diff</span>
+              <h2 id="diff-title" class="section-title">Latest vs Previous Snapshot</h2>
+            </div>
+            <span id="diff-meta" class="section-copy">No comparison selected yet.</span>
+          </div>
+          <div class="summary-grid">
+            <div class="card summary-card"><span class="kpi-label">Tokens</span><strong id="diff-tokens">0</strong><small id="diff-tokens-detail">--</small></div>
+            <div class="card summary-card"><span class="kpi-label">Cost</span><strong id="diff-cost">$0.00</strong><small id="diff-cost-detail">--</small></div>
+            <div class="card summary-card"><span class="kpi-label">Cache</span><strong id="diff-cache">0%</strong><small id="diff-cache-detail">--</small></div>
+            <div class="card summary-card"><span class="kpi-label">Retrieval</span><strong id="diff-retrieval">0x</strong><small id="diff-retrieval-detail">--</small></div>
+            <div class="card summary-card"><span class="kpi-label">Health</span><strong id="diff-health">0</strong><small id="diff-health-detail">--</small></div>
+            <div class="card summary-card"><span class="kpi-label">Stability</span><strong id="diff-stability">0%</strong><small id="diff-stability-detail">--</small></div>
+          </div>
+        </section>
+        <div class="actions-layout">
+          <section class="card">
+            <div class="spotlight-head">
+              <div>
+                <span class="section-label">Compare</span>
+                <h2 class="section-title">Quick Diff Actions</h2>
+              </div>
+              <span class="section-copy">Recompute the active diff mode without leaving the dashboard.</span>
+            </div>
+            <div class="button-stack">
+              <button class="secondary" data-command="diffAgainstPrevious">Diff Against Previous Snapshot</button>
+              <button class="secondary" data-command="diffAgainstSevenDays">Diff Against 7 Days Ago</button>
+              <button class="secondary" data-command="diffAgainstBaseline">Diff Against Baseline</button>
+            </div>
+          </section>
+          <section class="card">
+            <div class="spotlight-head">
+              <div>
+                <span class="section-label">Signals</span>
+                <h2 class="section-title">Regression Signals</h2>
+              </div>
+              <span class="section-copy">High-signal regressions surfaced by the runtime diff engine.</span>
+            </div>
+            <div id="diff-signals" class="comparison-list"></div>
+          </section>
+          <section class="card">
+            <div class="spotlight-head">
+              <div>
+                <span class="section-label">Recommendations</span>
+                <h2 class="section-title">Operator Guidance</h2>
+              </div>
+              <span class="section-copy">Practical next steps from the current comparison.</span>
+            </div>
+            <div id="diff-recommendations" class="comparison-list"></div>
+          </section>
+        </div>
+        <div class="chart-grid chart-grid--wide">
+          <section class="card">
+            <div class="spotlight-head">
+              <div>
+                <span class="section-label">Regressions</span>
+                <h2 class="section-title">Highest File-Level Regressions</h2>
+              </div>
+              <span class="section-copy">Files whose findings, amplification, or cache behavior worsened the most.</span>
+            </div>
+            <div id="diff-regressions" class="comparison-list"></div>
+          </section>
+          <section class="card">
+            <div class="spotlight-head">
+              <div>
+                <span class="section-label">Improvements</span>
+                <h2 class="section-title">Highest File-Level Improvements</h2>
+              </div>
+              <span class="section-copy">Files that improved after a refactor, prompt cleanup, or retrieval tuning change.</span>
+            </div>
+            <div id="diff-improvements" class="comparison-list"></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
     <section id="section-settings" class="dashboard-section">
       <div class="settings-grid">
         <section class="card">
@@ -1121,6 +1360,9 @@ export class RuntimeDashboardPanel {
             <li>Workspace filter: <span id="settings-workspace">All workspaces</span></li>
             <li>Time window: <span id="settings-window">7 days</span></li>
             <li>Exports: CSV and JSON snapshots written to <strong>.tokenlint/exports/</strong></li>
+            <li>History enabled: <span id="settings-history-enabled">Yes</span></li>
+            <li>History retention: <span id="settings-history-retention">30 days / 500 snapshots</span></li>
+            <li>History baseline: <span id="settings-history-baseline">Latest snapshot</span></li>
           </ul>
         </section>
         <section class="card">
@@ -1128,6 +1370,7 @@ export class RuntimeDashboardPanel {
           <h2 class="section-title">Artifact Policy</h2>
           <ul class="insight-list">
             <li>Runtime analytics are stored under <strong>.tokenlint/</strong> and ignored by Git.</li>
+            <li>History snapshots live under <strong>.tokenlint/history/</strong> with a rolling latest pointer in <strong>.tokenlint/snapshots/latest.json</strong>.</li>
             <li>Deep cost, cache, and retrieval analysis opens in dedicated webview panels.</li>
             <li>Markdown-style runtime diagnostics are no longer the default runtime UX.</li>
           </ul>

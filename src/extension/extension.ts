@@ -19,7 +19,7 @@ import { scanOrFix } from './commands/scanOrFix';
 export function activate(context: vscode.ExtensionContext) {
   const diagnostics = new TokenLintDiagnosticProvider();
   const sidebarProvider = new TokenLintSidebarProvider(context.extensionUri);
-  const runtimeObservability = new RuntimeObservabilityController(context);
+  const runtimeObservability = new RuntimeObservabilityController(context, diagnostics);
 
   void ensureGitIgnoreRules();
 
@@ -47,12 +47,12 @@ export function activate(context: vscode.ExtensionContext) {
     ),
     vscode.commands.registerCommand('tokenlint.scanCurrentFile', async () => {
       await scanCurrentFile(diagnostics);
-      await budgetController.refresh();
+      await budgetController.refresh({ reason: 'scan' });
     }),
 
     vscode.commands.registerCommand('tokenlint.scanWorkspace', async () => {
       await scanWorkspace(diagnostics);
-      await budgetController.refresh({ forceWorkspaceRefresh: true });
+      await budgetController.refresh({ forceWorkspaceRefresh: true, reason: 'scan' });
     }),
 
     vscode.commands.registerCommand('tokenlint.scanOrFix', async () => {
@@ -73,6 +73,30 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand('tokenlint.openRuntimeDashboard', async (section) => {
       await runtimeObservability.openRuntimeDashboard(section);
+    }),
+
+    vscode.commands.registerCommand('tokenlint.saveRuntimeSnapshot', async () => {
+      await runtimeObservability.saveRuntimeSnapshot();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.showRuntimeHistory', async () => {
+      await runtimeObservability.showRuntimeHistory();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.diffRuntimeAgainstPrevious', async () => {
+      await runtimeObservability.diffRuntimeAgainstPrevious();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.diffRuntimeAgainst7Days', async () => {
+      await runtimeObservability.diffRuntimeAgainst7Days();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.diffRuntimeAgainstBaseline', async () => {
+      await runtimeObservability.diffRuntimeAgainstBaseline();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.clearOldRuntimeHistory', async () => {
+      await runtimeObservability.clearOldRuntimeHistory();
     }),
 
     vscode.commands.registerCommand('tokenlint.showCostAnalysis', async () => {
@@ -124,17 +148,17 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (shouldIncludeBudgetFile(document.fileName)) {
         budgetController.invalidateWorkspaceEstimate();
-        void budgetController.refresh({ forceWorkspaceRefresh: true });
+        void budgetController.refresh({ forceWorkspaceRefresh: true, reason: 'scan' });
         return;
       }
 
-      void budgetController.refresh();
+      void budgetController.refresh({ reason: 'scan' });
     }),
     vscode.window.onDidChangeActiveTextEditor(() => {
-      void budgetController.refresh();
+      void budgetController.refresh({ reason: 'focus' });
     }),
     vscode.window.onDidChangeVisibleTextEditors(() => {
-      void budgetController.refresh();
+      void budgetController.refresh({ reason: 'focus' });
     }),
     vscode.workspace.onDidChangeConfiguration(event => {
       if (
@@ -144,12 +168,24 @@ export function activate(context: vscode.ExtensionContext) {
         || event.affectsConfiguration('tokenlint.includeWorkspaceEstimate')
         || event.affectsConfiguration('tokenlint.includeRetrievalAmplification')
       ) {
-        void budgetController.refresh({ forceWorkspaceRefresh: true });
+        void budgetController.refresh({ forceWorkspaceRefresh: true, reason: 'configuration' });
+      }
+
+      if (
+        event.affectsConfiguration('tokenlint.runtimeTimeWindowDays')
+        || event.affectsConfiguration('tokenlint.history.enabled')
+        || event.affectsConfiguration('tokenlint.history.retentionDays')
+        || event.affectsConfiguration('tokenlint.history.maxSnapshots')
+        || event.affectsConfiguration('tokenlint.history.snapshotOnScan')
+        || event.affectsConfiguration('tokenlint.history.snapshotOnDashboardOpen')
+        || event.affectsConfiguration('tokenlint.history.baseline')
+      ) {
+        runtimeObservability.refreshView();
       }
     })
   );
 
-  void budgetController.refresh({ forceWorkspaceRefresh: true });
+  void budgetController.refresh({ forceWorkspaceRefresh: true, reason: 'configuration' });
 }
 
 export function deactivate() {}
