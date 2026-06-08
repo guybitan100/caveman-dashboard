@@ -2,7 +2,7 @@
   "name": "tokenlint-vscode",
   "displayName": "TokenLint",
   "description": "AI runtime observability platform for prompts, skills, MCP workflows, and cognitive security in VS Code",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "publisher": "tokenlint",
   "repository": {
     "type": "git",
