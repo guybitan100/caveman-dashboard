@@ -1,8 +1,11 @@
 import { BudgetRiskLevel } from '../../core/budget/budgetModels';
 
+export type RuntimeSessionSource = 'vscode' | 'copilot' | 'simulated' | 'sdk';
+
 export interface AISession {
   id: string;
   workspace: string;
+  title: string;
   startedAt: number;
   endedAt?: number;
   model: string;
@@ -14,6 +17,7 @@ export interface AISession {
   requests: number;
   estimatedCost: number;
   credits: number;
+  cacheSavings: number;
   cacheEfficiency: number;
   files: string[];
   retrievalFiles: string[];
@@ -25,11 +29,12 @@ export interface AISession {
   promptStability: number;
   latencyMs: number;
   risk: BudgetRiskLevel;
-  source: 'simulated';
+  source: RuntimeSessionSource;
 }
 
 export interface SessionTelemetry {
   workspace: string;
+  title: string;
   startedAt: number;
   endedAt?: number;
   model: string;
@@ -41,6 +46,7 @@ export interface SessionTelemetry {
   requests: number;
   estimatedCost: number;
   credits: number;
+  cacheSavings: number;
   cacheEfficiency: number;
   files: string[];
   retrievalFiles: string[];
@@ -52,7 +58,7 @@ export interface SessionTelemetry {
   promptStability: number;
   latencyMs: number;
   risk: BudgetRiskLevel;
-  source: 'simulated';
+  source: RuntimeSessionSource;
 }
 
 export interface CacheInsight {
@@ -69,22 +75,71 @@ export interface CostEstimate {
   cacheSavings: number;
 }
 
-export interface RuntimeDashboardSummary {
-  totalSessions: number;
+export interface DashboardSummary {
+  sessions: number;
   totalCost: number;
   totalCredits: number;
   averageCacheEfficiency: number;
+  estimatedSavings: number;
+  estimatedWaste: number;
   averageRetrievalAmplification: number;
   averageContextPressure: number;
   stablePromptRegions: number;
   volatilePromptRegions: number;
+  contextHealth: number;
+  reasoningRisk: BudgetRiskLevel;
 }
 
-export interface RuntimeDashboardState {
+export interface CostOverTimePoint {
+  date: string;
+  cost: number;
+}
+
+export interface CostByModelPoint {
+  model: string;
+  cost: number;
+  percent: number;
+}
+
+export interface CacheBreakdown {
+  totalTokens: number;
+  cacheReadTokens: number;
+  cacheCreateTokens: number;
+}
+
+export interface RetrievalAmplificationPoint {
+  date: string;
+  amplification: number;
+}
+
+export interface CacheEfficiencyPoint {
+  date: string;
+  efficiency: number;
+}
+
+export interface ContextComposition {
+  systemPrompt: number;
+  memory: number;
+  retrieval: number;
+  toolOutput: number;
+  userInput: number;
+  completion: number;
+}
+
+export interface RuntimeDashboardData {
+  summary: DashboardSummary;
+  sessions: AISession[];
+  costOverTime: CostOverTimePoint[];
+  costByModel: CostByModelPoint[];
+  cacheBreakdown: CacheBreakdown;
+  retrievalAmplification: RetrievalAmplificationPoint[];
+  cacheEfficiencyTrend: CacheEfficiencyPoint[];
+  contextComposition: ContextComposition;
+}
+
+export interface RuntimeDashboardState extends RuntimeDashboardData {
   generatedAt: number;
   latestSession?: AISession;
-  sessions: AISession[];
-  summary: RuntimeDashboardSummary;
   workspaces: string[];
 }
 
@@ -99,6 +154,7 @@ export interface ModelPricing {
   input: number;
   output: number;
   cache: number;
+  creditMultiplier: number;
 }
 
 export interface ModelProfile {

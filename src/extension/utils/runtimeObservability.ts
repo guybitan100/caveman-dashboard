@@ -25,7 +25,6 @@ type RuntimeBudgetSnapshot = {
 export class RuntimeObservabilityController {
   private readonly panel: RuntimeDashboardPanel;
   private readonly sessionManager: RuntimeSessionManager;
-  private previousFiles: string[] = [];
   private filter = { ...defaultFilter };
 
   constructor(
@@ -54,7 +53,7 @@ export class RuntimeObservabilityController {
       }).latestSession
     });
 
-    const session = await this.sessionManager.recordTelemetry(telemetry);
+    await this.sessionManager.recordTelemetry(telemetry);
     this.panel.update(this.buildViewState());
   }
 
@@ -77,14 +76,18 @@ export class RuntimeObservabilityController {
         '# Runtime Cost Analysis',
         '',
         `- Workspace: ${latest.workspace}`,
+        `- Session Title: ${latest.title}`,
         `- Model: ${latest.model}`,
         `- Prompt Tokens: ${latest.promptTokens}`,
         `- Completion Tokens: ${latest.completionTokens}`,
         `- Estimated Cost: $${latest.estimatedCost.toFixed(4)}`,
         `- Credits: ${latest.credits.toFixed(2)}`,
+        `- Estimated Savings: $${latest.cacheSavings.toFixed(4)}`,
         `- Cache Efficiency: ${latest.cacheEfficiency.toFixed(1)}%`,
         '',
-        `Aggregate cost in the selected window: $${viewState.summary.totalCost.toFixed(2)}`
+        `Aggregate cost in the selected window: $${viewState.summary.totalCost.toFixed(2)}`,
+        `Aggregate savings in the selected window: $${viewState.summary.estimatedSavings.toFixed(2)}`,
+        `Highest-cost model in the selected window: ${viewState.costByModel[0]?.model ?? 'N/A'}`
       ].join('\n')
     });
 
@@ -106,6 +109,8 @@ export class RuntimeObservabilityController {
         '# Cache Efficiency Analysis',
         '',
         `- Average Cache Efficiency: ${viewState.summary.averageCacheEfficiency.toFixed(1)}%`,
+        `- Estimated Savings: $${viewState.summary.estimatedSavings.toFixed(2)}`,
+        `- Total Prompt Tokens: ${viewState.cacheBreakdown.totalTokens}`,
         `- Latest Session Cache Read Tokens: ${latest.cacheReadTokens}`,
         `- Latest Session Cache Create Tokens: ${latest.cacheCreateTokens}`,
         `- Prompt Stability: ${latest.promptStability.toFixed(1)}%`,
@@ -135,6 +140,7 @@ export class RuntimeObservabilityController {
         '',
         `- Latest Retrieval Amplification: ${latest.retrievalAmplification.toFixed(2)}x`,
         `- Average Retrieval Amplification: ${viewState.summary.averageRetrievalAmplification.toFixed(2)}x`,
+        `- Peak Retrieval Amplification: ${Math.max(0, ...viewState.retrievalAmplification.map(point => point.amplification)).toFixed(2)}x`,
         `- Context Pressure: ${latest.contextPressure.toFixed(1)}%`,
         `- Retrieval Files: ${latest.retrievalFiles.join(', ') || 'None'}`,
         '',
@@ -189,7 +195,7 @@ export class RuntimeObservabilityController {
   private async exportView(format: 'csv' | 'json'): Promise<void> {
     const viewState = this.buildViewState();
     const content = format === 'json'
-      ? JSON.stringify(viewState.sessions, null, 2)
+      ? JSON.stringify(viewState, null, 2)
       : toCsv(viewState.sessions);
     const language = format === 'json' ? 'json' : 'csv';
     const document = await vscode.workspace.openTextDocument({ language, content });
@@ -222,23 +228,22 @@ function normalizeTimeWindow(value: number | undefined): number {
 
 function toCsv(sessions: RuntimeDashboardViewState['sessions']): string {
   const lines = [
-    ['time', 'model', 'workspace', 'cost', 'credits', 'promptTokens', 'completionTokens', 'cacheEfficiency', 'retrievalAmplification', 'contextPressure', 'latencyMs', 'risk'].join(',')
+    ['lastActive', 'source', 'workspace', 'title', 'model', 'cost', 'credits', 'cacheEfficiency', 'cacheSavings', 'promptTokens', 'completionTokens'].join(',')
   ];
 
   for (const session of sessions) {
     lines.push([
       new Date(session.endedAt ?? session.startedAt).toISOString(),
-      escapeCsv(session.model),
+      escapeCsv(session.source),
       escapeCsv(session.workspace),
+      escapeCsv(session.title),
+      escapeCsv(session.model),
       session.estimatedCost.toFixed(4),
       session.credits.toFixed(2),
+      session.cacheEfficiency.toFixed(1),
+      session.cacheSavings.toFixed(4),
       String(session.promptTokens),
       String(session.completionTokens),
-      session.cacheEfficiency.toFixed(1),
-      session.retrievalAmplification.toFixed(2),
-      session.contextPressure.toFixed(1),
-      String(session.latencyMs),
-      session.risk
     ].join(','));
   }
 

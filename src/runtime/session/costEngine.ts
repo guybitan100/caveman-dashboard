@@ -1,4 +1,5 @@
 import { CostEstimate, ModelProfile } from './sessionModels';
+import { MODEL_PRICING } from './modelPricing';
 
 export interface RuntimeCostInput {
   model: string;
@@ -8,42 +9,27 @@ export interface RuntimeCostInput {
   cacheReadTokens: number;
 }
 
-export const modelProfiles: readonly ModelProfile[] = [
-  {
-    name: 'GPT-5.4',
-    contextWindow: 192_000,
-    pricing: {
-      input: 5 / 1_000_000,
-      output: 15 / 1_000_000,
-      cache: 2 / 1_000_000
-    }
-  },
-  {
-    name: 'Claude Sonnet 4.6',
-    contextWindow: 400_000,
-    pricing: {
-      input: 3 / 1_000_000,
-      output: 15 / 1_000_000,
-      cache: 0.8 / 1_000_000
-    }
-  },
-  {
-    name: 'Gemini 3.1',
-    contextWindow: 1_000_000,
-    pricing: {
-      input: 2.5 / 1_000_000,
-      output: 10 / 1_000_000,
-      cache: 0.5 / 1_000_000
-    }
+export const modelProfiles: readonly ModelProfile[] = MODEL_PRICING.map(entry => ({
+  name: entry.model,
+  contextWindow: entry.contextWindow,
+  pricing: {
+    input: entry.inputPerMillion / 1_000_000,
+    output: entry.outputPerMillion / 1_000_000,
+    cache: entry.cachePerMillion / 1_000_000,
+    creditMultiplier: entry.creditMultiplier
   }
-] as const;
+}));
 
 export function selectModelProfile(totalContextTokens: number): ModelProfile {
-  if (totalContextTokens > 250_000) {
-    return modelProfiles[2];
+  if (totalContextTokens > 400_000) {
+    return modelProfiles[3];
   }
 
   if (totalContextTokens > 120_000) {
+    return modelProfiles[2];
+  }
+
+  if (totalContextTokens > 40_000) {
     return modelProfiles[1];
   }
 
@@ -54,17 +40,17 @@ export function estimateRuntimeCost(input: RuntimeCostInput): CostEstimate {
   const profile = resolveModelProfile(input.model);
   const promptTokens = Math.max(0, Math.round(input.promptTokens));
   const completionTokens = Math.max(0, Math.round(input.completionTokens));
-  const cacheCreateTokens = Math.max(0, Math.round(input.cacheCreateTokens));
   const cacheReadTokens = Math.max(0, Math.round(input.cacheReadTokens));
-  const inputCost = promptTokens * profile.pricing.input;
+  const nonCachedPromptTokens = Math.max(promptTokens - cacheReadTokens, 0);
+  const inputCost = nonCachedPromptTokens * profile.pricing.input;
   const outputCost = completionTokens * profile.pricing.output;
-  const cacheCreateCost = cacheCreateTokens * profile.pricing.cache;
-  const cacheSavings = cacheReadTokens * Math.max(profile.pricing.input - profile.pricing.cache, 0) * 0.65;
-  const estimatedCost = roundTo(Math.max(inputCost + outputCost + cacheCreateCost - cacheSavings, 0), 4);
+  const cacheReadCost = cacheReadTokens * profile.pricing.cache;
+  const cacheSavings = cacheReadTokens * Math.max(profile.pricing.input - profile.pricing.cache, 0);
+  const estimatedCost = roundTo(Math.max(inputCost + outputCost + cacheReadCost, 0), 4);
 
   return {
     estimatedCost,
-    credits: roundTo(estimatedCost * 100, 2),
+    credits: roundTo(estimatedCost * profile.pricing.creditMultiplier, 2),
     cacheSavings: roundTo(cacheSavings, 4)
   };
 }

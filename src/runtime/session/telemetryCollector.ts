@@ -49,6 +49,7 @@ export function collectRuntimeTelemetry(input: TelemetryCollectorInput): Session
 
   return {
     workspace: input.workspace,
+    title: buildSessionTitle(input.workspace, visibleFiles, promptFiles, retrievalFiles),
     startedAt: now,
     endedAt: now,
     model: modelProfile.name,
@@ -60,6 +61,7 @@ export function collectRuntimeTelemetry(input: TelemetryCollectorInput): Session
     requests: 1,
     estimatedCost: costEstimate.estimatedCost,
     credits: costEstimate.credits,
+    cacheSavings: costEstimate.cacheSavings,
     cacheEfficiency: cacheInsight.cacheEfficiency,
     files: uniqueValues([...visibleFiles, ...(input.workspaceAnalysis?.highestRiskFiles ?? [])]),
     retrievalFiles,
@@ -73,6 +75,23 @@ export function collectRuntimeTelemetry(input: TelemetryCollectorInput): Session
     risk: input.budget.risk,
     source: 'simulated'
   };
+}
+
+function buildSessionTitle(
+  workspace: string,
+  visibleFiles: string[],
+  promptFiles: string[],
+  retrievalFiles: string[]
+): string {
+  const primaryFile = promptFiles[0] ?? visibleFiles[0] ?? retrievalFiles[0];
+  if (!primaryFile) {
+    return `New session - ${workspace}`;
+  }
+
+  const fileParts = primaryFile.split('/').filter(Boolean);
+  const fileName = fileParts[fileParts.length - 1] ?? primaryFile;
+  const baseName = fileName.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim();
+  return `New session - ${baseName || workspace}`;
 }
 
 function resolveModelProfile(preferredModel: string | undefined, totalContextTokens: number) {

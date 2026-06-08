@@ -28,7 +28,7 @@ export function calculateCacheInsight(input: CacheInsightInput): CacheInsight {
   const promptStability = clamp(Math.round((baselineStability - amplificationPenalty) * 100), 15, 96);
   const cacheReadTokens = Math.round(promptTokens * (promptStability / 100) * 0.48);
   const cacheCreateTokens = Math.max(promptTokens - cacheReadTokens, 0);
-  const cacheEfficiency = roundTo((cacheReadTokens / promptTokens) * 100, 1);
+  const cacheEfficiency = roundTo((cacheReadTokens / Math.max(cacheCreateTokens, 1)) * 100, 1);
 
   return {
     cacheCreateTokens,
@@ -44,11 +44,11 @@ function uniqueValues(values: string[]): string[] {
 }
 
 function toCacheIndicator(cacheEfficiency: number): CacheInsight['cacheIndicator'] {
-  if (cacheEfficiency >= 55) {
+  if (cacheEfficiency > 70) {
     return 'high';
   }
 
-  if (cacheEfficiency >= 25) {
+  if (cacheEfficiency > 30) {
     return 'partial';
   }
 

@@ -14,8 +14,8 @@ describe('runtime cache engine', () => {
     expect(insight.cacheIndicator).toBe('partial');
     expect(insight.promptStability).toBeGreaterThanOrEqual(80);
     expect(insight.promptStability).toBeLessThanOrEqual(90);
-    expect(insight.cacheEfficiency).toBeGreaterThanOrEqual(35);
-    expect(insight.cacheEfficiency).toBeLessThanOrEqual(45);
+    expect(insight.cacheEfficiency).toBeGreaterThanOrEqual(60);
+    expect(insight.cacheEfficiency).toBeLessThanOrEqual(75);
     expect(insight.cacheReadTokens).toBeGreaterThan(9_000);
     expect(insight.cacheCreateTokens).toBeLessThan(15_000);
   });

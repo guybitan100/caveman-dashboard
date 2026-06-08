@@ -60,6 +60,7 @@ describe('runtime dashboard panel', () => {
       latestSession: {
         id: 'token-lint-1',
         workspace: 'token-lint',
+        title: 'New session - runtime dashboard spec',
         startedAt: 1_718_000_000_000,
         endedAt: 1_718_000_010_000,
         model: 'Claude Sonnet 4.6',
@@ -71,6 +72,7 @@ describe('runtime dashboard panel', () => {
         requests: 1,
         estimatedCost: 0.41,
         credits: 41,
+        cacheSavings: 0.12,
         cacheEfficiency: 28.6,
         files: ['prompt.md'],
         retrievalFiles: ['rag.yaml'],
@@ -84,16 +86,37 @@ describe('runtime dashboard panel', () => {
         risk: 'high' as const,
         source: 'simulated' as const
       },
-      sessions: [],
       summary: {
-        totalSessions: 1,
+        sessions: 1,
         totalCost: 0.41,
         totalCredits: 41,
         averageCacheEfficiency: 28.6,
+        estimatedSavings: 0.12,
+        estimatedWaste: 37.4,
         averageRetrievalAmplification: 3.2,
         averageContextPressure: 88,
         stablePromptRegions: 61,
-        volatilePromptRegions: 39
+        volatilePromptRegions: 39,
+        contextHealth: 48,
+        reasoningRisk: 'high' as const
+      },
+      sessions: [],
+      costOverTime: [{ date: '2024-06-11', cost: 0.41 }],
+      costByModel: [{ model: 'Claude Sonnet 4.6', cost: 0.41, percent: 100 }],
+      cacheBreakdown: {
+        totalTokens: 42_000,
+        cacheReadTokens: 12_000,
+        cacheCreateTokens: 18_000
+      },
+      retrievalAmplification: [{ date: '2024-06-11', amplification: 3.2 }],
+      cacheEfficiencyTrend: [{ date: '2024-06-11', efficiency: 28.6 }],
+      contextComposition: {
+        systemPrompt: 8_000,
+        memory: 6_000,
+        retrieval: 12_000,
+        toolOutput: 4_000,
+        userInput: 12_000,
+        completion: 4_200
       },
       workspaces: ['All workspaces', 'token-lint'],
       filter: {
@@ -113,6 +136,8 @@ describe('runtime dashboard panel', () => {
     expect(panelMocks.webview.html).toContain('AI Runtime Observability Platform');
     expect(panelMocks.webview.html).toContain('Export CSV');
     expect(panelMocks.webview.html).toContain('Latest Session');
+    expect(panelMocks.webview.html).toContain('Estimated Waste');
+    expect(panelMocks.webview.html).toContain('Context Composition');
     expect(panelMocks.webview.postMessage).toHaveBeenLastCalledWith({
       type: 'tokenlint.runtimeDashboard',
       payload: state
@@ -133,14 +158,35 @@ describe('runtime dashboard panel', () => {
       generatedAt: Date.now(),
       sessions: [],
       summary: {
-        totalSessions: 0,
+        sessions: 0,
         totalCost: 0,
         totalCredits: 0,
         averageCacheEfficiency: 0,
+        estimatedSavings: 0,
+        estimatedWaste: 0,
         averageRetrievalAmplification: 0,
         averageContextPressure: 0,
         stablePromptRegions: 0,
-        volatilePromptRegions: 0
+        volatilePromptRegions: 0,
+        contextHealth: 0,
+        reasoningRisk: 'low' as const
+      },
+      costOverTime: [],
+      costByModel: [],
+      cacheBreakdown: {
+        totalTokens: 0,
+        cacheReadTokens: 0,
+        cacheCreateTokens: 0
+      },
+      retrievalAmplification: [],
+      cacheEfficiencyTrend: [],
+      contextComposition: {
+        systemPrompt: 0,
+        memory: 0,
+        retrieval: 0,
+        toolOutput: 0,
+        userInput: 0,
+        completion: 0
       },
       workspaces: ['All workspaces'],
       filter: {
@@ -166,14 +212,35 @@ describe('runtime dashboard panel', () => {
       generatedAt: Date.now(),
       sessions: [],
       summary: {
-        totalSessions: 0,
+        sessions: 0,
         totalCost: 0,
         totalCredits: 0,
         averageCacheEfficiency: 0,
+        estimatedSavings: 0,
+        estimatedWaste: 0,
         averageRetrievalAmplification: 0,
         averageContextPressure: 0,
         stablePromptRegions: 0,
-        volatilePromptRegions: 0
+        volatilePromptRegions: 0,
+        contextHealth: 0,
+        reasoningRisk: 'low' as const
+      },
+      costOverTime: [],
+      costByModel: [],
+      cacheBreakdown: {
+        totalTokens: 0,
+        cacheReadTokens: 0,
+        cacheCreateTokens: 0
+      },
+      retrievalAmplification: [],
+      cacheEfficiencyTrend: [],
+      contextComposition: {
+        systemPrompt: 0,
+        memory: 0,
+        retrieval: 0,
+        toolOutput: 0,
+        userInput: 0,
+        completion: 0
       },
       workspaces: ['All workspaces'],
       filter: {

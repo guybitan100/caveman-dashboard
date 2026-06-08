@@ -48,6 +48,8 @@ describe('runtime telemetry collector', () => {
     expect(telemetry.mcpConfigs).toContain('mcp.json');
     expect(telemetry.retrievalFiles).toEqual(['rag-config.yaml', 'memory.md']);
     expect(telemetry.estimatedCost).toBeGreaterThan(0);
+    expect(telemetry.cacheSavings).toBeGreaterThan(0);
+    expect(telemetry.title).toBe('New session - prompt');
     expect(telemetry.source).toBe('simulated');
   });
 });
