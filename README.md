@@ -1,10 +1,51 @@
-# TokenLint AI Runtime Observability Platform
+# TokenLint Cost, Linting, and Runtime Observability
 
-TokenLint is a VS Code extension for prompts, AI skills, agent instructions, MCP workflows, and AI context infrastructure. It combines compiler-style linting, Copilot context-budget analysis, runtime observability, and a local runtime history/diff engine in one workflow.
+TokenLint is a VS Code extension for prompts, AI skills, agent instructions, MCP workflows, and AI context infrastructure. It combines compiler-style linting, Copilot context-budget analysis, a cost-and-token runtime dashboard, and a local runtime history/diff engine in one workflow.
 
 ## Product Positioning
 
-AI Runtime Observability Platform and Cognitive Systems Profiler for GitHub Copilot, agentic workflows, MCP-enabled tooling, and prompt engineering repositories.
+TokenLint is positioned as compiler, runtime observability, and AI FinOps infrastructure for cognitive systems built on GitHub Copilot, agentic workflows, MCP-enabled tooling, and prompt-engineering repositories.
+
+The current runtime surface is centered on a dedicated:
+
+- `TokenLint Cost & Token Tracker`
+- AI runtime cost observability inside VS Code
+- session-level cost, credits, cache reuse, and workspace spend analysis
+
+## Recent Changes
+
+The current release includes several material product changes.
+
+### Cost dashboard redesign
+
+- Replaced the broader multi-section runtime console with a focused `TokenLint Cost & Token Tracker` dashboard
+- Added top-level dashboard tabs for `Latest Session`, `All Sessions`, and `Aggregate`
+- Added enterprise-style KPI summary cards for Sessions, Cost, and Credits
+- Added `Export Selected View` controls for CSV and JSON
+- Added favorites support for runtime sessions, including favorites-only filtering
+- Added expandable per-session rows with token, cost, cache, model, retrieval, context-health, and optimization details
+- Added cache efficiency indicators with poor / partial / strong cache states
+
+### Runtime command surface
+
+- Renamed the primary dashboard entry to `TokenLint: Open Cost Dashboard`
+- Added command-palette shortcuts for:
+  - `TokenLint: Show Latest Session`
+  - `TokenLint: Show Aggregate View`
+  - `TokenLint: Export Cost View as CSV`
+  - `TokenLint: Export Cost View as JSON`
+- Export commands now follow the active dashboard tab instead of always exporting the same default view
+
+### Sidebar simplification
+
+- Reworked the Activity Bar sidebar so it emphasizes a single `Open Dashboard` entry instead of duplicating internal runtime navigation there
+- Kept context-budget, scan/fix, report, and graph utilities in the sidebar
+
+### Fix engine consistency
+
+- Unified fix availability across Problems, Quick Fix, bulk fixes, and the fix graph
+- Review-oriented rules that expose assisted fixes now use the same `finding.fix` source of truth as the bulk-fix and visualization pipeline
+- This eliminates the previous mismatch where findings appeared in Problems but surfaced as “no fixes available” in sidebar actions
 
 ## Core Capabilities
 
@@ -13,6 +54,7 @@ AI Runtime Observability Platform and Cognitive Systems Profiler for GitHub Copi
 - Parses prompt, skill, agent, and MCP-oriented artifacts into an intermediate representation
 - Runs optimization, retrieval, security, and skills-focused passes over that IR
 - Surfaces diagnostics, hovers, quick fixes, reports, and before/after fix previews in VS Code
+- Uses a shared fixability model across Quick Fix, bulk fix, and fix visualization flows
 - Detects duplicate instructions, prompt injection, malicious skill-test behavior, unsafe permissions, encoded payloads, external endpoints, prompt bloat, and retrieval amplification patterns
 
 ### Copilot context-budget analysis
@@ -22,13 +64,15 @@ AI Runtime Observability Platform and Cognitive Systems Profiler for GitHub Copi
 - Workspace budget report with estimated token totals, amplification, and highest-risk files
 - Risk scoring for warning and critical thresholds
 
-### Runtime observability
+### Runtime observability and AI FinOps
 
-- Dedicated runtime dashboard built as a VS Code webview panel
+- Dedicated `TokenLint Cost & Token Tracker` dashboard built as a VS Code webview panel
 - Session analytics for cost, cache efficiency, credits, latency, retrieval amplification, prompt stability, context pressure, and context health
+- Latest-session, all-sessions, and aggregate runtime views in one panel
 - Deep cost, cache, and retrieval drilldowns rendered in dedicated webview panels
 - Runtime status bar that summarizes live Context, Cache, Cost, and Health
-- Export of dashboard views as CSV or JSON artifacts
+- Export of selected dashboard views as CSV or JSON artifacts
+- Favorites support and workspace/time-window filtering for runtime sessions
 
 ### Runtime history and diff engine
 
@@ -65,10 +109,7 @@ TokenLint adds a dedicated Activity Bar entry in VS Code.
 The sidebar includes:
 
 - Copilot Context Budget card with current file, open files, workspace estimate, retrieval estimate, usage, and risk
-- Open Runtime Dashboard
-- Show Cost Analysis
-- Analyze Cache Efficiency
-- Analyze Retrieval Amplification
+- Cost Dashboard card with `Open Dashboard`
 - Scan / Fix... quick action
 - Scan Current File
 - Scan Workspace
@@ -84,32 +125,72 @@ The sidebar includes:
 TokenLint ships two live status experiences.
 
 - Copilot budget examples: `TokenLint: 42.3k / 128k - 33%`, `TokenLint: 91k / 128k - HIGH`, `TokenLint: 122k / 128k - CRITICAL`
-- Runtime examples: `TokenLint Runtime  Context: 82.0k  Cache: 71%  Cost: $0.18  Health: 72`
-- The runtime status bar opens the runtime dashboard directly
+- Runtime examples: `TokenLint Cost  Context: 82.0k  Cache: 71%  Cost: $0.18  Health: 72`
+- The runtime status bar opens the cost dashboard directly
 - Focus changes refresh live budget/runtime state, while scan-driven refreshes can also capture runtime history snapshots
 
-## Runtime Observability Dashboard
+## Runtime Cost Dashboard
 
-TokenLint includes a multi-section runtime dashboard rendered in a dedicated VS Code webview panel.
+TokenLint includes a dedicated `TokenLint Cost & Token Tracker` dashboard rendered in a VS Code webview panel.
 
-### Dashboard sections
+### Dashboard layout
 
-- `Overview`: top KPI cards, latest runtime pulse, waste/savings signals, and key health indicators
-- `Sessions`: activity table with expandable drilldowns per runtime session
-- `Models`: model mix, cost concentration, and optimization opportunity views
-- `Workspaces`: cross-workspace cost, cache, and retrieval concentration
-- `Analysis`: charts for spend, cache efficiency, retrieval amplification, context composition, and cache usage
-- `History`: local runtime snapshots, baseline information, retention state, and snapshot actions
-- `Diff`: summary deltas, regression signals, recommendations, and highest file-level regressions/improvements
-- `Settings`: active filters, export/storage behavior, and runtime history configuration summary
+The main dashboard is organized as:
+
+- Header with the `TokenLint Cost & Token Tracker` title
+- Time-window controls and refresh action
+- Top-level tabs for `Latest Session`, `All Sessions`, and `Aggregate`
+- KPI summary bar for Sessions, Cost, and Credits
+- Session activity table with expandable rows
+- Aggregate analytics panels for workspaces, model mix, runtime health, history, and recommendations
+
+### Latest Session view
+
+The Latest Session view is focused on one runtime session and exposes:
+
+- Session summary and pricing reference
+- Token breakdown
+- Cost breakdown
+- Cache breakdown
+- Model details
+- Files included
+- Retrieval amplification details
+- Context-health signals
+- Optimization suggestions
+
+### All Sessions view
+
+The All Sessions view provides a session activity table with:
+
+- UTC last-active timestamps
+- Source badges
+- Workspace badges
+- Truncated session titles
+- Favorite toggles
+- Cost and credits columns
+- Cache efficiency state indicators
+- Expandable detail panels per row
+
+### Aggregate view
+
+The Aggregate view summarizes:
+
+- Workspace spend concentration
+- Model cost mix
+- Average cache efficiency, retrieval amplification, context health, and estimated waste/savings
+- Runtime recommendations
+- History controls and snapshot summaries
+- Deep-analysis launch points for cost, cache, and retrieval drilldowns
 
 ### Dashboard interactions
 
-- Workspace filter and time-window filter with `1`, `7`, and `30` day windows
-- CSV and JSON export of the current dashboard view under `.tokenlint/exports/`
-- Expandable session drilldowns with prompt breakdown, retrieval/tool data, cache regions, composition estimates, and optimization suggestions
-- Quick diff actions for previous snapshot, 7-day snapshot, and baseline comparison
-- Snapshot-specific actions to compare a saved checkpoint against the latest snapshot or promote it to the active baseline
+- Workspace filter with `All workspaces`, current workspace resolution, and favorites-only filtering
+- Time-window controls for `Today`, `7 days`, `This month`, `30 days`, and custom windows inside the dashboard
+- CSV and JSON export of the selected dashboard view under `.tokenlint/exports/`
+- Expandable session drilldowns with prompt, cost, cache, retrieval, and optimization detail
+- Favorite session toggling with persisted favorites-only filtering
+- Empty-state actions for analyzing the workspace, opening settings, and future telemetry import flow
+- Quick diff actions for previous snapshot and baseline comparison
 - Dedicated cost, cache, and retrieval analysis panels outside the main dashboard shell
 
 ### Current telemetry model
@@ -136,8 +217,8 @@ The runtime history system is designed to make AI runtime behavior comparable ov
 ### Snapshot capture
 
 - Automatic on scan-driven budget refresh when `tokenlint.history.snapshotOnScan` is enabled
-- Automatic when opening the runtime dashboard when `tokenlint.history.snapshotOnDashboardOpen` is enabled
-- Manual via `TokenLint: Save Runtime Snapshot` or the dashboard History section
+- Automatic when opening the cost dashboard when `tokenlint.history.snapshotOnDashboardOpen` is enabled
+- Manual via `TokenLint: Save Runtime Snapshot` or the dashboard aggregate/history surface
 - Workspace-local only; history is effectively unavailable if TokenLint has no workspace root to store under
 - Duplicate snapshots are avoided: if a newly captured snapshot matches the latest snapshot fingerprint within a 10-minute window, TokenLint reuses the existing snapshot instead of writing a duplicate
 
@@ -192,8 +273,8 @@ The diff engine computes:
 - Retention is controlled by both age and maximum snapshot count
 - The active baseline snapshot is preserved during pruning
 - `TokenLint: Clear Old Runtime History` prunes snapshots that fall outside the configured retention policy; it is not a blind delete-all command
-- `TokenLint: Show Runtime History` opens the History section directly
-- The diff commands open the Diff section directly and notify the user if there is not enough history yet for the selected comparison mode
+- `TokenLint: Show Runtime History` opens the history-focused dashboard state directly
+- The diff commands open the diff-focused dashboard state directly and notify the user if there is not enough history yet for the selected comparison mode
 
 ## Fix Engine
 
@@ -204,6 +285,7 @@ TokenLint includes a multi-file fix engine centered on non-destructive automatic
 - Removes exact duplicate instructions automatically
 - Applies every automatic fix whose safety is not marked `unsafe`, not just fixes in the currently focused file
 - Falls back from an unsupported active editor to a supported diagnostic file when possible, so sidebar-triggered fix runs do not dead-end unnecessarily
+- Uses the same fix metadata that powers Quick Fix and the fix graph, so automatic-fix surfaces stay aligned
 
 ### Review-oriented automatic helpers
 
@@ -212,6 +294,7 @@ TokenLint includes a multi-file fix engine centered on non-destructive automatic
 - markdownlint fixes for `MD024`, `MD041`, and `MD056` on TokenLint-relevant files
 - Supported JSON dashboard syntax repair for missing wrappers, missing `conditional_formats`, trailing commas, and related EOF/property issues
 - Automatic `.tokenlintignore` updates when a file's only remaining TokenLint issue is `optimization.promptSize`
+- Review-required security and skills findings can now surface assisted fixes consistently across Problems, Quick Fix, and fix-graph flows
 
 ### Post-fix behavior
 
@@ -241,7 +324,11 @@ TokenLint includes a multi-file fix engine centered on non-destructive automatic
 
 ### Runtime dashboard and history commands
 
-- `TokenLint: Open Runtime Dashboard`
+- `TokenLint: Open Cost Dashboard`
+- `TokenLint: Show Latest Session`
+- `TokenLint: Show Aggregate View`
+- `TokenLint: Export Cost View as CSV`
+- `TokenLint: Export Cost View as JSON`
 - `TokenLint: Save Runtime Snapshot`
 - `TokenLint: Show Runtime History`
 - `TokenLint: Diff Runtime Against Previous Snapshot`
@@ -271,7 +358,8 @@ TokenLint includes a multi-file fix engine centered on non-destructive automatic
 
 ### Runtime settings
 
-- `tokenlint.runtimeTimeWindowDays`: default `7`, allowed values `1`, `7`, `30`
+- `tokenlint.runtimeTimeWindowDays`: default `7`, configuration values `1`, `7`, `30`
+- The dashboard itself can also switch to `Today`, `This month`, `30 days`, or a custom time window at runtime without changing the saved setting
 
 ### Runtime history settings
 
@@ -401,11 +489,12 @@ to apply automatic non-unsafe fixes, rescan the affected files, and preview the 
 Run:
 
 ```text
-TokenLint: Open Runtime Dashboard
+TokenLint: Open Cost Dashboard
 ```
 
 Then:
 
+- Switch between `Latest Session`, `All Sessions`, and `Aggregate` as needed
 - Save a snapshot from the History section or run `TokenLint: Save Runtime Snapshot`
 - Make prompt or retrieval changes and rescan the workspace
 - Run `TokenLint: Diff Runtime Against Previous Snapshot`, `TokenLint: Diff Runtime Against 7 Days Ago`, or `TokenLint: Diff Runtime Against Baseline`
