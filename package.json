@@ -1,8 +1,8 @@
 {
   "name": "tokenlint-vscode",
   "displayName": "TokenLint",
-  "description": "Compiler-style prompt, AI skill, MCP, and cognitive security linter for VS Code",
-  "version": "1.0.6",
+  "description": "AI runtime observability platform for prompts, skills, MCP workflows, and cognitive security in VS Code",
+  "version": "2.0.0",
   "publisher": "tokenlint",
   "repository": {
     "type": "git",
@@ -46,6 +46,22 @@
       {
         "command": "tokenlint.showCopilotBudget",
         "title": "TokenLint: Show Copilot Budget"
+      },
+      {
+        "command": "tokenlint.openRuntimeDashboard",
+        "title": "TokenLint: Open Runtime Dashboard"
+      },
+      {
+        "command": "tokenlint.showCostAnalysis",
+        "title": "TokenLint: Show Cost Analysis"
+      },
+      {
+        "command": "tokenlint.analyzeCacheEfficiency",
+        "title": "TokenLint: Analyze Cache Efficiency"
+      },
+      {
+        "command": "tokenlint.analyzeRetrievalAmplification",
+        "title": "TokenLint: Analyze Retrieval Amplification"
       },
       {
         "command": "tokenlint.analyzeWorkspaceBudget",
@@ -115,6 +131,16 @@
           "type": "boolean",
           "default": true,
           "description": "Include retrieval amplification estimates when calculating Copilot context pressure"
+        },
+        "tokenlint.runtimeTimeWindowDays": {
+          "type": "number",
+          "default": 7,
+          "enum": [
+            1,
+            7,
+            30
+          ],
+          "description": "Default runtime dashboard time window in days"
         }
       }
     },
@@ -155,34 +181,39 @@
           "group": "tokenlint@3"
         },
         {
-          "command": "tokenlint.showCopilotBudget",
+          "command": "tokenlint.openRuntimeDashboard",
           "when": "view == tokenlint.sidebar",
           "group": "tokenlint@4"
         },
         {
-          "command": "tokenlint.analyzeWorkspaceBudget",
+          "command": "tokenlint.showCopilotBudget",
           "when": "view == tokenlint.sidebar",
           "group": "tokenlint@5"
         },
         {
-          "command": "tokenlint.applyAllSafeFixes",
+          "command": "tokenlint.analyzeWorkspaceBudget",
           "when": "view == tokenlint.sidebar",
           "group": "tokenlint@6"
         },
         {
-          "command": "tokenlint.generateReport",
+          "command": "tokenlint.applyAllSafeFixes",
           "when": "view == tokenlint.sidebar",
           "group": "tokenlint@7"
         },
         {
-          "command": "tokenlint.showIR",
+          "command": "tokenlint.generateReport",
           "when": "view == tokenlint.sidebar",
           "group": "tokenlint@8"
         },
         {
-          "command": "tokenlint.showFixGraph",
+          "command": "tokenlint.showIR",
           "when": "view == tokenlint.sidebar",
           "group": "tokenlint@9"
+        },
+        {
+          "command": "tokenlint.showFixGraph",
+          "when": "view == tokenlint.sidebar",
+          "group": "tokenlint@10"
         }
       ]
     }

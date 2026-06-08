@@ -260,6 +260,7 @@ describe('extension providers', () => {
 
     expect(webviewView.webview.options).toEqual({ enableScripts: true });
     expect(webviewView.webview.html).toContain('Copilot Context Budget');
+    expect(webviewView.webview.html).toContain('Open Runtime Dashboard');
     expect(webviewView.webview.html).toContain('Apply All Safe Fixes');
     expect(webviewView.webview.html).toContain('Show Before / After Graph');
     expect(webviewView.webview.html).toContain("acquireVsCodeApi()");
@@ -298,6 +299,10 @@ describe('extension providers', () => {
       ['scanCurrentFile', 'tokenlint.scanCurrentFile'],
       ['scanWorkspace', 'tokenlint.scanWorkspace'],
       ['showCopilotBudget', 'tokenlint.showCopilotBudget'],
+      ['openRuntimeDashboard', 'tokenlint.openRuntimeDashboard'],
+      ['showCostAnalysis', 'tokenlint.showCostAnalysis'],
+      ['analyzeCacheEfficiency', 'tokenlint.analyzeCacheEfficiency'],
+      ['analyzeRetrievalAmplification', 'tokenlint.analyzeRetrievalAmplification'],
       ['analyzeOpenFilesBudget', 'tokenlint.analyzeOpenFilesBudget'],
       ['analyzeWorkspaceBudget', 'tokenlint.analyzeWorkspaceBudget'],
       ['setCopilotBudget', 'tokenlint.setCopilotBudget'],

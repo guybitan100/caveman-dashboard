@@ -5,6 +5,7 @@ import { createHoverProvider } from './providers/hoverProvider';
 import { TokenLintCodeActionProvider } from './providers/codeActionProvider';
 import { TokenLintSidebarProvider } from './providers/sidebarProvider';
 import { CopilotBudgetController, shouldIncludeBudgetFile } from './utils/copilotBudget';
+import { RuntimeObservabilityController } from './utils/runtimeObservability';
 
 import { scanCurrentFile } from './commands/scanCurrentFile';
 import { scanWorkspace } from './commands/scanWorkspace';
@@ -17,9 +18,14 @@ import { scanOrFix } from './commands/scanOrFix';
 export function activate(context: vscode.ExtensionContext) {
   const diagnostics = new TokenLintDiagnosticProvider();
   const sidebarProvider = new TokenLintSidebarProvider(context.extensionUri);
+  const runtimeObservability = new RuntimeObservabilityController(context);
 
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-  const budgetController = new CopilotBudgetController(statusBar, sidebarProvider);
+  const budgetController = new CopilotBudgetController(
+    statusBar,
+    sidebarProvider,
+    runtimeObservability
+  );
 
   const supportedSelectors: vscode.DocumentSelector = [
     { scheme: 'file', language: 'markdown' },
@@ -60,6 +66,22 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand('tokenlint.showCopilotBudget', async () => {
       await budgetController.showCopilotBudget();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.openRuntimeDashboard', async () => {
+      await runtimeObservability.openRuntimeDashboard();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.showCostAnalysis', async () => {
+      await runtimeObservability.showCostAnalysis();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.analyzeCacheEfficiency', async () => {
+      await runtimeObservability.analyzeCacheEfficiency();
+    }),
+
+    vscode.commands.registerCommand('tokenlint.analyzeRetrievalAmplification', async () => {
+      await runtimeObservability.analyzeRetrievalAmplification();
     }),
 
     vscode.commands.registerCommand('tokenlint.analyzeWorkspaceBudget', async () => {

@@ -1,14 +1,17 @@
-# TokenLint VS Code Compiler MVP
+# TokenLint AI Runtime Observability Platform
 
-TokenLint is a compiler-style VS Code extension for prompts, AI skills, MCP workflows, and cognitive security.
+TokenLint is a VS Code extension for prompts, AI skills, MCP workflows, and cognitive security that now combines compiler-style linting with runtime observability for AI context usage.
 
 ## Product Positioning
 
-AI Context Budget Manager for GitHub Copilot and Agentic AI.
+AI Runtime Observability Platform for GitHub Copilot, agentic workflows, and cognitive systems.
 
 ## What This MVP Includes
 
 - Real VS Code extension entrypoint
+- Runtime observability dashboard
+- Simulated AI session telemetry
+- Cost, cache, retrieval, and context-pressure analysis
 - Compiler-style IR
 - Parser from prompt/skill files into IR
 - Optimization passes
@@ -34,6 +37,10 @@ TokenLint now adds a dedicated Activity Bar icon in VS Code.
 The sidebar includes:
 
 - Copilot Context Budget card with current file, open files, workspace estimate, usage, and risk
+- Open Runtime Dashboard
+- Show Cost Analysis
+- Analyze Cache Efficiency
+- Analyze Retrieval Amplification
 - Scan / Fix... quick action
 - Scan Current File
 - Scan Workspace
@@ -51,6 +58,16 @@ TokenLint includes a real-time Copilot budget meter in the status bar and sideba
 - Status bar examples: `TokenLint: 42.3k / 128k - 33%`, `TokenLint: 91k / 128k - HIGH`, `TokenLint: 122k / 128k - CRITICAL`
 - Sidebar budget card shows the current file tokens, open file tokens, workspace estimate, retrieval estimate, configured budget, usage percent, and risk level
 - Workspace budget analysis opens a markdown report with estimated token totals, runtime amplification, and highest-risk files
+
+## Runtime Observability Dashboard
+
+TokenLint now includes a dedicated runtime dashboard built with a VS Code webview panel.
+
+- Latest session view with model, cost, credits, tokens, cache reuse, retrieval amplification, context pressure, and prompt stability
+- All sessions view with workspace filters, time-window filters, and CSV or JSON export
+- Aggregate analytics view for cache efficiency, retrieval amplification, context pressure, and prompt volatility
+- Markdown drill-down commands for cost analysis, cache efficiency analysis, and retrieval amplification analysis
+- Phase 1 simulated telemetry derived from Copilot budget state, visible files, workspace analysis, and prompt-shape heuristics
 
 ## Fix Engine
 
@@ -78,6 +95,10 @@ TokenLint includes a safe fix engine.
 - `TokenLint: Set Copilot Budget`
 - `TokenLint: Analyze Open Files Budget`
 - `TokenLint: Show Copilot Budget`
+- `TokenLint: Open Runtime Dashboard`
+- `TokenLint: Show Cost Analysis`
+- `TokenLint: Analyze Cache Efficiency`
+- `TokenLint: Analyze Retrieval Amplification`
 - `TokenLint: Analyze Workspace Budget`
 - `TokenLint: Generate Report`
 - `TokenLint: Show IR`
@@ -91,6 +112,7 @@ TokenLint includes a safe fix engine.
 - `tokenlint.criticalThresholdPercent`: default `90`
 - `tokenlint.includeWorkspaceEstimate`: default `true`
 - `tokenlint.includeRetrievalAmplification`: default `true`
+- `tokenlint.runtimeTimeWindowDays`: default `7`, allowed values `1`, `7`, `30`
 
 ## Scan Scope
 

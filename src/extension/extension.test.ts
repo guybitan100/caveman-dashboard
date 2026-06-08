@@ -36,6 +36,12 @@ const extensionMocks = vi.hoisted(() => {
     analyzeWorkspaceBudget: vi.fn().mockResolvedValue(undefined),
     setCopilotBudget: vi.fn().mockResolvedValue(undefined)
   };
+  const runtimeController = {
+    openRuntimeDashboard: vi.fn().mockResolvedValue(undefined),
+    showCostAnalysis: vi.fn().mockResolvedValue(undefined),
+    analyzeCacheEfficiency: vi.fn().mockResolvedValue(undefined),
+    analyzeRetrievalAmplification: vi.fn().mockResolvedValue(undefined)
+  };
 
   class MockTokenLintDiagnosticProvider {
     scan = diagnosticsInstance.scan;
@@ -68,12 +74,20 @@ const extensionMocks = vi.hoisted(() => {
     setCopilotBudget = budgetController.setCopilotBudget;
   }
 
+  class MockRuntimeObservabilityController {
+    openRuntimeDashboard = runtimeController.openRuntimeDashboard;
+    showCostAnalysis = runtimeController.showCostAnalysis;
+    analyzeCacheEfficiency = runtimeController.analyzeCacheEfficiency;
+    analyzeRetrievalAmplification = runtimeController.analyzeRetrievalAmplification;
+  }
+
   return {
     state,
     commandHandlers,
     diagnosticsInstance,
     statusBar,
     budgetController,
+    runtimeController,
     registerWebviewViewProvider: vi.fn(() => ({ dispose: vi.fn() })),
     registerCommand: vi.fn((command: string, handler: () => Promise<void>) => {
       commandHandlers.set(command, handler);
@@ -111,6 +125,7 @@ const extensionMocks = vi.hoisted(() => {
     MockTokenLintSidebarProvider,
     MockTokenLintCodeActionProvider,
     MockCopilotBudgetController,
+    MockRuntimeObservabilityController,
     StatusBarAlignment: { Left: 1 }
   };
 });
@@ -162,6 +177,10 @@ vi.mock('./utils/scanFilter', () => ({
 vi.mock('./utils/copilotBudget', () => ({
   CopilotBudgetController: extensionMocks.MockCopilotBudgetController,
   shouldIncludeBudgetFile: extensionMocks.shouldAnalyzeFile
+}));
+
+vi.mock('./utils/runtimeObservability', () => ({
+  RuntimeObservabilityController: extensionMocks.MockRuntimeObservabilityController
 }));
 
 vi.mock('./commands/scanCurrentFile', () => ({
@@ -236,6 +255,14 @@ describe('extension activation', () => {
     extensionMocks.budgetController.analyzeWorkspaceBudget.mockResolvedValue(undefined);
     extensionMocks.budgetController.setCopilotBudget.mockReset();
     extensionMocks.budgetController.setCopilotBudget.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.openRuntimeDashboard.mockReset();
+    extensionMocks.runtimeController.openRuntimeDashboard.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.showCostAnalysis.mockReset();
+    extensionMocks.runtimeController.showCostAnalysis.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.analyzeCacheEfficiency.mockReset();
+    extensionMocks.runtimeController.analyzeCacheEfficiency.mockResolvedValue(undefined);
+    extensionMocks.runtimeController.analyzeRetrievalAmplification.mockReset();
+    extensionMocks.runtimeController.analyzeRetrievalAmplification.mockResolvedValue(undefined);
   });
 
   it('registers providers, commands, and status bar wiring', async () => {
@@ -254,7 +281,7 @@ describe('extension activation', () => {
       'tokenlint.sidebar',
       expect.any(extensionMocks.MockTokenLintSidebarProvider)
     );
-    expect(extensionMocks.registerCommand).toHaveBeenCalledTimes(11);
+    expect(extensionMocks.registerCommand).toHaveBeenCalledTimes(15);
     expect(extensionMocks.registerHoverProvider).toHaveBeenCalledWith(
       expect.arrayContaining([
         { scheme: 'file', language: 'markdown' },
@@ -293,6 +320,18 @@ describe('extension activation', () => {
     await extensionMocks.commandHandlers.get('tokenlint.showCopilotBudget')?.();
     expect(extensionMocks.budgetController.showCopilotBudget).toHaveBeenCalled();
 
+    await extensionMocks.commandHandlers.get('tokenlint.openRuntimeDashboard')?.();
+    expect(extensionMocks.runtimeController.openRuntimeDashboard).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.showCostAnalysis')?.();
+    expect(extensionMocks.runtimeController.showCostAnalysis).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.analyzeCacheEfficiency')?.();
+    expect(extensionMocks.runtimeController.analyzeCacheEfficiency).toHaveBeenCalled();
+
+    await extensionMocks.commandHandlers.get('tokenlint.analyzeRetrievalAmplification')?.();
+    expect(extensionMocks.runtimeController.analyzeRetrievalAmplification).toHaveBeenCalled();
+
     await extensionMocks.commandHandlers.get('tokenlint.analyzeWorkspaceBudget')?.();
     expect(extensionMocks.budgetController.analyzeWorkspaceBudget).toHaveBeenCalled();
 
@@ -308,7 +347,7 @@ describe('extension activation', () => {
     await extensionMocks.commandHandlers.get('tokenlint.showFixGraph')?.();
     expect(extensionMocks.showFixGraph).toHaveBeenCalled();
 
-    expect(context.subscriptions.length).toBe(20);
+    expect(context.subscriptions.length).toBe(24);
   });
 
   it('updates diagnostics on save for both ignored and analyzable files', () => {

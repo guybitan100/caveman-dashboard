@@ -42,6 +42,22 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
           await vscode.commands.executeCommand('tokenlint.showCopilotBudget');
           break;
 
+        case 'openRuntimeDashboard':
+          await vscode.commands.executeCommand('tokenlint.openRuntimeDashboard');
+          break;
+
+        case 'showCostAnalysis':
+          await vscode.commands.executeCommand('tokenlint.showCostAnalysis');
+          break;
+
+        case 'analyzeCacheEfficiency':
+          await vscode.commands.executeCommand('tokenlint.analyzeCacheEfficiency');
+          break;
+
+        case 'analyzeRetrievalAmplification':
+          await vscode.commands.executeCommand('tokenlint.analyzeRetrievalAmplification');
+          break;
+
         case 'analyzeOpenFilesBudget':
           await vscode.commands.executeCommand('tokenlint.analyzeOpenFilesBudget');
           break;
@@ -301,6 +317,12 @@ export class TokenLintSidebarProvider implements vscode.WebviewViewProvider {
 
     <div class="mini-note" id="budget-amplification">Runtime amplification: --</div>
   </div>
+
+  <div class="section">Runtime</div>
+  <button class="secondary" data-command="openRuntimeDashboard">Open Runtime Dashboard</button>
+  <button data-command="showCostAnalysis">Show Cost Analysis</button>
+  <button data-command="analyzeCacheEfficiency">Analyze Cache Efficiency</button>
+  <button data-command="analyzeRetrievalAmplification">Analyze Retrieval Amplification</button>
 
   <div class="section">Scan</div>
   <button class="secondary" data-command="scanOrFix">Scan / Fix...</button>

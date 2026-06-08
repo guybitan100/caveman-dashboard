@@ -26,6 +26,10 @@ type SidebarBudgetTarget = {
   updateBudget(payload: TokenLintSidebarBudgetPayload): void;
 };
 
+type RuntimeBudgetTarget = {
+  captureBudgetSnapshot(payload: TokenLintSidebarBudgetPayload): Promise<void> | void;
+};
+
 type BudgetSettings = {
   budgetTokens: number;
   warningThresholdPercent: number;
@@ -52,7 +56,8 @@ export class CopilotBudgetController {
 
   constructor(
     private readonly statusBar: vscode.StatusBarItem,
-    private readonly sidebar: SidebarBudgetTarget
+    private readonly sidebar: SidebarBudgetTarget,
+    private readonly runtimeObserver?: RuntimeBudgetTarget
   ) {
     this.statusBar.command = 'tokenlint.showCopilotBudget';
     this.statusBar.text = 'TokenLint: Budget meter';
@@ -66,12 +71,19 @@ export class CopilotBudgetController {
 
   async refresh(options: RefreshOptions = {}): Promise<BudgetResult> {
     const result = await this.calculateCurrentBudget(options);
-
-    this.applyStatusBarState(result);
-    this.sidebar.updateBudget({
+    const payload = {
       budget: result,
       workspaceAnalysis: this.workspaceAnalysis
-    });
+    };
+
+    this.applyStatusBarState(result);
+    this.sidebar.updateBudget(payload);
+
+    try {
+      await this.runtimeObserver?.captureBudgetSnapshot(payload);
+    } catch (error) {
+      console.error('TokenLint runtime telemetry capture failed.', error);
+    }
 
     return result;
   }
