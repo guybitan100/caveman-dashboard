@@ -75,7 +75,7 @@ test.describe('runtime dashboard rendering', () => {
 
     await clearPostedMessages(page);
     await page.locator(dashboardSelectors.tabAll).click();
-    expect(await getActiveTab(page)).toBe('all');
+    await expect.poll(async () => getActiveTab(page)).toBe('all');
     messages = await getPostedMessages(page);
     expect(messages.at(-1)).toEqual({ command: 'selectView', view: 'all' });
     await expect(page.locator(dashboardSelectors.sectionAll)).toHaveClass(/active/);
@@ -128,7 +128,7 @@ test.describe('runtime dashboard rendering', () => {
 
     await clearPostedMessages(page);
     await page.locator(dashboardSelectors.tabAggregate).click();
-    expect(await getActiveTab(page)).toBe('aggregate');
+    await expect.poll(async () => getActiveTab(page)).toBe('aggregate');
     messages = await getPostedMessages(page);
     expect(messages.at(-1)).toEqual({ command: 'selectView', view: 'aggregate' });
     await expect(page.locator(dashboardSelectors.sectionAggregate)).toHaveClass(/active/);

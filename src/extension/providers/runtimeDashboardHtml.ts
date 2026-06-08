@@ -1754,9 +1754,9 @@ export function buildRuntimeDashboardHtml(nonce: string, pricingPayload = JSON.s
       const tabButton = event.target.closest('[data-tab]');
       if (tabButton) {
         activeTab = tabButton.dataset.tab;
-        lastViewFromState = activeTab;
         vscode.postMessage({ command: 'selectView', view: activeTab });
-        render(currentState);
+        renderPanels(currentState);
+        persistState();
         return;
       }
 

@@ -406,6 +406,33 @@ The coverage run targets `src/**/*.ts` and excludes:
 - Type-only contracts such as IR and fix interfaces
 - Test utilities under `src/test-utils/**`
 
+## Runtime Validation
+
+TokenLint now includes a browser-driven runtime validation system for the cost dashboard and local runtime history stack.
+
+### Validation commands
+
+```bash
+npm run validate:mcp-runtime
+npm run test:playwright
+npm run test:playwright:visual
+```
+
+- `npm run validate:mcp-runtime` runs the deterministic Playwright suite for dashboard interactions, telemetry updates, cost calculations, and history/diff regression logic
+- `npm run test:playwright` runs the full Playwright suite, including the visual regression spec
+- `npm run test:playwright:visual` runs the screenshot baseline check for the aggregate dashboard view
+
+### Validation architecture
+
+- The production dashboard HTML is shared through `src/extension/providers/runtimeDashboardHtml.ts`, so browser tests render the same markup as the VS Code webview
+- The MCP-style runtime harness under `tests/mcp/` seeds the real session manager, snapshot manager, and history store instead of using a duplicated fake analytics layer
+- Shared Playwright helpers under `tests/utils/` provide stable `data-testid` selectors, metric assertions, and a VS Code bootstrap shim for the dashboard webview script
+
+### CI workflow
+
+- `.github/workflows/runtime-dashboard-validation.yml` compiles the extension, runs the Vitest suite, installs Chromium, and executes `npm run validate:mcp-runtime`
+- The visual regression baseline is maintained as a dedicated script so screenshot updates remain explicit and reviewable
+
 ## Architecture
 
 ```text
