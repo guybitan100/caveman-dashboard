@@ -296,6 +296,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:playwright": "playwright test",
+    "validate:mcp-runtime": "playwright test tests/playwright/runtime tests/playwright/telemetry tests/playwright/history tests/playwright/dashboard",
     "package": "vsce package",
     "release:local": "node ./scripts/release-local-extension.mjs"
   },
@@ -304,6 +306,7 @@
     "yaml": "^2.5.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.2",
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.90.0",
     "@vitest/coverage-v8": "^4.1.6",
