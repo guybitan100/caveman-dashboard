@@ -10,5 +10,5 @@
     "types": ["node", "vscode"],
     "skipLibCheck": true
   },
-  "exclude": ["node_modules", ".vscode-test", "vitest.config.ts", "playwright.config.ts", "tests/**"]
+  "exclude": ["node_modules", ".vscode-test", "out"]
 }

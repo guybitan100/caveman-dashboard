@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from '../types';
 import { CavemanUpdateStatus } from '../collectors/updateChecker';
+import { showCost, shortSha } from '../util';
 
 /**
  * Standalone webview for caveman savings, split by provider (Claude Code + Copilot).
@@ -54,10 +55,6 @@ export class CavemanPanel {
   }
 }
 
-function showCost(): boolean {
-  return vscode.workspace.getConfiguration('cavemanDashboard').get<boolean>('showCost', false);
-}
-
 function fmtTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
   if (n >= 1_000) return `${Math.round(n / 1_000)}K`;
@@ -71,6 +68,30 @@ function fmtMonth(month: string): string {
   if (!m) return month;
   return `${MONTH_NAMES[Number(m[2]) - 1] ?? m[2]} ${m[1]}`;
 }
+/** Previous calendar month key for a "YYYY-MM" value, or '' if unparseable. */
+function prevMonthKey(month: string): string {
+  const m = /^(\d{4})-(\d{2})$/.exec(month);
+  if (!m) return '';
+  let year = Number(m[1]);
+  let mo = Number(m[2]) - 1;
+  if (mo < 1) { mo = 12; year -= 1; }
+  return `${year}-${String(mo).padStart(2, '0')}`;
+}
+
+/** Saved tokens recorded for a given month in a per-month history series. */
+function savedInMonth(rows: { month: string; savedTokens: number }[], month: string): number {
+  return rows.find(r => r.month === month)?.savedTokens ?? 0;
+}
+
+/** A ▲/▼ percent chip comparing this month's savings to last month (empty when no baseline). */
+function deltaChip(current: number, previous: number): string {
+  if (previous <= 0) return '';
+  const pct = Math.round(((current - previous) / previous) * 100);
+  if (pct === 0) return '<small class="cv-delta cv-flat">▬ same as last month</small>';
+  const up = pct > 0;
+  return `<small class="cv-delta ${up ? 'cv-up' : 'cv-down'}">${up ? '▲' : '▼'} ${Math.abs(pct)}% vs last month</small>`;
+}
+
 function escapeHtml(value: string): string {
   return String(value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch] as string));
 }
@@ -94,21 +115,41 @@ const CAVEMAN_ACTIONS = `
   </div>`;
 
 /** Minimal inline SVG line chart for a single daily series. */
-function renderLineChart(days: string[], values: number[], fmt: (n: number) => string): string {
-  const w = 640, h = 200, padL = 48, padR = 16, padT = 16, padB = 28;
+function renderLineChart(
+  days: string[],
+  values: number[],
+  fmt: (n: number) => string,
+  opts: { color: string; id: string } = { color: '#51cf66', id: 'chart' },
+): string {
+  const w = 640, h = 200, padL = 52, padR = 16, padT = 16, padB = 28;
+  const { color, id } = opts;
   const max = Math.max(...values, 0) || 1;
   const n = values.length;
-  const x = (i: number) => padL + (n <= 1 ? 0 : (i / (n - 1)) * (w - padL - padR));
+  const x = (i: number) => padL + (n <= 1 ? (w - padL - padR) / 2 : (i / (n - 1)) * (w - padL - padR));
   const y = (v: number) => padT + (1 - v / max) * (h - padT - padB);
+  const base = (h - padB).toFixed(1);
   const pts = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
-  const area = `M ${x(0).toFixed(1)},${(h - padB).toFixed(1)} L ${values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' L ')} L ${x(n - 1).toFixed(1)},${(h - padB).toFixed(1)} Z`;
-  const dots = values.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" fill="#51cf66"><title>${escapeHtml(days[i])}: ${escapeHtml(fmt(v))}</title></circle>`).join('');
-  const xLabels = days.map((d, i) => `<text x="${x(i).toFixed(1)}" y="${h - 8}" text-anchor="middle" class="axis">${escapeHtml(d.slice(5))}</text>`).join('');
-  return `<svg viewBox="0 0 ${w} ${h}" class="chart" role="img" aria-label="Daily savings chart">
-    <text x="4" y="${padT + 4}" class="axis">${escapeHtml(fmt(max))}</text>
-    <text x="4" y="${h - padB}" class="axis">0</text>
-    <path d="${area}" fill="#51cf6622" stroke="none" />
-    <polyline points="${pts}" fill="none" stroke="#51cf66" stroke-width="2" />
+  const area = `M ${x(0).toFixed(1)},${base} L ${pts.replace(/ /g, ' L ')} L ${x(n - 1).toFixed(1)},${base} Z`;
+  const dots = values.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3.5" fill="${color}" stroke="var(--vscode-editorWidget-background)" stroke-width="1.5"><title>${escapeHtml(days[i])}: ${escapeHtml(fmt(v))}</title></circle>`).join('');
+  // Thin out x labels so they never overlap on dense months.
+  const step = Math.ceil(n / 12);
+  const xLabels = days.map((d, i) =>
+    i % step === 0 || i === n - 1
+      ? `<text x="${x(i).toFixed(1)}" y="${h - 8}" text-anchor="middle" class="axis">${escapeHtml(d.slice(5))}</text>`
+      : '').join('');
+  const gy = y(max / 2).toFixed(1);
+  return `<svg viewBox="0 0 ${w} ${h}" class="chart" role="img" aria-label="Daily savings chart" preserveAspectRatio="xMidYMid meet">
+    <defs><linearGradient id="grad-${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="${color}" stop-opacity="0.02" />
+    </linearGradient></defs>
+    <line x1="${padL}" y1="${gy}" x2="${w - padR}" y2="${gy}" class="grid" />
+    <line x1="${padL}" y1="${base}" x2="${w - padR}" y2="${base}" class="grid" />
+    <text x="6" y="${padT + 4}" class="axis">${escapeHtml(fmt(max))}</text>
+    <text x="6" y="${Number(gy) + 3}" class="axis">${escapeHtml(fmt(max / 2))}</text>
+    <text x="6" y="${base}" class="axis">0</text>
+    <path d="${area}" fill="url(#grad-${id})" stroke="none" />
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
     ${dots}${xLabels}
   </svg>`;
 }
@@ -118,10 +159,13 @@ function renderTotals(claude: CavemanSavings, copilot: CopilotSavings, cost: boo
   const total = claude.savedTokens + copilot.savedTokens;
   const claudeUsd = cost ? `<small>${money(claude.savedUsd)} saved</small>` : '';
   const label = fmtMonth(claude.currentMonth);
+  const prev = prevMonthKey(claude.currentMonth);
+  const prevTotal = savedInMonth(claude.byMonth, prev) + savedInMonth(copilot.byMonth, prev);
+  const trend = deltaChip(total, prevTotal);
   return `<div class="muted cv-month">This month · <b>${escapeHtml(label)}</b> <span class="cv-reset">(resets on the 1st — history kept below)</span></div>
   <div class="cards">
-    <div class="card accent-green"><span>Total Saved Tokens</span><b>${fmtTokens(total)}</b><small>Claude + Copilot</small></div>
-    <div class="card accent-orange"><span>Claude Saved</span><b>${fmtTokens(claude.savedTokens)}</b>${claudeUsd}</div>
+    <div class="card accent-green"><span>Total Saved Tokens</span><b>${fmtTokens(total)}</b>${trend || '<small>Claude + Copilot</small>'}</div>
+    <div class="card accent-orange"><span>Claude Saved</span><b>${fmtTokens(claude.savedTokens)}</b>${claudeUsd || '<small>Claude Code</small>'}</div>
     <div class="card accent-purple"><span>Copilot Saved <em>(est)</em></span><b>${fmtTokens(copilot.savedTokens)}</b><small>subscription — no USD</small></div>
   </div>`;
 }
@@ -171,7 +215,7 @@ function renderClaude(c: CavemanSavings, cost: boolean): string {
   const chart = !cost
     ? ''
     : days.length >= 2
-      ? `<div class="cv-chart"><h3>Daily savings this month (USD)</h3><div class="muted">Estimated output-token value saved per day.</div>${renderLineChart(days, c.byDay.map(d => d.savedUsd), money)}</div>`
+      ? `<div class="cv-chart"><h3>Daily savings this month (USD)</h3><div class="muted">Estimated output-token value saved per day.</div>${renderLineChart(days, c.byDay.map(d => d.savedUsd), money, { color: '#51cf66', id: 'claude' })}</div>`
       : days.length === 1
         ? `<div class="muted cv-note">Daily savings trend appears after 2+ days — <b>${money(c.byDay[0].savedUsd)}</b> saved so far on ${escapeHtml(c.byDay[0].day.slice(5))}.</div>`
         : '';
@@ -197,7 +241,7 @@ function renderCopilot(c: CopilotSavings): string {
   }
   const days = c.byDay.map(d => d.day);
   const chart = days.length >= 2
-    ? `<div class="cv-chart"><h3>Daily saved tokens this month (est)</h3>${renderLineChart(days, c.byDay.map(d => d.savedTokens), fmtTokens)}</div>`
+    ? `<div class="cv-chart"><h3>Daily saved tokens this month (est)</h3>${renderLineChart(days, c.byDay.map(d => d.savedTokens), fmtTokens, { color: '#b197fc', id: 'copilot' })}</div>`
     : '';
   const models = c.models.length ? `<div class="muted">Models: ${escapeHtml(c.models.join(', '))}</div>` : '';
   const history = renderMonthlyHistory(c.byMonth, c.currentMonth, false);
@@ -212,8 +256,6 @@ function renderCopilot(c: CopilotSavings): string {
     ${history}
     <div class="muted cv-foot">Copilot keeps no local token log — output tokens are <b>counted</b> from chat transcripts with a real o200k_base tokenizer, but saved tokens are a <b>projection</b> (assume caveman compression, ~65%, was active — Copilot leaves no per-message marker). Copilot is subscription-billed, so no USD figure is shown.</div>`;
 }
-
-function shortSha(sha: string | null): string { return sha ? sha.slice(0, 7) : 'unknown'; }
 
 /** Banner reflecting the last caveman update check (empty until the user checks). */
 function renderUpdateBanner(status: CavemanUpdateStatus | undefined): string {
@@ -262,22 +304,29 @@ function renderHtml(data: CombinedSavings, updateStatus?: CavemanUpdateStatus): 
   .cv-on { background: #51cf6622; border-color: #51cf6655; color: #51cf66; }
   .cv-off { background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
   .cards { display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0 12px; }
-  .card { flex: 1 1 160px; min-width: 150px; padding: 12px 14px; border-radius: 8px; border-left: 4px solid var(--vscode-panel-border); background: var(--vscode-editorWidget-background); display: flex; flex-direction: column; gap: 2px; }
+  .card { flex: 1 1 160px; min-width: 150px; padding: 12px 14px; border-radius: 8px; border-left: 4px solid var(--vscode-panel-border); background: var(--vscode-editorWidget-background); box-shadow: 0 1px 2px rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 3px; transition: box-shadow 0.15s ease, transform 0.15s ease; }
+  .card:hover { box-shadow: 0 3px 8px rgba(0,0,0,0.2); transform: translateY(-1px); }
   .card span { font-size: 0.8rem; color: var(--vscode-descriptionForeground); }
-  .card b { font-size: 1.5rem; }
+  .card b { font-size: 1.6rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
   .card small { font-size: 0.72rem; color: var(--vscode-descriptionForeground); }
   .accent-green { border-left-color: #51cf66; }
   .accent-purple { border-left-color: #b197fc; }
   .accent-blue { border-left-color: #4dabf7; }
   .accent-orange { border-left-color: #ffa94d; }
+  .cv-delta { font-weight: 600; }
+  .cv-up { color: #51cf66; }
+  .cv-down { color: #ffa94d; }
+  .cv-flat { color: var(--vscode-descriptionForeground); }
   .cv-note, .cv-empty { padding: 12px 14px; background: var(--vscode-editorWidget-background); border-radius: 8px; }
   .provider-grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; margin-top: 8px; }
+  @media (min-width: 900px) { .provider-grid { grid-template-columns: 1fr 1fr; } }
   .cv-provider { padding: 4px 16px 16px; border: 1px solid var(--vscode-panel-border); border-radius: 8px; background: var(--vscode-editorWidget-background); min-width: 0; }
   .cv-provider h2 { margin-top: 12px; }
   .cv-provider .cards { flex-direction: row; flex-wrap: wrap; }
   .cv-provider .card { flex: 1 1 160px; }
   .chart { width: 100%; max-width: 640px; height: auto; }
   .axis { fill: var(--vscode-descriptionForeground); font-size: 10px; }
+  .grid { stroke: var(--vscode-panel-border); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.6; }
   .cv-panel { margin-top: 16px; padding: 14px; border: 1px solid var(--vscode-panel-border); border-radius: 8px; }
   .cv-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
   .cv-safe { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }

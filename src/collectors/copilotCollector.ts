@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { CavemanDayPoint, CopilotMonthPoint, CopilotSavings } from '../types';
-import { estimateSavedTokens, currentMonthKey } from '../analytics/cavemanEngine';
+import { estimateSavedTokens, currentMonthKey, todayIso } from '../analytics/cavemanEngine';
 import { countOutputTokens } from '../analytics/tokenizer';
 
 /**
@@ -61,7 +61,7 @@ export class CopilotCollector {
         const saved = estimateSavedTokens(outTok, ratioMode);
         if (r?.modelId) models.add(String(r.modelId));
 
-        const day = isoDay(r?.timestamp) ?? fallbackDay ?? today();
+        const day = isoDay(r?.timestamp) ?? fallbackDay ?? todayIso();
         const mb = monthBucket(day.slice(0, 7));
         mb.turns += 1;
         mb.outputTokens += outTok;
@@ -74,7 +74,7 @@ export class CopilotCollector {
         }
       }
       // A session is attributed to the month of its last-message/creation date.
-      if (sessionHadTurn) monthBucket((fallbackDay ?? today()).slice(0, 7)).sessions += 1;
+      if (sessionHadTurn) monthBucket((fallbackDay ?? todayIso()).slice(0, 7)).sessions += 1;
     }
 
     const cur = months.get(currentMonth);
@@ -151,5 +151,3 @@ function isoDay(ts: unknown): string | undefined {
   if (!Number.isFinite(n)) return undefined;
   return new Date(n).toISOString().slice(0, 10);
 }
-
-function today(): string { return new Date().toISOString().slice(0, 10); }

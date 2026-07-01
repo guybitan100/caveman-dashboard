@@ -6,6 +6,11 @@ export function currentMonthKey(): string {
   return new Date().toISOString().slice(0, 7);
 }
 
+/** Today's date as YYYY-MM-DD (UTC). */
+export function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 /**
  * Mean per-task output compression by caveman mode, taken from the plugin's own
  * benchmarks (caveman-stats.js: only 'full' has measured data — others get no

@@ -1,8 +1,8 @@
 {
   "name": "caveman-dashboard",
   "displayName": "Caveman Dashboard",
-  "description": "AI runtime observability platform for prompts, skills, MCP workflows, and cognitive security in VS Code",
-  "version": "0.6.1",
+  "description": "Track token savings from the caveman output-compression plugin across Claude Code and GitHub Copilot, right inside VS Code.",
+  "version": "0.7.0",
   "publisher": "tokenlint",
   "repository": {
     "type": "git",
@@ -13,8 +13,7 @@
     "vscode": "^1.90.0"
   },
   "categories": [
-    "Linters",
-    "Programming Languages",
+    "Visualization",
     "Other"
   ],
   "activationEvents": [
@@ -24,295 +23,55 @@
   "contributes": {
     "commands": [
       {
-        "command": "tokenlint.scanCurrentFile",
-        "title": "TokenLint: Scan Current File"
+        "command": "cavemanDashboard.openDashboard",
+        "title": "Open Dashboard",
+        "category": "Caveman"
       },
       {
-        "command": "tokenlint.scanWorkspace",
-        "title": "TokenLint: Scan Workspace"
+        "command": "cavemanDashboard.refresh",
+        "title": "Refresh Savings",
+        "category": "Caveman"
       },
       {
-        "command": "tokenlint.scanOrFix",
-        "title": "TokenLint: Scan / Fix..."
-      },
-      {
-        "command": "tokenlint.setCopilotBudget",
-        "title": "TokenLint: Set Copilot Budget"
-      },
-      {
-        "command": "tokenlint.analyzeOpenFilesBudget",
-        "title": "TokenLint: Analyze Open Files Budget"
-      },
-      {
-        "command": "tokenlint.showCopilotBudget",
-        "title": "TokenLint: Show Copilot Budget"
-      },
-      {
-        "command": "tokenlint.openRuntimeDashboard",
-        "title": "TokenLint: Open Cost Dashboard"
-      },
-      {
-        "command": "tokenlint.showLatestSession",
-        "title": "TokenLint: Show Latest Session"
-      },
-      {
-        "command": "tokenlint.showAggregateView",
-        "title": "TokenLint: Show Aggregate View"
-      },
-      {
-        "command": "tokenlint.exportCostViewCsv",
-        "title": "TokenLint: Export Cost View as CSV"
-      },
-      {
-        "command": "tokenlint.exportCostViewJson",
-        "title": "TokenLint: Export Cost View as JSON"
-      },
-      {
-        "command": "tokenlint.saveRuntimeSnapshot",
-        "title": "TokenLint: Save Runtime Snapshot"
-      },
-      {
-        "command": "tokenlint.showRuntimeHistory",
-        "title": "TokenLint: Show Runtime History"
-      },
-      {
-        "command": "tokenlint.diffRuntimeAgainstPrevious",
-        "title": "TokenLint: Diff Runtime Against Previous Snapshot"
-      },
-      {
-        "command": "tokenlint.diffRuntimeAgainst7Days",
-        "title": "TokenLint: Diff Runtime Against 7 Days Ago"
-      },
-      {
-        "command": "tokenlint.diffRuntimeAgainstBaseline",
-        "title": "TokenLint: Diff Runtime Against Baseline"
-      },
-      {
-        "command": "tokenlint.clearOldRuntimeHistory",
-        "title": "TokenLint: Clear Old Runtime History"
-      },
-      {
-        "command": "tokenlint.showCostAnalysis",
-        "title": "TokenLint: Show Cost Analysis"
-      },
-      {
-        "command": "tokenlint.analyzeCacheEfficiency",
-        "title": "TokenLint: Analyze Cache Efficiency"
-      },
-      {
-        "command": "tokenlint.analyzeRetrievalAmplification",
-        "title": "TokenLint: Analyze Retrieval Amplification"
-      },
-      {
-        "command": "tokenlint.analyzeWorkspaceBudget",
-        "title": "TokenLint: Analyze Workspace Budget"
-      },
-      {
-        "command": "tokenlint.generateReport",
-        "title": "TokenLint: Generate Report"
-      },
-      {
-        "command": "tokenlint.showIR",
-        "title": "TokenLint: Show IR"
-      },
-      {
-        "command": "tokenlint.applyAllSafeFixes",
-        "title": "TokenLint: Apply All Safe Fixes"
-      },
-      {
-        "command": "tokenlint.showFixGraph",
-        "title": "TokenLint: Show Before / After Graph"
+        "command": "cavemanDashboard.checkUpdate",
+        "title": "Check for Caveman Update",
+        "category": "Caveman"
       }
     ],
     "configuration": {
-      "title": "TokenLint",
+      "title": "Caveman Dashboard",
       "properties": {
-        "tokenlint.maxPromptTokens": {
-          "type": "number",
-          "default": 4000,
-          "description": "Token threshold for large prompt warning"
-        },
-        "tokenlint.criticalPromptTokens": {
-          "type": "number",
-          "default": 8000,
-          "description": "Token threshold for critical prompt warning"
-        },
-        "tokenlint.maxTopK": {
-          "type": "number",
-          "default": 10,
-          "description": "Retrieval top_k threshold"
-        },
-        "tokenlint.enableSecurityScanner": {
+        "cavemanDashboard.showCost": {
           "type": "boolean",
-          "default": true,
-          "description": "Enable AI skill and prompt security scanner"
+          "default": false,
+          "description": "Show estimated USD cost figures alongside token savings (Claude Code only)."
         },
-        "tokenlint.copilotBudget": {
-          "type": "number",
-          "default": 128000,
-          "description": "Configured GitHub Copilot context budget in tokens"
-        },
-        "tokenlint.warningThresholdPercent": {
-          "type": "number",
-          "default": 70,
-          "description": "Usage percentage that marks the Copilot budget meter as high risk"
-        },
-        "tokenlint.criticalThresholdPercent": {
-          "type": "number",
-          "default": 90,
-          "description": "Usage percentage that marks the Copilot budget meter as critical"
-        },
-        "tokenlint.includeWorkspaceEstimate": {
-          "type": "boolean",
-          "default": true,
-          "description": "Include the workspace-wide context estimate in the Copilot budget meter"
-        },
-        "tokenlint.includeRetrievalAmplification": {
-          "type": "boolean",
-          "default": true,
-          "description": "Include retrieval amplification estimates when calculating Copilot context pressure"
-        },
-        "tokenlint.runtimeTimeWindowDays": {
-          "type": "number",
-          "default": 7,
-          "enum": [
-            1,
-            7,
-            30
-          ],
-          "description": "Default runtime dashboard time window in days"
-        },
-        "tokenlint.history.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable local runtime history snapshots and diff analysis."
-        },
-        "tokenlint.history.retentionDays": {
-          "type": "number",
-          "default": 30,
-          "minimum": 1,
-          "description": "How many days of runtime snapshots to retain locally."
-        },
-        "tokenlint.history.maxSnapshots": {
-          "type": "number",
-          "default": 500,
-          "minimum": 1,
-          "description": "Maximum number of runtime snapshots to retain locally."
-        },
-        "tokenlint.history.snapshotOnScan": {
-          "type": "boolean",
-          "default": true,
-          "description": "Automatically save a runtime snapshot after scan-driven budget refreshes."
-        },
-        "tokenlint.history.snapshotOnDashboardOpen": {
-          "type": "boolean",
-          "default": true,
-          "description": "Automatically save a runtime snapshot when the runtime dashboard opens."
-        },
-        "tokenlint.history.baseline": {
+        "cavemanDashboard.claudeProjectsPath": {
           "type": "string",
-          "default": "latest",
-          "description": "Baseline strategy for runtime diffs. Use 'latest' or a saved snapshot id."
+          "default": "",
+          "description": "Override the Claude config directory used to read caveman history and transcripts. Defaults to $CLAUDE_CONFIG_DIR or ~/.claude."
+        },
+        "cavemanDashboard.vscodeUserPath": {
+          "type": "string",
+          "default": "",
+          "description": "Override the VS Code User directory used to find GitHub Copilot chat transcripts. Defaults to the per-OS location."
         }
       }
-    },
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "tokenlint",
-          "title": "TokenLint",
-          "icon": "media/tokenlint.svg"
-        }
-      ]
-    },
-    "views": {
-      "tokenlint": [
-        {
-          "id": "tokenlint.sidebar",
-          "name": "TokenLint",
-          "type": "webview",
-          "icon": "media/tokenlint.svg"
-        }
-      ]
-    },
-    "menus": {
-      "view/title": [
-        {
-          "command": "tokenlint.scanCurrentFile",
-          "when": "view == tokenlint.sidebar",
-          "group": "tokenlint@1"
-        },
-        {
-          "command": "tokenlint.scanWorkspace",
-          "when": "view == tokenlint.sidebar",
-          "group": "tokenlint@2"
-        },
-        {
-          "command": "tokenlint.scanOrFix",
-          "when": "view == tokenlint.sidebar",
-          "group": "tokenlint@3"
-        },
-        {
-          "command": "tokenlint.openRuntimeDashboard",
-          "when": "view == tokenlint.sidebar",
-          "group": "tokenlint@4"
-        },
-        {
-          "command": "tokenlint.showCopilotBudget",
-          "when": "view == tokenlint.sidebar",
-          "group": "tokenlint@5"
-        },
-        {
-          "command": "tokenlint.analyzeWorkspaceBudget",
-          "when": "view == tokenlint.sidebar",
-          "group": "tokenlint@6"
-        },
-        {
-          "command": "tokenlint.applyAllSafeFixes",
-          "when": "view == tokenlint.sidebar",
-          "group": "tokenlint@7"
-        },
-        {
-          "command": "tokenlint.generateReport",
-          "when": "view == tokenlint.sidebar",
-          "group": "tokenlint@8"
-        },
-        {
-          "command": "tokenlint.showIR",
-          "when": "view == tokenlint.sidebar",
-          "group": "tokenlint@9"
-        },
-        {
-          "command": "tokenlint.showFixGraph",
-          "when": "view == tokenlint.sidebar",
-          "group": "tokenlint@10"
-        }
-      ]
     }
   },
   "scripts": {
+    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "test:playwright": "playwright test",
-    "test:playwright:visual": "playwright test tests/playwright/regression",
-    "validate:mcp-runtime": "playwright test tests/playwright/runtime tests/playwright/telemetry tests/playwright/history tests/playwright/dashboard",
-    "package": "vsce package",
-    "release:local": "node ./scripts/release-local-extension.mjs"
+    "package": "vsce package"
   },
   "dependencies": {
-    "gpt-tokenizer": "^2.1.0",
-    "yaml": "^2.5.0"
+    "gpt-tokenizer": "^2.1.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.54.2",
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.90.0",
-    "@vitest/coverage-v8": "^4.1.6",
     "@vscode/vsce": "^2.15.0",
-    "typescript": "^5.4.0",
-    "vitest": "^4.1.6"
+    "typescript": "^5.4.0"
   }
 }

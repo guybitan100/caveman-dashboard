@@ -6,16 +6,13 @@ import { CavemanPanel } from './dashboard/cavemanPanel';
 import { CavemanStatusBar } from './statusbar/statusBar';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from './types';
 import { currentMonthKey } from './analytics/cavemanEngine';
+import { showCost, shortSha } from './util';
 
 let cavemanCollector: CavemanCollector;
 let copilotCollector: CopilotCollector;
 let statusBar: CavemanStatusBar;
 let outputChannel: vscode.OutputChannel;
 let lastData: CombinedSavings | undefined;
-
-function showCost(): boolean {
-  return vscode.workspace.getConfiguration('cavemanDashboard').get<boolean>('showCost', false);
-}
 
 const EMPTY_CLAUDE: CavemanSavings = {
   active: false, currentMonth: currentMonthKey(), sessions: 0, outputTokens: 0, savedTokens: 0, savedUsd: 0,
@@ -99,8 +96,9 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // Populate the status bar badge at startup.
-  refreshData();
+  // Populate the status bar badge after activation returns — the collectors read
+  // thousands of transcript files synchronously, so defer them off the activation path.
+  setTimeout(refreshData, 0);
 }
 
 function refreshData(): CombinedSavings {
@@ -125,10 +123,6 @@ function refreshData(): CombinedSavings {
 
 export function deactivate() {
   statusBar?.dispose();
-}
-
-function shortSha(sha: string | null): string {
-  return sha ? sha.slice(0, 7) : 'unknown';
 }
 
 /** Show the update-check result as a notification with follow-up actions. */

@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { CavemanSavings } from '../types';
-import { CavemanSessionInput, aggregateCaveman, detectCavemanMode } from '../analytics/cavemanEngine';
+import { CavemanSessionInput, aggregateCaveman, detectCavemanMode, todayIso } from '../analytics/cavemanEngine';
 
 type LedgerEntry = {
   ts?: number;
@@ -37,7 +37,7 @@ export class CavemanCollector {
     const transcripts = this.scanTranscripts(path.join(dir, 'projects'));
 
     const sessionIds = new Set<string>([...transcripts.keys(), ...ledger.keys()]);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayIso();
     const inputs: CavemanSessionInput[] = [];
 
     for (const sid of sessionIds) {
@@ -131,7 +131,7 @@ export class CavemanCollector {
       out.set(path.basename(file, '.jsonl'), {
         model,
         outputTokens,
-        day: day || new Date().toISOString().slice(0, 10),
+        day: day || todayIso(),
         mode,
       });
     }
