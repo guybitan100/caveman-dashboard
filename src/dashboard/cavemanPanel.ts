@@ -319,7 +319,6 @@ function renderHtml(data: CombinedSavings, updateStatus?: CavemanUpdateStatus): 
   .cv-flat { color: var(--vscode-descriptionForeground); }
   .cv-note, .cv-empty { padding: 12px 14px; background: var(--vscode-editorWidget-background); border-radius: 8px; }
   .provider-grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; margin-top: 8px; }
-  @media (min-width: 900px) { .provider-grid { grid-template-columns: 1fr 1fr; } }
   .cv-provider { padding: 4px 16px 16px; border: 1px solid var(--vscode-panel-border); border-radius: 8px; background: var(--vscode-editorWidget-background); min-width: 0; }
   .cv-provider h2 { margin-top: 12px; }
   .cv-provider .cards { flex-direction: row; flex-wrap: wrap; }
