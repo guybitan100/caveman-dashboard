@@ -15,3 +15,7 @@ coverage/**
 *.vsix
 .vscode/**
 node_modules/.package-lock.json
+
+# Sourcemaps not needed at runtime (big bytes, esp. gpt-tokenizer)
+**/*.js.map
+node_modules/**/*.ts

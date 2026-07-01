@@ -1,8 +1,8 @@
 {
-  "name": "tokenlint-vscode",
-  "displayName": "TokenLint",
+  "name": "caveman-dashboard",
+  "displayName": "Caveman Dashboard",
   "description": "AI runtime observability platform for prompts, skills, MCP workflows, and cognitive security in VS Code",
-  "version": "2.1.0",
+  "version": "0.5.1",
   "publisher": "tokenlint",
   "repository": {
     "type": "git",
@@ -20,7 +20,7 @@
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./out/extension/extension.js",
+  "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
