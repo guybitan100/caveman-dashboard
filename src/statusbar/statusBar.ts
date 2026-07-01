@@ -31,9 +31,8 @@ export class CavemanStatusBar {
       this.item.show();
       return;
     }
-    // One badge, both providers: "Caveman  Claude 1.5M · Copilot 1.4M" (cost prefix optional).
-    const cost = showCost && claude.savedUsd > 0 ? `$${claude.savedUsd.toFixed(2)} · ` : '';
-    this.item.text = `$(graph) Caveman ${cost}Claude ${compact(claude.savedTokens)} · Copilot ${compact(copilot.savedTokens)}`;
+    // Minimal badge: just "Caveman". Numbers live in the tooltip + dashboard.
+    this.item.text = '$(graph) Caveman';
     this.item.tooltip = [
       `Caveman savings this month (${claude.currentMonth}) — Claude + Copilot`,
       `Claude: ${formatTokens(claude.savedTokens)}${showCost ? ` ($${claude.savedUsd.toFixed(2)})` : ''} — ${claude.sessions} sessions`,
@@ -51,11 +50,4 @@ function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M tok`;
   if (n >= 1_000) return `${Math.round(n / 1_000)}K tok`;
   return `${n} tok`;
-}
-
-/** Tight token label for the status bar badge (no "tok" suffix): 1.5M / 140K / 12. */
-function compact(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${Math.round(n / 1_000)}K`;
-  return `${n}`;
 }
