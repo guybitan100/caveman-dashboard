@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from '../types';
+import { CavemanUpdateStatus } from '../collectors/updateChecker';
 
 /**
  * Standalone webview for caveman savings, split by provider (Claude Code + Copilot).
@@ -9,6 +10,8 @@ import { CavemanSavings, CombinedSavings, CopilotSavings } from '../types';
 export class CavemanPanel {
   static currentPanel: CavemanPanel | undefined;
   private readonly panel: vscode.WebviewPanel;
+  private data: CombinedSavings;
+  private updateStatus: CavemanUpdateStatus | undefined;
 
   static show(context: vscode.ExtensionContext, data: CombinedSavings) {
     if (CavemanPanel.currentPanel) {
@@ -26,15 +29,28 @@ export class CavemanPanel {
 
   private constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext, data: CombinedSavings) {
     this.panel = panel;
+    this.data = data;
     this.panel.webview.onDidReceiveMessage(message => {
       if (message?.command === 'refresh') vscode.commands.executeCommand('cavemanDashboard.refresh');
+      if (message?.command === 'checkUpdate') vscode.commands.executeCommand('cavemanDashboard.checkUpdate');
       if (message?.command === 'cavemanCli') vscode.commands.executeCommand('cavemanDashboard.cavemanCli', message.action);
     }, undefined, context.subscriptions);
-    this.update(data);
+    this.render();
   }
 
   update(data: CombinedSavings) {
-    this.panel.webview.html = renderHtml(data);
+    this.data = data;
+    this.render();
+  }
+
+  /** Reflect the latest caveman update-check result in the dashboard banner. */
+  setUpdateStatus(status: CavemanUpdateStatus) {
+    this.updateStatus = status;
+    this.render();
+  }
+
+  private render() {
+    this.panel.webview.html = renderHtml(this.data, this.updateStatus);
   }
 }
 
@@ -197,7 +213,27 @@ function renderCopilot(c: CopilotSavings): string {
     <div class="muted cv-foot">Copilot keeps no local token log — output tokens are <b>counted</b> from chat transcripts with a real o200k_base tokenizer, but saved tokens are a <b>projection</b> (assume caveman compression, ~65%, was active — Copilot leaves no per-message marker). Copilot is subscription-billed, so no USD figure is shown.</div>`;
 }
 
-function renderHtml(data: CombinedSavings): string {
+function shortSha(sha: string | null): string { return sha ? sha.slice(0, 7) : 'unknown'; }
+
+/** Banner reflecting the last caveman update check (empty until the user checks). */
+function renderUpdateBanner(status: CavemanUpdateStatus | undefined): string {
+  if (!status) return '';
+  if (status.error) {
+    return `<div class="cv-update cv-update-warn">Update check failed: ${escapeHtml(status.error)}</div>`;
+  }
+  if (!status.installed) {
+    return `<div class="cv-update cv-update-warn">caveman is not installed on this machine.</div>`;
+  }
+  if (!status.updateAvailable) {
+    return `<div class="cv-update cv-update-ok">caveman is up to date <code>${escapeHtml(shortSha(status.installedSha))}</code>.</div>`;
+  }
+  const link = status.compareUrl
+    ? ` — <a href="${escapeHtml(status.compareUrl)}">view changes</a>`
+    : '';
+  return `<div class="cv-update cv-update-new">Update available: <code>${escapeHtml(shortSha(status.installedSha))}</code> → <code>${escapeHtml(shortSha(status.latestSha))}</code>${link}. Use <b>Update caveman</b> to install the latest.</div>`;
+}
+
+function renderHtml(data: CombinedSavings, updateStatus?: CavemanUpdateStatus): string {
   const nonce = getNonce();
   const cost = showCost();
   const { claude, copilot } = data;
@@ -256,6 +292,10 @@ function renderHtml(data: CombinedSavings): string {
   .cv-table .num { text-align: right; font-variant-numeric: tabular-nums; }
   .cv-cur-row { background: #51cf6614; }
   .cv-cur { font-size: 0.7rem; color: #51cf66; border: 1px solid #51cf6655; border-radius: 999px; padding: 1px 6px; margin-left: 6px; }
+  .cv-update { margin: 4px 0 12px; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid transparent; }
+  .cv-update-ok { background: #51cf6614; border-color: #51cf6655; }
+  .cv-update-new { background: #ffa94d1a; border-color: #ffa94d66; }
+  .cv-update-warn { background: #e0384522; border-color: #e0384555; color: #ff6b6b; }
 </style>
 </head>
 <body>
@@ -263,7 +303,11 @@ function renderHtml(data: CombinedSavings): string {
   <div class="muted">Estimated savings from the <a href="https://github.com/JuliusBrussee/caveman">caveman</a> output-compression plugin, split by provider.</div>
   <div class="toolbar">
     <button id="refresh">Refresh</button>
+    <button id="check-update" class="cv-safe">Check for caveman update</button>
+    <button class="cv-btn" data-cv="force" title="reinstall latest caveman (--force)">Update caveman</button>
   </div>
+
+  ${renderUpdateBanner(updateStatus)}
 
   ${renderTotals(claude, copilot, cost)}
 
@@ -287,6 +331,7 @@ function renderHtml(data: CombinedSavings): string {
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     document.getElementById('refresh').addEventListener('click', () => vscode.postMessage({ command: 'refresh' }));
+    document.getElementById('check-update').addEventListener('click', () => vscode.postMessage({ command: 'checkUpdate' }));
     document.querySelectorAll('.cv-btn').forEach(b =>
       b.addEventListener('click', () => vscode.postMessage({ command: 'cavemanCli', action: b.getAttribute('data-cv') })));
   </script>

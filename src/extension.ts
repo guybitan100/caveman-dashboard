@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { CavemanCollector } from './collectors/cavemanCollector';
 import { CopilotCollector } from './collectors/copilotCollector';
+import { checkCavemanUpdate, CavemanUpdateStatus } from './collectors/updateChecker';
 import { CavemanPanel } from './dashboard/cavemanPanel';
 import { CavemanStatusBar } from './statusbar/statusBar';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from './types';
@@ -47,6 +48,15 @@ export function activate(context: vscode.ExtensionContext) {
       const data = refreshData();
       if (CavemanPanel.currentPanel) CavemanPanel.currentPanel.update(data);
       vscode.window.showInformationMessage('Caveman Dashboard refreshed');
+    }),
+    vscode.commands.registerCommand('cavemanDashboard.checkUpdate', async () => {
+      const dir = explicitDir && explicitDir.trim() ? explicitDir.trim() : undefined;
+      const status = await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: 'Checking for caveman update…' },
+        () => checkCavemanUpdate(dir),
+      );
+      if (CavemanPanel.currentPanel) CavemanPanel.currentPanel.setUpdateStatus(status);
+      await presentUpdateStatus(status);
     }),
     vscode.commands.registerCommand('cavemanDashboard.cavemanCli', async (action?: unknown) => {
       // Map dashboard actions to caveman installer CLI flags (bin/install.js).
@@ -115,6 +125,33 @@ function refreshData(): CombinedSavings {
 
 export function deactivate() {
   statusBar?.dispose();
+}
+
+function shortSha(sha: string | null): string {
+  return sha ? sha.slice(0, 7) : 'unknown';
+}
+
+/** Show the update-check result as a notification with follow-up actions. */
+async function presentUpdateStatus(s: CavemanUpdateStatus): Promise<void> {
+  if (s.error) {
+    vscode.window.showWarningMessage(`Caveman update check failed: ${s.error}`);
+    return;
+  }
+  if (!s.installed) {
+    const pick = await vscode.window.showInformationMessage('caveman is not installed on this machine.', 'Install');
+    if (pick === 'Install') vscode.commands.executeCommand('cavemanDashboard.cavemanCli', 'install');
+    return;
+  }
+  if (!s.updateAvailable) {
+    vscode.window.showInformationMessage(`caveman is up to date (${shortSha(s.installedSha)}).`);
+    return;
+  }
+  const pick = await vscode.window.showInformationMessage(
+    `caveman update available: ${shortSha(s.installedSha)} → ${shortSha(s.latestSha)}.`,
+    'Update', 'View changes',
+  );
+  if (pick === 'Update') vscode.commands.executeCommand('cavemanDashboard.cavemanCli', 'force');
+  else if (pick === 'View changes' && s.compareUrl) vscode.env.openExternal(vscode.Uri.parse(s.compareUrl));
 }
 
 function logError(message: string, error: unknown): void {
