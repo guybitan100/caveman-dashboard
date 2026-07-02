@@ -2,7 +2,7 @@
   "name": "caveman-dashboard",
   "displayName": "Caveman Dashboard",
   "description": "Track token savings from the caveman output-compression plugin across Claude Code and GitHub Copilot, right inside VS Code.",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "publisher": "caveman-dashboard",
   "repository": {
     "type": "git",
@@ -61,8 +61,10 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "compile": "npm run typecheck && npm run bundle",
+    "typecheck": "tsc -p ./ --noEmit",
+    "bundle": "rm -rf out && mkdir -p out && esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=out/extension.js",
+    "watch": "npm run bundle -- --watch",
     "package": "vsce package"
   },
   "dependencies": {
@@ -72,6 +74,7 @@
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.90.0",
     "@vscode/vsce": "^2.15.0",
+    "esbuild": "^0.25.6",
     "typescript": "^5.4.0"
   }
 }

@@ -957,23 +957,11 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   ${renderHeaderHero(data, updateStatus)}
 
   <div class="cv-tabs" role="tablist">
-    <button class="cv-tab" data-tab="overview" role="tab">Executive summary</button>
-    <button class="cv-tab" data-tab="claude" role="tab">Claude Code</button>
     <button class="cv-tab" data-tab="copilot" role="tab">GitHub Copilot</button>
+    <button class="cv-tab" data-tab="claude" role="tab">Claude Code</button>
     <button class="cv-tab" data-tab="history" role="tab">Monthly history</button>
     <button class="cv-tab" data-tab="updates" role="tab">Updates &amp; installer</button>
   </div>
-
-  <section class="cv-tabpanel" data-panel="overview" role="tabpanel">
-    <div class="cv-overview">
-      <div>
-        ${renderOverviewLead(claude, copilot, cost)}
-        ${renderTotals(claude, copilot, cost)}
-        ${renderOverviewHighlights(claude, copilot)}
-      </div>
-      ${renderSignalRail(claude, copilot, cost)}
-    </div>
-  </section>
 
   <section class="cv-tabpanel cv-hidden" data-panel="claude" role="tabpanel">
     ${renderClaudeTab(claude, cost)}
@@ -998,6 +986,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     const vscode = acquireVsCodeApi();
     const tabs = document.querySelectorAll('.cv-tab');
     const panels = document.querySelectorAll('.cv-tabpanel');
+    const validTabs = new Set(Array.from(tabs, t => t.getAttribute('data-tab')));
     requestAnimationFrame(() => document.body.classList.add('cv-ready'));
     function activateTab(tab) {
       tabs.forEach(t => t.classList.toggle('cv-tab-active', t.getAttribute('data-tab') === tab));
@@ -1014,7 +1003,8 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     }
     tabs.forEach(t => t.addEventListener('click', () => activateTab(t.getAttribute('data-tab'))));
     // Restore the last-viewed tab so re-renders (Refresh, update check) keep the user in place.
-    activateTab((vscode.getState() || {}).activeTab || 'overview');
+    const savedTab = (vscode.getState() || {}).activeTab;
+    activateTab(validTabs.has(savedTab) ? savedTab : 'copilot');
 
     document.querySelectorAll('[data-command="refresh"]').forEach(b =>
       b.addEventListener('click', () => vscode.postMessage({ command: 'refresh' })));
