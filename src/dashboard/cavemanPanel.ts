@@ -247,11 +247,26 @@ function renderMonthlyHistory(
       </tr>`;
     })
     .join('');
-  return `<div class="cv-history"><h3>Monthly history</h3>
+  return `<div class="cv-history">
     <table class="cv-table">
       <thead><tr><th>Month</th><th class="num">Saved tokens</th>${usdHead}<th class="num">Sessions</th></tr></thead>
       <tbody>${body}</tbody>
     </table></div>`;
+}
+
+/** Monthly history tab: each provider's month-by-month table, side by side. */
+function renderHistoryTab(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
+  const claudeHistory = renderMonthlyHistory(claude.byMonth, claude.currentMonth, cost);
+  const copilotHistory = renderMonthlyHistory(copilot.byMonth, copilot.currentMonth, false);
+  if (!claudeHistory && !copilotHistory) {
+    return `<div class="cv-panel"><div class="muted cv-empty">No monthly history yet — a month-by-month breakdown appears once caveman has usage spanning more than one calendar month.</div></div>`;
+  }
+  const block = (header: string, table: string) =>
+    table ? `<section class="cv-provider">${header}${table}</section>` : '';
+  return `<div class="provider-grid">
+    ${block(renderProviderHeader('Claude Code', 'Saved output tokens by month.', 'layers'), claudeHistory)}
+    ${block(renderProviderHeader('GitHub Copilot', 'Estimated saved tokens by month.', 'package'), copilotHistory)}
+  </div>`;
 }
 
 function renderClaudeStatus(c: CavemanSavings): string {
@@ -299,7 +314,6 @@ function renderCopilot(c: CopilotSavings): string {
     ? `<div class="cv-chart"><h3>Daily saved tokens this month (est)</h3>${renderLineChart(days, c.byDay.map(d => d.savedTokens), fmtTokens, { color: '#b197fc', id: 'copilot' })}</div>`
     : '';
   const models = c.models.length ? `<div class="muted">Models: ${escapeHtml(c.models.join(', '))}</div>` : '';
-  const history = renderMonthlyHistory(c.byMonth, c.currentMonth, false);
   return `${status}
     <div class="cards">
       <div class="card accent-purple"><span>Saved Output Tokens <em>(est)</em></span><b>${fmtTokens(c.savedTokens)}</b></div>
@@ -308,7 +322,6 @@ function renderCopilot(c: CopilotSavings): string {
     </div>
     ${models}
     ${chart}
-    ${history}
     <div class="muted cv-foot">Copilot keeps no local token log — output tokens are <b>counted</b> from chat transcripts with a real o200k_base tokenizer, but saved tokens are a <b>projection</b> (assume caveman compression, ~65%, was active — Copilot leaves no per-message marker). Copilot is subscription-billed, so no USD figure is shown.</div>`;
 }
 
@@ -564,6 +577,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
 
   <div class="cv-tabs" role="tablist">
     <button class="cv-tab" data-tab="overview" role="tab">Overview</button>
+    <button class="cv-tab" data-tab="history" role="tab">Monthly history</button>
     <button class="cv-tab" data-tab="updates" role="tab">Updates &amp; installer</button>
   </div>
 
@@ -585,6 +599,10 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
       </div>
       ${renderSignalRail(claude, copilot, cost)}
     </div>
+  </section>
+
+  <section class="cv-tabpanel" data-panel="history" role="tabpanel">
+    ${renderHistoryTab(claude, copilot, cost)}
   </section>
 
   <section class="cv-tabpanel" data-panel="updates" role="tabpanel">
