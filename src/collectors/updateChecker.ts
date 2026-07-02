@@ -93,35 +93,68 @@ export function readCavemanVersion(explicitDir?: string): string | null {
   return null;
 }
 
-/**
- * Fetch the latest commit sha on the repo's default branch via the GitHub API.
- * Uses the `application/vnd.github.sha` media type, which returns the raw sha as the
- * body (tiny response), with a JSON fallback if the server ignores the media type.
- */
-export function fetchLatestCommitSha(repo: string, timeoutMs = 8000): Promise<string> {
+/** GET a URL as text, following up to `redirects` redirects; resolves { status, body }. */
+function httpGet(
+  url: string,
+  headers: Record<string, string>,
+  timeoutMs: number,
+  redirects = 3,
+): Promise<{ status: number; body: string }> {
   return new Promise((resolve, reject) => {
-    const req = https.get(
-      `https://api.github.com/repos/${repo}/commits/HEAD`,
-      { headers: { 'User-Agent': 'caveman-dashboard-vscode', 'Accept': 'application/vnd.github.sha' } },
-      res => {
-        const status = res.statusCode ?? 0;
-        let body = '';
-        res.on('data', c => (body += c));
-        res.on('end', () => {
-          if (status < 200 || status >= 300) {
-            reject(new Error(`GitHub API ${status}: ${body.slice(0, 120)}`));
-            return;
-          }
-          const raw = body.trim();
-          if (/^[0-9a-f]{7,40}$/i.test(raw)) { resolve(raw); return; }
-          try { const j = JSON.parse(body); if (j?.sha) { resolve(String(j.sha)); return; } } catch { /* not JSON */ }
-          reject(new Error(`Unexpected GitHub response: ${raw.slice(0, 80)}`));
-        });
-      },
-    );
+    const req = https.get(url, { headers }, res => {
+      const status = res.statusCode ?? 0;
+      const location = res.headers.location;
+      if (status >= 300 && status < 400 && location && redirects > 0) {
+        res.resume(); // drain so the socket frees
+        httpGet(new URL(location, url).toString(), headers, timeoutMs, redirects - 1).then(resolve, reject);
+        return;
+      }
+      let body = '';
+      res.on('data', c => (body += c));
+      res.on('end', () => resolve({ status, body }));
+    });
     req.on('error', reject);
-    req.setTimeout(timeoutMs, () => req.destroy(new Error('GitHub request timed out')));
+    req.setTimeout(timeoutMs, () => req.destroy(new Error('request timed out')));
   });
+}
+
+/**
+ * Fetch the latest commit sha on the repo's default branch.
+ *
+ * Primary: the git smart-HTTP ref advertisement (`/info/refs?service=git-upload-pack`)
+ * — unauthenticated, NOT subject to the GitHub API's 60-req/hr limit, and lists HEAD's
+ * sha as the first ref. This is what makes "Check for update" reliable on direct networks
+ * where the API otherwise 403s once the anonymous budget is spent.
+ * Fallback: the REST API (`application/vnd.github.sha`), with a JSON parse as last resort.
+ */
+export async function fetchLatestCommitSha(repo: string, timeoutMs = 8000): Promise<string> {
+  const UA = 'caveman-dashboard-vscode';
+  try {
+    const { status, body } = await httpGet(
+      `https://github.com/${repo}/info/refs?service=git-upload-pack`,
+      { 'User-Agent': UA },
+      timeoutMs,
+    );
+    // The advertisement lists HEAD first; the first 40-hex token is the default-branch tip.
+    // (pkt-line length prefixes are only 4 hex chars, so they can't false-match.)
+    if (status >= 200 && status < 300) {
+      const m = /[0-9a-f]{40}/i.exec(body);
+      if (m) return m[0];
+    }
+  } catch { /* fall through to the REST API */ }
+
+  const { status, body } = await httpGet(
+    `https://api.github.com/repos/${repo}/commits/HEAD`,
+    { 'User-Agent': UA, 'Accept': 'application/vnd.github.sha' },
+    timeoutMs,
+  );
+  if (status < 200 || status >= 300) {
+    throw new Error(`GitHub API ${status}: ${body.slice(0, 120)}`);
+  }
+  const raw = body.trim();
+  if (/^[0-9a-f]{7,40}$/i.test(raw)) return raw;
+  try { const j = JSON.parse(body); if (j?.sha) return String(j.sha); } catch { /* not JSON */ }
+  throw new Error(`Unexpected GitHub response: ${raw.slice(0, 80)}`);
 }
 
 /** Compare the installed caveman commit against the repo HEAD; never rejects. */

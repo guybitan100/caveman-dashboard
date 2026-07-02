@@ -370,6 +370,11 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   a { color: var(--vscode-textLink-foreground); }
   code { background: var(--vscode-textCodeBlock-background); padding: 1px 4px; border-radius: 3px; }
   .toolbar { display: flex; gap: 8px; margin: 12px 0; }
+  .cv-tabs { display: flex; gap: 4px; margin: 14px 0 6px; border-bottom: 1px solid var(--vscode-panel-border); }
+  .cv-tab { background: transparent; color: var(--vscode-descriptionForeground); border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 14px; font-weight: 600; }
+  .cv-tab:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.12)); color: var(--vscode-foreground); }
+  .cv-tab-active { color: var(--vscode-foreground); border-bottom-color: #4dabf7; }
+  .cv-hidden { display: none; }
   button { font-family: inherit; font-size: 0.85rem; padding: 5px 12px; border: 1px solid var(--vscode-button-border, transparent); border-radius: 4px; cursor: pointer; background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
   button:hover { background: var(--vscode-button-hoverBackground); }
   .cv-status { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 12px; }
@@ -452,29 +457,50 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
 <body>
   <h1>Caveman Dashboard</h1>
   <div class="muted">Estimated savings from the <a href="https://github.com/JuliusBrussee/caveman">caveman</a> output-compression plugin, split by provider.</div>
-  <div class="toolbar">
-    <button id="refresh">Refresh</button>
+
+  <div class="cv-tabs" role="tablist">
+    <button class="cv-tab" data-tab="overview" role="tab">Overview</button>
+    <button class="cv-tab" data-tab="updates" role="tab">Updates &amp; installer</button>
   </div>
 
-  ${renderCavemanPanel(updateStatus)}
+  <section class="cv-tabpanel" data-panel="overview" role="tabpanel">
+    <div class="toolbar">
+      <button id="refresh">Refresh</button>
+    </div>
 
-  ${renderTotals(claude, copilot, cost)}
+    ${renderTotals(claude, copilot, cost)}
 
-  <div class="provider-grid">
-    <section class="cv-provider">
-      <h2>Claude Code</h2>
-      ${renderClaude(claude, cost)}
-    </section>
-    <section class="cv-provider">
-      <h2>GitHub Copilot <em>(estimated)</em></h2>
-      ${renderCopilot(copilot)}
-    </section>
-  </div>
+    <div class="provider-grid">
+      <section class="cv-provider">
+        <h2>Claude Code</h2>
+        ${renderClaude(claude, cost)}
+      </section>
+      <section class="cv-provider">
+        <h2>GitHub Copilot <em>(estimated)</em></h2>
+        ${renderCopilot(copilot)}
+      </section>
+    </div>
+  </section>
+
+  <section class="cv-tabpanel" data-panel="updates" role="tabpanel">
+    ${renderCavemanPanel(updateStatus)}
+  </section>
 
   ${renderVersionFooter(version, cavemanVersion)}
 
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
+    const tabs = document.querySelectorAll('.cv-tab');
+    const panels = document.querySelectorAll('.cv-tabpanel');
+    function activateTab(tab) {
+      tabs.forEach(t => t.classList.toggle('cv-tab-active', t.getAttribute('data-tab') === tab));
+      panels.forEach(p => p.classList.toggle('cv-hidden', p.getAttribute('data-panel') !== tab));
+      vscode.setState({ ...(vscode.getState() || {}), activeTab: tab });
+    }
+    tabs.forEach(t => t.addEventListener('click', () => activateTab(t.getAttribute('data-tab'))));
+    // Restore the last-viewed tab so re-renders (Refresh, update check) keep the user in place.
+    activateTab((vscode.getState() || {}).activeTab || 'overview');
+
     document.getElementById('refresh').addEventListener('click', () => vscode.postMessage({ command: 'refresh' }));
     document.getElementById('check-update').addEventListener('click', () => vscode.postMessage({ command: 'checkUpdate' }));
     document.querySelectorAll('[data-cv]').forEach(b =>
