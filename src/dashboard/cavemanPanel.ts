@@ -659,47 +659,6 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
   </section>`;
 }
 
-function renderSignalRail(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
-  const claudeConfidence = claude.source === 'ledger'
-    ? 'High confidence · ledger-backed'
-    : claude.source === 'mixed'
-      ? 'Mixed confidence · ledger + estimate'
-      : 'Estimated only';
-  const costLine = cost ? 'USD estimate is enabled for Claude.' : 'USD estimate is off for cleaner token-only review.';
-  const copilotLine = copilot.active
-    ? `Copilot savings are projected from ${copilot.turns} turns.`
-    : 'Copilot has no local chats in scope yet.';
-  return `<aside class="cv-signal-rail">
-    <div class="cv-rail-card">
-      <div class="cv-rail-eyebrow">Read this first</div>
-      <h3>Signal quality</h3>
-      <div class="cv-rail-line"><span>Claude</span><strong>${escapeHtml(claudeConfidence)}</strong></div>
-      <div class="cv-rail-line"><span>Copilot</span><strong>${escapeHtml(copilotLine)}</strong></div>
-      <div class="cv-rail-line"><span>Cost view</span><strong>${escapeHtml(costLine)}</strong></div>
-    </div>
-    <div class="cv-rail-card">
-      <div class="cv-rail-eyebrow">Workflow</div>
-      <h3>Recommended loop</h3>
-      <div class="cv-step">1. Run Claude or Copilot with caveman enabled.</div>
-      <div class="cv-step">2. Refresh to re-read local logs and transcripts.</div>
-      <div class="cv-step">3. Use monthly history to compare adoption over time.</div>
-    </div>
-  </aside>`;
-}
-
-function renderClaudeRail(claude: CavemanSavings, cost: boolean): string {
-  const costLine = cost ? `${money(claude.savedUsd)} estimated saved this month.` : 'Cost view is hidden for this session.';
-  return `<aside class="cv-signal-rail">
-    <div class="cv-rail-card">
-      <div class="cv-rail-eyebrow">Signal quality</div>
-      <h3>Claude readout</h3>
-      <div class="cv-rail-line"><span>Source</span><strong>${escapeHtml(claude.source)}</strong></div>
-      <div class="cv-rail-line"><span>Mode</span><strong>${escapeHtml(claude.activeMode ?? 'off')}</strong></div>
-      <div class="cv-rail-line"><span>Cost lens</span><strong>${escapeHtml(costLine)}</strong></div>
-    </div>
-  </aside>`;
-}
-
 function renderClaudeTab(claude: CavemanSavings, cost: boolean): string {
   const confidence = claude.source === 'ledger'
     ? 'Ledger-backed'
@@ -729,7 +688,6 @@ function renderClaudeTab(claude: CavemanSavings, cost: boolean): string {
       ${renderClaude(claude, cost)}
     </section>
     </div>
-    ${renderClaudeRail(claude, cost)}
   </div>`;
 }
 
