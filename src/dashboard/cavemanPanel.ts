@@ -144,15 +144,9 @@ function renderAction(a: CavemanAction): string {
   </button>`;
 }
 
-function renderActionGroup(title: string, actions: CavemanAction[]): string {
-  return `<div class="cv-group">
-    <div class="cv-group-label">${escapeHtml(title)}</div>
-    <div class="cv-actions">${actions.map(renderAction).join('')}</div>
-  </div>`;
-}
-
-/** Consolidated "updates & installer" panel: update check + banner + grouped CLI actions. */
+/** Consolidated "updates & installer" panel: update check + banner + CLI action tiles (2 rows). */
 function renderCavemanPanel(updateStatus: CavemanUpdateStatus | undefined): string {
+  const actions = [...INSTALL_ACTIONS, ...INSPECT_ACTIONS, ...MAINTAIN_ACTIONS];
   return `<div class="cv-panel cv-installer">
     <div class="cv-panel-head">
       <div class="cv-panel-title">
@@ -168,9 +162,7 @@ function renderCavemanPanel(updateStatus: CavemanUpdateStatus | undefined): stri
       </div>
     </div>
     ${renderUpdateBanner(updateStatus)}
-    ${renderActionGroup('Install', INSTALL_ACTIONS)}
-    ${renderActionGroup('Inspect · read-only', INSPECT_ACTIONS)}
-    ${renderActionGroup('Maintenance', MAINTAIN_ACTIONS)}
+    <div class="cv-actions cv-actions-flat">${actions.map(renderAction).join('')}</div>
     <div class="muted cv-foot">Actions download and run the <b>latest</b> installer (<code>curl … main/install.sh | bash</code>) in a terminal; state-changing actions confirm first. Slash commands (<code>/caveman</code>, <code>/caveman-stats</code>, …) run inside Claude Code, not here. Savings are estimated (only <code>full</code> mode benchmarked, ≈65% output reduction) — output-token value, not billed.</div>
   </div>`;
 }
@@ -403,10 +395,10 @@ function renderHtml(data: CombinedSavings, updateStatus?: CavemanUpdateStatus): 
   .cv-ghost:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.14)); border-color: var(--vscode-focusBorder, #4dabf7); }
   .cv-hero { background: #4dabf7; color: #08203a; border: 1px solid #4dabf7; box-shadow: 0 2px 10px #4dabf73d; }
   .cv-hero:hover { background: #74c0fc; }
-  .cv-group { margin-top: 16px; }
-  .cv-group-label { display: flex; align-items: center; gap: 10px; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; color: var(--vscode-descriptionForeground); margin-bottom: 10px; }
-  .cv-group-label::after { content: ''; flex: 1; height: 1px; background: var(--vscode-panel-border); }
   .cv-actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 10px; }
+  /* All 7 installer tiles in exactly 2 rows (4 + 3) on wide layouts. */
+  .cv-actions-flat { margin-top: 16px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 720px) { .cv-actions-flat { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .cv-btn { display: flex; align-items: flex-start; gap: 11px; text-align: left; line-height: 1.3; padding: 12px 13px; border-radius: 10px; background: var(--vscode-editorWidget-background); border: 1px solid var(--vscode-panel-border); color: var(--vscode-foreground); transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease; }
   .cv-btn:hover { border-color: var(--cv-accent, #4dabf7); transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,0.2); }
   .cv-btn-ico { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; flex: none; background: var(--cv-accent-soft, #4dabf722); color: var(--cv-accent, #4dabf7); }
