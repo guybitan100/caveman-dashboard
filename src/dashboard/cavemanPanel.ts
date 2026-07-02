@@ -102,27 +102,45 @@ function getNonce(): string {
   return text;
 }
 
+// Minimal inline SVG glyphs (stroke = currentColor). CSP forbids external icon fonts.
+const ICONS: Record<string, string> = {
+  download: '<path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/>',
+  layers: '<path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>',
+  package: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  refresh: '<path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/>',
+  trash: '<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  rocket: '<path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2 0-2.8a2 2 0 0 0-2.8 0zM12 15l-3-3a22 22 0 0 1 8-10c3 0 5 2 5 5a22 22 0 0 1-10 8zM9 12H4l3-3h3M12 15v5l3-3v-3"/>',
+};
+function svgIcon(name: string): string {
+  return `<svg class="cv-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] ?? ''}</svg>`;
+}
+
 // Installer CLI actions, grouped by intent. data-cv maps to cavemanDashboard.cavemanCli.
-// Each action carries a caption so its effect is clear without hovering for the tooltip.
-type CavemanAction = { cv: string; label: string; caption: string; cls?: string; flag: string };
+// icon/accent drive the tile glyph + its color; caption makes each effect clear without hovering.
+type CavemanAction = { cv: string; label: string; caption: string; icon: string; accent: string; cls?: string; flag: string };
 const INSTALL_ACTIONS: CavemanAction[] = [
-  { cv: 'install', label: 'Install', caption: 'Plugin + defaults', flag: '--non-interactive' },
-  { cv: 'all', label: 'Install + hooks/init', caption: 'Hooks + per-repo init', flag: '--all' },
-  { cv: 'minimal', label: 'Install minimal', caption: 'Plugin only', flag: '--minimal' },
+  { cv: 'install', label: 'Install', caption: 'Plugin + defaults', icon: 'download', accent: '#4dabf7', flag: '--non-interactive' },
+  { cv: 'all', label: 'Install + hooks/init', caption: 'Hooks + per-repo init', icon: 'layers', accent: '#4dabf7', flag: '--all' },
+  { cv: 'minimal', label: 'Install minimal', caption: 'Plugin only', icon: 'package', accent: '#4dabf7', flag: '--minimal' },
 ];
 const INSPECT_ACTIONS: CavemanAction[] = [
-  { cv: 'dry-run', label: 'Dry run', caption: 'Preview — no changes', cls: 'cv-safe', flag: '--dry-run' },
-  { cv: 'list', label: 'List providers', caption: 'Provider matrix', cls: 'cv-safe', flag: '--list' },
+  { cv: 'dry-run', label: 'Dry run', caption: 'Preview — no changes', icon: 'eye', accent: '#8b98a5', flag: '--dry-run' },
+  { cv: 'list', label: 'List providers', caption: 'Provider matrix', icon: 'list', accent: '#8b98a5', flag: '--list' },
 ];
 const MAINTAIN_ACTIONS: CavemanAction[] = [
-  { cv: 'force', label: 'Force reinstall', caption: 'Overwrite latest', flag: '--force' },
-  { cv: 'uninstall', label: 'Uninstall', caption: 'Remove from machine', cls: 'cv-danger', flag: '--uninstall' },
+  { cv: 'force', label: 'Force reinstall', caption: 'Overwrite latest', icon: 'refresh', accent: '#ffa94d', flag: '--force' },
+  { cv: 'uninstall', label: 'Uninstall', caption: 'Remove from machine', icon: 'trash', accent: '#ff6b6b', cls: 'cv-danger', flag: '--uninstall' },
 ];
 
 function renderAction(a: CavemanAction): string {
-  return `<button class="cv-btn ${a.cls ?? ''}" data-cv="${a.cv}" title="${escapeHtml(a.flag)}">
-    <span class="cv-btn-label">${escapeHtml(a.label)}</span>
-    <span class="cv-btn-cap">${escapeHtml(a.caption)}</span>
+  return `<button class="cv-btn ${a.cls ?? ''}" data-cv="${a.cv}" title="${escapeHtml(a.flag)}" style="--cv-accent:${a.accent};--cv-accent-soft:${a.accent}22">
+    <span class="cv-btn-ico">${svgIcon(a.icon)}</span>
+    <span class="cv-btn-text">
+      <span class="cv-btn-label">${escapeHtml(a.label)}</span>
+      <span class="cv-btn-cap">${escapeHtml(a.caption)}</span>
+    </span>
   </button>`;
 }
 
@@ -137,15 +155,21 @@ function renderActionGroup(title: string, actions: CavemanAction[]): string {
 function renderCavemanPanel(updateStatus: CavemanUpdateStatus | undefined): string {
   return `<div class="cv-panel cv-installer">
     <div class="cv-panel-head">
-      <h3>caveman — updates &amp; installer</h3>
+      <div class="cv-panel-title">
+        <span class="cv-panel-ico">${svgIcon('rocket')}</span>
+        <div>
+          <h3>Updates &amp; installer</h3>
+          <div class="cv-panel-sub">Manage the caveman plugin on this machine</div>
+        </div>
+      </div>
       <div class="cv-panel-actions">
-        <button id="check-update" class="cv-safe">Check for update</button>
-        <button class="cv-btn cv-primary" data-cv="force" title="--force (reinstall latest)">Update caveman</button>
+        <button id="check-update" class="cv-ghost">${svgIcon('refresh')}<span>Check for update</span></button>
+        <button class="cv-hero" data-cv="force" title="--force (reinstall latest)">${svgIcon('download')}<span>Update caveman</span></button>
       </div>
     </div>
     ${renderUpdateBanner(updateStatus)}
     ${renderActionGroup('Install', INSTALL_ACTIONS)}
-    ${renderActionGroup('Inspect (read-only)', INSPECT_ACTIONS)}
+    ${renderActionGroup('Inspect · read-only', INSPECT_ACTIONS)}
     ${renderActionGroup('Maintenance', MAINTAIN_ACTIONS)}
     <div class="muted cv-foot">Actions download and run the <b>latest</b> installer (<code>curl … main/install.sh | bash</code>) in a terminal; state-changing actions confirm first. Slash commands (<code>/caveman</code>, <code>/caveman-stats</code>, …) run inside Claude Code, not here. Savings are estimated (only <code>full</code> mode benchmarked, ≈65% output reduction) — output-token value, not billed.</div>
   </div>`;
@@ -363,23 +387,35 @@ function renderHtml(data: CombinedSavings, updateStatus?: CavemanUpdateStatus): 
   .chart { width: 100%; max-width: 640px; height: auto; }
   .axis { fill: var(--vscode-descriptionForeground); font-size: 10px; }
   .grid { stroke: var(--vscode-panel-border); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.6; }
-  .cv-panel { margin-top: 16px; padding: 14px 16px; border: 1px solid var(--vscode-panel-border); border-radius: 8px; background: var(--vscode-editorWidget-background); }
-  .cv-installer { border-left: 4px solid #4dabf7; }
-  .cv-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
-  .cv-panel-head h3 { margin: 0; }
-  .cv-panel-actions { display: flex; gap: 8px; }
-  .cv-group { margin-top: 10px; }
-  .cv-group-label { font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vscode-descriptionForeground); margin-bottom: 5px; }
-  .cv-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-  .cv-btn { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; line-height: 1.25; padding: 6px 12px; }
-  .cv-btn-label { font-weight: 600; }
-  .cv-btn-cap { font-size: 0.7rem; opacity: 0.72; }
-  .cv-primary { background: #4dabf7; color: #0b1a2b; border-color: #4dabf7; font-weight: 600; }
-  .cv-primary:hover { background: #74c0fc; }
-  .cv-safe { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
-  .cv-danger { background: #e0384522; color: #ff6b6b; border-color: #e0384555; }
-  .cv-danger:hover { background: #e0384533; }
-  .cv-foot { margin-top: 8px; }
+  .cv-ico { display: block; }
+  .cv-panel { margin-top: 18px; padding: 18px 20px; border: 1px solid var(--vscode-panel-border); border-radius: 12px; background: var(--vscode-editorWidget-background); }
+  .cv-installer { border-left: 3px solid #4dabf7; }
+  .cv-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .cv-panel-title { display: flex; align-items: center; gap: 12px; }
+  .cv-panel-ico { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: #4dabf71f; color: #4dabf7; flex: none; }
+  .cv-panel-ico .cv-ico { width: 20px; height: 20px; }
+  .cv-panel-title h3 { margin: 0; font-size: 1.02rem; }
+  .cv-panel-sub { font-size: 0.8rem; color: var(--vscode-descriptionForeground); margin-top: 2px; }
+  .cv-panel-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  #check-update, .cv-hero { display: inline-flex; align-items: center; gap: 7px; font-weight: 600; padding: 7px 14px; border-radius: 8px; }
+  #check-update .cv-ico, .cv-hero .cv-ico { width: 15px; height: 15px; }
+  .cv-ghost { background: transparent; color: var(--vscode-foreground); border: 1px solid var(--vscode-panel-border); }
+  .cv-ghost:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.14)); border-color: var(--vscode-focusBorder, #4dabf7); }
+  .cv-hero { background: #4dabf7; color: #08203a; border: 1px solid #4dabf7; box-shadow: 0 2px 10px #4dabf73d; }
+  .cv-hero:hover { background: #74c0fc; }
+  .cv-group { margin-top: 16px; }
+  .cv-group-label { display: flex; align-items: center; gap: 10px; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; color: var(--vscode-descriptionForeground); margin-bottom: 10px; }
+  .cv-group-label::after { content: ''; flex: 1; height: 1px; background: var(--vscode-panel-border); }
+  .cv-actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 10px; }
+  .cv-btn { display: flex; align-items: flex-start; gap: 11px; text-align: left; line-height: 1.3; padding: 12px 13px; border-radius: 10px; background: var(--vscode-editorWidget-background); border: 1px solid var(--vscode-panel-border); color: var(--vscode-foreground); transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease; }
+  .cv-btn:hover { border-color: var(--cv-accent, #4dabf7); transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,0.2); }
+  .cv-btn-ico { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; flex: none; background: var(--cv-accent-soft, #4dabf722); color: var(--cv-accent, #4dabf7); }
+  .cv-btn-ico .cv-ico { width: 18px; height: 18px; }
+  .cv-btn-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .cv-btn-label { font-weight: 600; font-size: 0.88rem; }
+  .cv-btn-cap { font-size: 0.73rem; color: var(--vscode-descriptionForeground); }
+  .cv-btn.cv-danger { background: #e0384510; border-color: #e0384533; }
+  .cv-foot { margin-top: 16px; padding: 10px 13px; border-radius: 8px; background: rgba(128,128,128,0.08); border-left: 2px solid var(--vscode-panel-border); line-height: 1.5; }
   .cv-month { margin: 12px 0 6px; }
   .cv-reset { opacity: 0.7; }
   .cv-history { margin-top: 14px; }
@@ -421,7 +457,7 @@ function renderHtml(data: CombinedSavings, updateStatus?: CavemanUpdateStatus): 
     const vscode = acquireVsCodeApi();
     document.getElementById('refresh').addEventListener('click', () => vscode.postMessage({ command: 'refresh' }));
     document.getElementById('check-update').addEventListener('click', () => vscode.postMessage({ command: 'checkUpdate' }));
-    document.querySelectorAll('.cv-btn').forEach(b =>
+    document.querySelectorAll('[data-cv]').forEach(b =>
       b.addEventListener('click', () => vscode.postMessage({ command: 'cavemanCli', action: b.getAttribute('data-cv') })));
   </script>
 </body>
