@@ -3,12 +3,20 @@ src/**
 tsconfig.json
 .gitignore
 .github/**
+.claude/**
 
 # Misc
 *.vsix
 .vscode/**
 node_modules/.package-lock.json
+package-lock.json
 
 # Sourcemaps not needed at runtime (big bytes, esp. gpt-tokenizer)
 **/*.js.map
 node_modules/**/*.ts
+
+# Keep only the CommonJS tokenizer runtime the extension actually requires.
+node_modules/gpt-tokenizer/src/**
+node_modules/gpt-tokenizer/esm/**
+node_modules/gpt-tokenizer/dist/**
+node_modules/gpt-tokenizer/data/**

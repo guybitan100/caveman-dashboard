@@ -157,6 +157,35 @@ function trackedMonthCount(rows: { month: string; savedTokens: number }[]): numb
   return rows.filter(r => r.savedTokens > 0).length;
 }
 
+function bestDay(rows: { day: string; savedTokens: number; savedUsd: number }[]): { day: string; savedTokens: number; savedUsd: number } | null {
+  if (!rows.length) return null;
+  return rows.reduce((best, row) => row.savedTokens > best.savedTokens ? row : best, rows[0]);
+}
+
+function dayDiff(prev: string, next: string): number {
+  const prevTime = new Date(`${prev}T00:00:00Z`).getTime();
+  const nextTime = new Date(`${next}T00:00:00Z`).getTime();
+  return Math.round((nextTime - prevTime) / 86_400_000);
+}
+
+function activeStreak(rows: { day: string; savedTokens: number }[]): number {
+  let streak = 0;
+  let expectedDay: string | null = null;
+  for (let i = rows.length - 1; i >= 0; i -= 1) {
+    const row = rows[i];
+    if (row.savedTokens <= 0) break;
+    if (expectedDay && dayDiff(row.day, expectedDay) !== 1) break;
+    streak += 1;
+    expectedDay = row.day;
+  }
+  return streak;
+}
+
+function sharePct(part: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.round((part / total) * 100);
+}
+
 function renderOverviewLead(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
   const leader = claude.savedTokens >= copilot.savedTokens ? 'Claude Code is leading savings this month.' : 'GitHub Copilot is leading savings this month.';
   const confidence = claude.source === 'ledger'
@@ -167,7 +196,7 @@ function renderOverviewLead(claude: CavemanSavings, copilot: CopilotSavings, cos
   const costView = cost ? 'USD projection is enabled for Claude.' : 'USD projection is currently hidden.';
   return `<div class="cv-page-intro">
     <div>
-      <div class="cv-page-eyebrow">Overview</div>
+      <div class="cv-page-eyebrow">Executive summary</div>
       <h2 class="cv-page-title">Current month performance</h2>
       <div class="cv-page-copy">A high-signal snapshot of provider savings, usage coverage, and whether the current month is trending above the last one.</div>
     </div>
@@ -179,10 +208,96 @@ function renderOverviewLead(claude: CavemanSavings, copilot: CopilotSavings, cos
   </div>`;
 }
 
+function renderClaudeInsights(claude: CavemanSavings, cost: boolean): string {
+  const best = bestMonth(claude.byMonth);
+  const day = bestDay(claude.byDay);
+  const streak = activeStreak(claude.byDay);
+  const confidence = claude.source === 'ledger'
+    ? 'Highest confidence'
+    : claude.source === 'mixed'
+      ? 'Good confidence'
+      : claude.source === 'estimated'
+        ? 'Estimated only'
+        : 'Waiting for signal';
+  const recommendation = !claude.installed
+    ? 'Install caveman on this machine first.'
+    : !claude.activeMode
+      ? 'Turn caveman mode on before the next Claude session.'
+      : !claude.active
+        ? 'Run at least one Claude session, then refresh.'
+        : cost
+          ? 'Use the USD chart to spot the most expensive save windows.'
+          : 'Enable cost view if you want dollar-impact context.';
+  return `<div class="cv-insight-grid">
+    <div class="cv-mini-card">
+      <span class="cv-mini-label">Best month</span>
+      <strong class="cv-mini-value">${best ? fmtTokens(best.savedTokens) : '—'}</strong>
+      <small class="cv-mini-copy">${best ? escapeHtml(fmtMonth(best.month)) : 'No monthly history yet.'}</small>
+    </div>
+    <div class="cv-mini-card">
+      <span class="cv-mini-label">Best day</span>
+      <strong class="cv-mini-value">${day ? fmtTokens(day.savedTokens) : '—'}</strong>
+      <small class="cv-mini-copy">${day ? escapeHtml(day.day) : 'No daily activity yet.'}</small>
+    </div>
+    <div class="cv-mini-card">
+      <span class="cv-mini-label">Current streak</span>
+      <strong class="cv-mini-value">${streak > 0 ? `${streak} day${streak === 1 ? '' : 's'}` : 'No streak yet'}</strong>
+      <small class="cv-mini-copy">${escapeHtml(confidence)} from the current Claude signal.</small>
+    </div>
+    <div class="cv-mini-card cv-mini-card-wide">
+      <span class="cv-mini-label">Suggested focus</span>
+      <strong class="cv-mini-value">${escapeHtml(recommendation)}</strong>
+      <small class="cv-mini-copy">Keep Claude usage measurable and comparable month over month.</small>
+    </div>
+  </div>`;
+}
+
+function renderCopilotInsights(copilot: CopilotSavings): string {
+  const best = bestMonth(copilot.byMonth);
+  const day = bestDay(copilot.byDay);
+  const streak = activeStreak(copilot.byDay);
+  const avgPerTurn = copilot.turns > 0 ? Math.round(copilot.savedTokens / copilot.turns) : 0;
+  const recommendation = !copilot.active
+    ? 'Use Copilot for a few chats so the dashboard has transcript signal to score.'
+    : !copilot.models.length
+      ? 'Model metadata is thin; compare another session before trusting trend shape.'
+      : 'Compare token savings per turn against Claude to see where caveman matters more.';
+  return `<div class="cv-insight-grid">
+    <div class="cv-mini-card">
+      <span class="cv-mini-label">Best month</span>
+      <strong class="cv-mini-value">${best ? fmtTokens(best.savedTokens) : '—'}</strong>
+      <small class="cv-mini-copy">${best ? escapeHtml(fmtMonth(best.month)) : 'No monthly history yet.'}</small>
+    </div>
+    <div class="cv-mini-card">
+      <span class="cv-mini-label">Best day</span>
+      <strong class="cv-mini-value">${day ? fmtTokens(day.savedTokens) : '—'}</strong>
+      <small class="cv-mini-copy">${day ? escapeHtml(day.day) : 'No daily activity yet.'}</small>
+    </div>
+    <div class="cv-mini-card">
+      <span class="cv-mini-label">Saved per turn</span>
+      <strong class="cv-mini-value">${copilot.turns > 0 ? fmtTokens(avgPerTurn) : '—'}</strong>
+      <small class="cv-mini-copy">${streak > 0 ? `${streak} active day${streak === 1 ? '' : 's'} in the current streak.` : 'No active streak yet.'}</small>
+    </div>
+    <div class="cv-mini-card cv-mini-card-wide">
+      <span class="cv-mini-label">Suggested focus</span>
+      <strong class="cv-mini-value">${escapeHtml(recommendation)}</strong>
+      <small class="cv-mini-copy">Copilot is projection-based, so consistency matters more than a single spike.</small>
+    </div>
+  </div>`;
+}
+
 function renderOverviewHighlights(claude: CavemanSavings, copilot: CopilotSavings): string {
   const totalCurrent = claude.savedTokens + copilot.savedTokens;
   const prev = prevMonthKey(claude.currentMonth);
   const totalPrevious = savedInMonth(claude.byMonth, prev) + savedInMonth(copilot.byMonth, prev);
+  const claudeShare = sharePct(claude.savedTokens, totalCurrent);
+  const copilotShare = sharePct(copilot.savedTokens, totalCurrent);
+  const bestClaudeDay = bestDay(claude.byDay);
+  const bestCopilotDay = bestDay(copilot.byDay);
+  const strongestDay = !bestCopilotDay || (bestClaudeDay && bestClaudeDay.savedTokens >= bestCopilotDay.savedTokens)
+    ? (bestClaudeDay ? `Claude · ${fmtTokens(bestClaudeDay.savedTokens)} on ${bestClaudeDay.day.slice(5)}` : 'No active day yet')
+    : `Copilot · ${fmtTokens(bestCopilotDay.savedTokens)} on ${bestCopilotDay.day.slice(5)}`;
+  const streak = Math.max(activeStreak(claude.byDay), activeStreak(copilot.byDay));
   const trend = totalPrevious > 0
     ? `${Math.abs(Math.round(((totalCurrent - totalPrevious) / totalPrevious) * 100))}% ${totalCurrent >= totalPrevious ? 'above' : 'below'} last month`
     : 'No previous-month baseline yet';
@@ -193,7 +308,6 @@ function renderOverviewHighlights(claude: CavemanSavings, copilot: CopilotSaving
       : !copilot.active
         ? 'Copilot has no transcript signal yet; use it for a few turns to estimate impact.'
         : 'Review provider split and compare it with the monthly history tab.';
-  const coverage = `${claude.sessions} Claude sessions · ${copilot.sessions} Copilot chats · ${copilot.turns} Copilot turns`;
   return `<div class="cv-insight-grid">
     <div class="cv-mini-card">
       <span class="cv-mini-label">Momentum</span>
@@ -201,11 +315,22 @@ function renderOverviewHighlights(claude: CavemanSavings, copilot: CopilotSaving
       <small class="cv-mini-copy">Based on combined current-month savings across both providers.</small>
     </div>
     <div class="cv-mini-card">
-      <span class="cv-mini-label">Coverage</span>
-      <strong class="cv-mini-value">${escapeHtml(coverage)}</strong>
-      <small class="cv-mini-copy">Use this to judge whether the snapshot is representative or still sparse.</small>
+      <span class="cv-mini-label">Provider share</span>
+      <strong class="cv-mini-value">Claude ${claudeShare}% · Copilot ${copilotShare}%</strong>
+      <small class="cv-mini-copy">Current-month saved-token contribution split across providers.</small>
+      <div class="cv-share-bar" aria-hidden="true"><span style="width:${claudeShare}%"></span></div>
     </div>
     <div class="cv-mini-card">
+      <span class="cv-mini-label">Best day</span>
+      <strong class="cv-mini-value">${escapeHtml(strongestDay)}</strong>
+      <small class="cv-mini-copy">Highest single-day saved-token spike across the current month.</small>
+    </div>
+    <div class="cv-mini-card">
+      <span class="cv-mini-label">Active streak</span>
+      <strong class="cv-mini-value">${streak > 0 ? `${streak} day${streak === 1 ? '' : 's'}` : 'No streak yet'}</strong>
+      <small class="cv-mini-copy">Consecutive active days ending on the latest recorded day with savings.</small>
+    </div>
+    <div class="cv-mini-card cv-mini-card-wide">
       <span class="cv-mini-label">Recommended next move</span>
       <strong class="cv-mini-value">${escapeHtml(recommendation)}</strong>
       <small class="cv-mini-copy">The dashboard should tell developers what to do next, not only what happened.</small>
@@ -345,6 +470,8 @@ function renderHistoryTab(claude: CavemanSavings, copilot: CopilotSavings, cost:
   const copilotHistory = renderMonthlyHistory(copilot.byMonth, copilot.currentMonth, false);
   const claudeBest = bestMonth(claude.byMonth);
   const copilotBest = bestMonth(copilot.byMonth);
+  const claudeBestDay = bestDay(claude.byDay);
+  const copilotBestDay = bestDay(copilot.byDay);
   const totalTrackedMonths = Math.max(trackedMonthCount(claude.byMonth), trackedMonthCount(copilot.byMonth));
   const leader = (claudeBest?.savedTokens ?? 0) >= (copilotBest?.savedTokens ?? 0)
     ? `Claude peak: ${claudeBest ? `${fmtTokens(claudeBest.savedTokens)} in ${fmtMonth(claudeBest.month)}` : 'No peak yet'}`
@@ -370,6 +497,9 @@ function renderHistoryTab(claude: CavemanSavings, copilot: CopilotSavings, cost:
       <div class="card accent-green"><span>Claude best month</span><b>${claudeBest ? fmtTokens(claudeBest.savedTokens) : '—'}</b><small>${claudeBest ? escapeHtml(fmtMonth(claudeBest.month)) : 'No historical data yet'}</small></div>
       <div class="card accent-purple"><span>Copilot best month</span><b>${copilotBest ? fmtTokens(copilotBest.savedTokens) : '—'}</b><small>${copilotBest ? escapeHtml(fmtMonth(copilotBest.month)) : 'No historical data yet'}</small></div>
       <div class="card accent-blue"><span>Tracked calendar months</span><b>${totalTrackedMonths}</b><small>Months with non-zero recorded savings</small></div>
+      <div class="card accent-orange"><span>Claude best day</span><b>${claudeBestDay ? fmtTokens(claudeBestDay.savedTokens) : '—'}</b><small>${claudeBestDay ? escapeHtml(claudeBestDay.day) : 'No daily history yet'}</small></div>
+      <div class="card accent-purple"><span>Copilot best day</span><b>${copilotBestDay ? fmtTokens(copilotBestDay.savedTokens) : '—'}</b><small>${copilotBestDay ? escapeHtml(copilotBestDay.day) : 'No daily history yet'}</small></div>
+      <div class="card accent-green"><span>Longest active streak</span><b>${Math.max(activeStreak(claude.byDay), activeStreak(copilot.byDay))}</b><small>Current consecutive active days across both providers</small></div>
     </div>
     <div class="provider-grid">
     ${block(renderProviderHeader('Claude Code', 'Saved output tokens by month.', 'layers'), claudeHistory)}
@@ -513,6 +643,114 @@ function renderSignalRail(claude: CavemanSavings, copilot: CopilotSavings, cost:
   </aside>`;
 }
 
+function renderClaudeRail(claude: CavemanSavings, cost: boolean): string {
+  const best = bestMonth(claude.byMonth);
+  const costLine = cost ? `${money(claude.savedUsd)} estimated saved this month.` : 'Cost view is hidden for this session.';
+  const historyLine = best ? `Best month so far: ${fmtMonth(best.month)}.` : 'Need more than one active month for a real trend.';
+  return `<aside class="cv-signal-rail">
+    <div class="cv-rail-card">
+      <div class="cv-rail-eyebrow">Signal quality</div>
+      <h3>Claude readout</h3>
+      <div class="cv-rail-line"><span>Source</span><strong>${escapeHtml(claude.source)}</strong></div>
+      <div class="cv-rail-line"><span>Mode</span><strong>${escapeHtml(claude.activeMode ?? 'off')}</strong></div>
+      <div class="cv-rail-line"><span>Cost lens</span><strong>${escapeHtml(costLine)}</strong></div>
+    </div>
+    <div class="cv-rail-card">
+      <div class="cv-rail-eyebrow">What to watch</div>
+      <h3>Claude operating notes</h3>
+      <div class="cv-step">1. Favor ledger-backed months when comparing savings.</div>
+      <div class="cv-step">2. Track whether active mode stays on across sessions.</div>
+      <div class="cv-step">3. ${escapeHtml(historyLine)}</div>
+    </div>
+  </aside>`;
+}
+
+function renderCopilotRail(copilot: CopilotSavings): string {
+  const models = copilot.models.length ? copilot.models.join(', ') : 'No model metadata yet';
+  const avgOutput = copilot.sessions > 0 ? fmtTokens(Math.round(copilot.outputTokens / copilot.sessions)) : '—';
+  const historyLine = trackedMonthCount(copilot.byMonth) > 1
+    ? 'Monthly trend is ready for cross-month comparison.'
+    : 'One more active month will make the trend more meaningful.';
+  return `<aside class="cv-signal-rail">
+    <div class="cv-rail-card">
+      <div class="cv-rail-eyebrow">Signal quality</div>
+      <h3>Copilot readout</h3>
+      <div class="cv-rail-line"><span>Models</span><strong>${escapeHtml(models)}</strong></div>
+      <div class="cv-rail-line"><span>Avg output / chat</span><strong>${escapeHtml(avgOutput)}</strong></div>
+      <div class="cv-rail-line"><span>Billing lens</span><strong>Subscription only</strong></div>
+    </div>
+    <div class="cv-rail-card">
+      <div class="cv-rail-eyebrow">What to watch</div>
+      <h3>Copilot operating notes</h3>
+      <div class="cv-step">1. Saved tokens are projected, not ledger-recorded.</div>
+      <div class="cv-step">2. Compare output-token volume, not USD, across sessions.</div>
+      <div class="cv-step">3. ${escapeHtml(historyLine)}</div>
+    </div>
+  </aside>`;
+}
+
+function renderClaudeTab(claude: CavemanSavings, cost: boolean): string {
+  const confidence = claude.source === 'ledger'
+    ? 'Ledger-backed'
+    : claude.source === 'mixed'
+      ? 'Ledger + estimate'
+      : claude.source === 'estimated'
+        ? 'Estimate-only'
+        : 'No signal yet';
+  const usdState = cost ? 'USD view on' : 'USD view off';
+  const mode = claude.activeMode ? `Mode ${claude.activeMode}` : 'Mode inactive';
+  return `<div class="cv-overview">
+    <div>
+    <div class="cv-page-intro">
+      <div>
+        <div class="cv-page-eyebrow">Claude Code</div>
+        <h2 class="cv-page-title">Measured caveman savings</h2>
+        <div class="cv-page-copy">This view is dedicated to Claude Code usage, with caveman session detection, measured saved tokens, and optional USD estimates from the local ledger.</div>
+      </div>
+      <div class="cv-inline-facts">
+        <span class="cv-inline-pill">${escapeHtml(confidence)}</span>
+        <span class="cv-inline-pill">${escapeHtml(mode)}</span>
+        <span class="cv-inline-pill">${escapeHtml(usdState)}</span>
+      </div>
+    </div>
+    ${renderClaudeInsights(claude, cost)}
+    <section class="cv-provider">
+      ${renderProviderHeader('Claude Code', 'Measured from caveman activity and local ledger history.', 'layers')}
+      ${renderClaude(claude, cost)}
+    </section>
+    </div>
+    ${renderClaudeRail(claude, cost)}
+  </div>`;
+}
+
+function renderCopilotTab(copilot: CopilotSavings): string {
+  const modelLabel = copilot.models.length ? `${copilot.models.length} model${copilot.models.length === 1 ? '' : 's'} seen` : 'No models seen yet';
+  const activity = copilot.active ? `${copilot.sessions} chats · ${copilot.turns} turns` : 'No chat activity yet';
+  const config = copilot.configured ? 'caveman installed' : 'caveman not installed';
+  return `<div class="cv-overview">
+    <div>
+    <div class="cv-page-intro">
+      <div>
+        <div class="cv-page-eyebrow">GitHub Copilot</div>
+        <h2 class="cv-page-title">Projected transcript-based savings</h2>
+        <div class="cv-page-copy">This view isolates GitHub Copilot activity using local chat transcripts, real tokenizer counts for output tokens, and a projected caveman compression impact.</div>
+      </div>
+      <div class="cv-inline-facts">
+        <span class="cv-inline-pill">${escapeHtml(modelLabel)}</span>
+        <span class="cv-inline-pill">${escapeHtml(activity)}</span>
+        <span class="cv-inline-pill">${escapeHtml(config)}</span>
+      </div>
+    </div>
+    ${renderCopilotInsights(copilot)}
+    <section class="cv-provider">
+      ${renderProviderHeader('GitHub Copilot', 'Estimated from local chat transcripts and tokenizer counts.', 'package')}
+      ${renderCopilot(copilot)}
+    </section>
+    </div>
+    ${renderCopilotRail(copilot)}
+  </div>`;
+}
+
 function renderProviderHeader(title: string, subtitle: string, icon: string): string {
   return `<div class="cv-provider-head">
     <div class="cv-provider-mark">${svgIcon(icon)}</div>
@@ -556,6 +794,8 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); padding: 18px 20px 28px; background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--vscode-button-background) 16%, transparent), transparent 34%),
     linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 88%, transparent), transparent 240px); }
+  .cv-shell { opacity: 0; transform: translateY(8px); transition: opacity 220ms ease, transform 260ms cubic-bezier(.2,.8,.2,1); }
+  body.cv-ready .cv-shell { opacity: 1; transform: translateY(0); }
   h1 { font-size: 1.75rem; margin: 0 0 8px; line-height: 1.08; letter-spacing: -0.02em; }
   h2 { font-size: 1.05rem; margin: 22px 0 8px; border-bottom: 1px solid var(--vscode-panel-border); padding-bottom: 4px; }
   h3 { font-size: 0.95rem; margin: 12px 0 4px; }
@@ -571,11 +811,14 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-page-copy { margin-top: 5px; max-width: 72ch; color: var(--vscode-descriptionForeground); line-height: 1.55; font-size: 0.9rem; }
   .cv-inline-facts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
   .cv-inline-pill { display: inline-flex; align-items: center; min-height: 28px; padding: 4px 10px; border-radius: 999px; background: rgba(128,128,128,0.08); border: 1px solid var(--vscode-panel-border); color: var(--vscode-descriptionForeground); font-size: 0.76rem; font-weight: 600; }
-  .cv-insight-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 16px; }
-  .cv-mini-card { padding: 14px 15px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 82%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 95%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 4%)); box-shadow: 0 6px 18px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 6px; }
+  .cv-insight-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin: 0 0 16px; }
+  .cv-mini-card { grid-column: span 2; padding: 14px 15px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 82%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 95%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 4%)); box-shadow: 0 6px 18px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 6px; }
+  .cv-mini-card-wide { grid-column: span 2; }
   .cv-mini-label { color: #8ecae6; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.71rem; font-weight: 700; }
   .cv-mini-value { font-size: 0.95rem; line-height: 1.45; }
   .cv-mini-copy { color: var(--vscode-descriptionForeground); font-size: 0.75rem; line-height: 1.45; }
+  .cv-share-bar { width: 100%; height: 8px; border-radius: 999px; background: rgba(128,128,128,0.14); overflow: hidden; margin-top: 2px; }
+  .cv-share-bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #51cf66, #4dabf7); }
   .toolbar { display: flex; gap: 8px; margin: 0; }
   .cv-hero-shell { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: end; padding: 22px 22px 18px; border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 88%, transparent); border-radius: 18px; background: linear-gradient(135deg, color-mix(in srgb, var(--vscode-editorWidget-background) 94%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 4%)); box-shadow: 0 14px 40px rgba(0,0,0,0.16); }
   .cv-kicker { color: #ffa94d; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.72rem; font-weight: 700; margin-bottom: 8px; }
@@ -590,9 +833,11 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-tab { background: transparent; color: var(--vscode-descriptionForeground); border: none; border-radius: 10px; padding: 8px 14px; font-weight: 700; }
   .cv-tab:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.12)); color: var(--vscode-foreground); }
   .cv-tab-active { color: #081b2c; background: linear-gradient(135deg, #7dd3fc, #4dabf7); box-shadow: 0 6px 18px #4dabf733; }
+  .cv-tabpanel.cv-panel-live { animation: cv-fade-up 220ms cubic-bezier(.2,.8,.2,1); }
   .cv-hidden { display: none; }
   button { font-family: inherit; font-size: 0.85rem; padding: 5px 12px; border: 1px solid var(--vscode-button-border, transparent); border-radius: 4px; cursor: pointer; background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
   button:hover { background: var(--vscode-button-hoverBackground); }
+  button:active { transform: translateY(1px) scale(0.995); }
   .cv-status { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 12px; }
   .cv-badge { font-size: 0.78rem; padding: 3px 10px; border-radius: 999px; border: 1px solid transparent; }
   .cv-on { background: #51cf6622; border-color: #51cf6655; color: #51cf66; }
@@ -684,6 +929,13 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-version-pill { text-decoration: none; text-transform: uppercase; letter-spacing: 0.6px; font-size: 0.72rem; font-weight: 600; color: var(--vscode-descriptionForeground); padding: 3px 11px; border: 1px solid var(--vscode-panel-border); border-radius: 999px; transition: border-color 0.15s ease, color 0.15s ease; }
   .cv-version-pill:hover { border-color: #c77dff; color: var(--vscode-foreground); }
   .cv-version-beta { text-transform: uppercase; letter-spacing: 0.6px; font-size: 0.72rem; font-weight: 700; color: #1a1205; background: #ffa94d; padding: 3px 11px; border-radius: 999px; }
+  @keyframes cv-fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cv-shell, .card, .cv-btn, .cv-tabpanel, button { animation: none !important; transition: none !important; transform: none !important; }
+  }
   @media (max-width: 980px) {
     .cv-overview, .provider-grid, .cv-hero-shell { grid-template-columns: 1fr; }
     .cv-hero-actions { justify-content: flex-start; }
@@ -695,6 +947,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     body { padding: 14px; }
     .cards { grid-template-columns: 1fr; }
     .cv-insight-grid { grid-template-columns: 1fr; }
+    .cv-mini-card, .cv-mini-card-wide { grid-column: auto; }
     .cv-shell { max-width: none; }
   }
 </style>
@@ -704,7 +957,9 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   ${renderHeaderHero(data, updateStatus)}
 
   <div class="cv-tabs" role="tablist">
-    <button class="cv-tab" data-tab="overview" role="tab">Overview</button>
+    <button class="cv-tab" data-tab="overview" role="tab">Executive summary</button>
+    <button class="cv-tab" data-tab="claude" role="tab">Claude Code</button>
+    <button class="cv-tab" data-tab="copilot" role="tab">GitHub Copilot</button>
     <button class="cv-tab" data-tab="history" role="tab">Monthly history</button>
     <button class="cv-tab" data-tab="updates" role="tab">Updates &amp; installer</button>
   </div>
@@ -715,20 +970,17 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
         ${renderOverviewLead(claude, copilot, cost)}
         ${renderTotals(claude, copilot, cost)}
         ${renderOverviewHighlights(claude, copilot)}
-
-        <div class="provider-grid">
-          <section class="cv-provider">
-            ${renderProviderHeader('Claude Code', 'Measured from caveman activity and local ledger history.', 'layers')}
-        ${renderClaude(claude, cost)}
-          </section>
-          <section class="cv-provider">
-            ${renderProviderHeader('GitHub Copilot', 'Estimated from local chat transcripts and tokenizer counts.', 'package')}
-        ${renderCopilot(copilot)}
-          </section>
-        </div>
       </div>
       ${renderSignalRail(claude, copilot, cost)}
     </div>
+  </section>
+
+  <section class="cv-tabpanel cv-hidden" data-panel="claude" role="tabpanel">
+    ${renderClaudeTab(claude, cost)}
+  </section>
+
+  <section class="cv-tabpanel cv-hidden" data-panel="copilot" role="tabpanel">
+    ${renderCopilotTab(copilot)}
   </section>
 
   <section class="cv-tabpanel" data-panel="history" role="tabpanel">
@@ -746,9 +998,18 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     const vscode = acquireVsCodeApi();
     const tabs = document.querySelectorAll('.cv-tab');
     const panels = document.querySelectorAll('.cv-tabpanel');
+    requestAnimationFrame(() => document.body.classList.add('cv-ready'));
     function activateTab(tab) {
       tabs.forEach(t => t.classList.toggle('cv-tab-active', t.getAttribute('data-tab') === tab));
-      panels.forEach(p => p.classList.toggle('cv-hidden', p.getAttribute('data-panel') !== tab));
+      panels.forEach(p => {
+        const isActive = p.getAttribute('data-panel') === tab;
+        p.classList.toggle('cv-hidden', !isActive);
+        p.classList.remove('cv-panel-live');
+        if (isActive) {
+          void p.offsetWidth;
+          p.classList.add('cv-panel-live');
+        }
+      });
       vscode.setState({ ...(vscode.getState() || {}), activeTab: tab });
     }
     tabs.forEach(t => t.addEventListener('click', () => activateTab(t.getAttribute('data-tab'))));
