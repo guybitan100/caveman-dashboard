@@ -481,8 +481,8 @@ function renderHistoryTab(claude: CavemanSavings, copilot: CopilotSavings, cost:
   if (!claudeHistory && !copilotHistory) {
     return `<div class="cv-panel"><div class="muted cv-empty">No monthly history yet — a month-by-month breakdown appears once caveman has usage spanning more than one calendar month.</div></div>`;
   }
-  const block = (header: string, table: string) =>
-    table ? `<section class="cv-provider">${header}${table}</section>` : '';
+  const block = (header: string, insights: string, table: string) =>
+    table ? `<section class="cv-provider">${header}${insights}${table}</section>` : '';
   return `<div>
     <div class="cv-page-intro">
       <div>
@@ -504,8 +504,8 @@ function renderHistoryTab(claude: CavemanSavings, copilot: CopilotSavings, cost:
       <div class="card accent-green"><span>Longest active streak</span><b>${Math.max(activeStreak(claude.byDay), activeStreak(copilot.byDay))}</b><small>Current consecutive active days across both providers</small></div>
     </div>
     <div class="provider-grid">
-    ${block(renderProviderHeader('Claude Code', 'Saved output tokens by month.', 'layers'), claudeHistory)}
-    ${block(renderProviderHeader('GitHub Copilot', 'Estimated saved tokens by month.', 'package'), copilotHistory)}
+    ${block(renderProviderHeader('Claude Code', 'Saved output tokens by month.', 'layers'), renderClaudeInsights(claude, cost), claudeHistory)}
+    ${block(renderProviderHeader('GitHub Copilot', 'Estimated saved tokens by month.', 'package'), renderCopilotInsights(copilot), copilotHistory)}
     </div>
   </div>`;
 }
@@ -704,7 +704,6 @@ function renderClaudeTab(claude: CavemanSavings, cost: boolean): string {
         <span class="cv-inline-pill">${escapeHtml(usdState)}</span>
       </div>
     </div>
-    ${renderClaudeInsights(claude, cost)}
     <section class="cv-provider">
       ${renderProviderHeader('Claude Code', 'Measured from caveman activity and local ledger history.', 'layers')}
       ${renderClaude(claude, cost)}
@@ -738,7 +737,6 @@ function renderCopilotTab(copilot: CopilotSavings): string {
       ${renderProviderHeader('GitHub Copilot', 'Estimated from local chat transcripts and tokenizer counts.', 'package')}
       ${renderCopilot(copilot)}
     </section>
-    ${renderCopilotInsights(copilot)}
     </div>
     ${renderCopilotRail(copilot)}
   </div>`;
