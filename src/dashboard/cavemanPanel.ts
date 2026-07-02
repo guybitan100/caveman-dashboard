@@ -669,8 +669,7 @@ function renderClaudeTab(claude: CavemanSavings, cost: boolean): string {
         : 'No signal yet';
   const usdState = cost ? 'USD view on' : 'USD view off';
   const mode = claude.activeMode ? `Mode ${claude.activeMode}` : 'Mode inactive';
-  return `<div class="cv-overview">
-    <div>
+  return `<div>
     <div class="cv-page-intro">
       <div>
         <div class="cv-page-eyebrow">Claude Code</div>
@@ -687,7 +686,6 @@ function renderClaudeTab(claude: CavemanSavings, cost: boolean): string {
       ${renderProviderHeader('Claude Code', 'Measured from caveman activity and local ledger history.', 'layers')}
       ${renderClaude(claude, cost)}
     </section>
-    </div>
   </div>`;
 }
 
