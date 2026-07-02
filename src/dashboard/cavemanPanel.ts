@@ -276,15 +276,13 @@ function renderClaude(c: CavemanSavings, cost: boolean): string {
       : days.length === 1
         ? `<div class="muted cv-note">Daily savings trend appears after 2+ days — <b>${money(c.byDay[0].savedUsd)}</b> saved so far on ${escapeHtml(c.byDay[0].day.slice(5))}.</div>`
         : '';
-  const history = renderMonthlyHistory(c.byMonth, c.currentMonth, cost);
   return `${renderClaudeStatus(c)}
     <div class="cards">
       ${cost ? `<div class="card accent-green"><span>Saved (USD)</span><b>${money(c.savedUsd)}</b><small>${srcLabel}</small></div>` : ''}
       <div class="card accent-purple"><span>Saved Output Tokens</span><b>${fmtTokens(c.savedTokens)}</b></div>
       <div class="card accent-blue"><span>Sessions</span><b>${c.sessions}</b></div>
     </div>
-    ${chart}
-    ${history}`;
+    ${chart}`;
 }
 
 function renderCopilot(c: CopilotSavings): string {
@@ -332,6 +330,77 @@ function renderUpdateBanner(status: CavemanUpdateStatus | undefined): string {
   return `<div class="cv-update cv-update-new">Update available: <code>${escapeHtml(shortSha(status.installedSha))}</code> → <code>${escapeHtml(shortSha(status.latestSha))}</code>${link}. Use <b>Update caveman</b> to install the latest.</div>`;
 }
 
+function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined): string {
+  const { claude, copilot } = data;
+  const totalSessions = claude.sessions + copilot.sessions;
+  const month = fmtMonth(claude.currentMonth);
+  const updateLabel = !updateStatus
+    ? 'Update status unknown'
+    : updateStatus.error
+      ? 'Update check failed'
+      : !updateStatus.installed
+        ? 'caveman not installed'
+        : updateStatus.updateAvailable
+          ? 'Update available'
+          : 'Up to date';
+  const modeLabel = claude.activeMode ? `Claude mode: ${claude.activeMode}` : 'Claude mode inactive';
+  return `<section class="cv-hero-shell">
+    <div class="cv-hero-main">
+      <div class="cv-kicker">Developer telemetry for caveman compression</div>
+      <h1>Caveman Dashboard</h1>
+      <div class="cv-hero-copy">Track real Claude savings, compare them with estimated Copilot impact, and keep the caveman install path close to the data.</div>
+      <div class="cv-hero-chips">
+        <span class="cv-chip cv-chip-good">${escapeHtml(month)}</span>
+        <span class="cv-chip">${escapeHtml(modeLabel)}</span>
+        <span class="cv-chip">${totalSessions} total sessions observed</span>
+        <span class="cv-chip">${escapeHtml(updateLabel)}</span>
+      </div>
+    </div>
+    <div class="cv-hero-actions">
+      <button class="cv-ghost cv-cta" data-command="checkUpdate">${svgIcon('refresh')}<span>Check update</span></button>
+      <button class="cv-hero cv-cta" data-command="refresh">${svgIcon('download')}<span>Refresh dashboard</span></button>
+    </div>
+  </section>`;
+}
+
+function renderSignalRail(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
+  const claudeConfidence = claude.source === 'ledger'
+    ? 'High confidence · ledger-backed'
+    : claude.source === 'mixed'
+      ? 'Mixed confidence · ledger + estimate'
+      : 'Estimated only';
+  const costLine = cost ? 'USD estimate is enabled for Claude.' : 'USD estimate is off for cleaner token-only review.';
+  const copilotLine = copilot.active
+    ? `Copilot savings are projected from ${copilot.turns} turns.`
+    : 'Copilot has no local chats in scope yet.';
+  return `<aside class="cv-signal-rail">
+    <div class="cv-rail-card">
+      <div class="cv-rail-eyebrow">Read this first</div>
+      <h3>Signal quality</h3>
+      <div class="cv-rail-line"><span>Claude</span><strong>${escapeHtml(claudeConfidence)}</strong></div>
+      <div class="cv-rail-line"><span>Copilot</span><strong>${escapeHtml(copilotLine)}</strong></div>
+      <div class="cv-rail-line"><span>Cost view</span><strong>${escapeHtml(costLine)}</strong></div>
+    </div>
+    <div class="cv-rail-card">
+      <div class="cv-rail-eyebrow">Workflow</div>
+      <h3>Recommended loop</h3>
+      <div class="cv-step">1. Run Claude or Copilot with caveman enabled.</div>
+      <div class="cv-step">2. Refresh to re-read local logs and transcripts.</div>
+      <div class="cv-step">3. Use monthly history to compare adoption over time.</div>
+    </div>
+  </aside>`;
+}
+
+function renderProviderHeader(title: string, subtitle: string, icon: string): string {
+  return `<div class="cv-provider-head">
+    <div class="cv-provider-mark">${svgIcon(icon)}</div>
+    <div>
+      <h2>${escapeHtml(title)}</h2>
+      <div class="muted cv-provider-sub">${escapeHtml(subtitle)}</div>
+    </div>
+  </div>`;
+}
+
 // Upstream caveman plugin — linked from the footer badge.
 const CAVEMAN_REPO = 'https://github.com/JuliusBrussee/caveman';
 
@@ -361,19 +430,32 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
 <title>Caveman Dashboard</title>
 <style>
   :root { color-scheme: light dark; }
-  body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); padding: 16px 20px; }
-  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  * { box-sizing: border-box; }
+  body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); padding: 18px 20px 28px; background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--vscode-button-background) 16%, transparent), transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 88%, transparent), transparent 240px); }
+  h1 { font-size: 1.75rem; margin: 0 0 8px; line-height: 1.08; letter-spacing: -0.02em; }
   h2 { font-size: 1.05rem; margin: 22px 0 8px; border-bottom: 1px solid var(--vscode-panel-border); padding-bottom: 4px; }
   h3 { font-size: 0.95rem; margin: 12px 0 4px; }
   .muted { color: var(--vscode-descriptionForeground); font-size: 0.85rem; }
   em { font-style: normal; opacity: 0.7; font-size: 0.85em; }
   a { color: var(--vscode-textLink-foreground); }
   code { background: var(--vscode-textCodeBlock-background); padding: 1px 4px; border-radius: 3px; }
-  .toolbar { display: flex; gap: 8px; margin: 12px 0; }
-  .cv-tabs { display: flex; gap: 4px; margin: 14px 0 6px; border-bottom: 1px solid var(--vscode-panel-border); }
-  .cv-tab { background: transparent; color: var(--vscode-descriptionForeground); border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 14px; font-weight: 600; }
+  .cv-shell { max-width: 1240px; margin: 0 auto; }
+  .toolbar { display: flex; gap: 8px; margin: 0; }
+  .cv-hero-shell { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: end; padding: 22px 22px 18px; border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 88%, transparent); border-radius: 18px; background: linear-gradient(135deg, color-mix(in srgb, var(--vscode-editorWidget-background) 94%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 4%)); box-shadow: 0 14px 40px rgba(0,0,0,0.16); }
+  .cv-kicker { color: #ffa94d; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.72rem; font-weight: 700; margin-bottom: 8px; }
+  .cv-hero-copy { max-width: 68ch; color: var(--vscode-descriptionForeground); line-height: 1.55; font-size: 0.95rem; }
+  .cv-hero-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .cv-chip { display: inline-flex; align-items: center; min-height: 30px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--vscode-panel-border); background: color-mix(in srgb, var(--vscode-editor-background) 55%, transparent); color: var(--vscode-descriptionForeground); font-size: 0.77rem; font-weight: 600; }
+  .cv-chip-good { color: #9ae6b4; border-color: #51cf6655; background: #51cf6616; }
+  .cv-hero-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+  .cv-cta { min-height: 38px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 10px; font-weight: 700; }
+  .cv-cta .cv-ico { width: 15px; height: 15px; }
+  .cv-tabs { display: inline-flex; gap: 6px; margin: 18px 0 10px; padding: 6px; border: 1px solid var(--vscode-panel-border); border-radius: 14px; background: color-mix(in srgb, var(--vscode-editorWidget-background) 88%, transparent); }
+  .cv-tab { background: transparent; color: var(--vscode-descriptionForeground); border: none; border-radius: 10px; padding: 8px 14px; font-weight: 700; }
   .cv-tab:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.12)); color: var(--vscode-foreground); }
-  .cv-tab-active { color: var(--vscode-foreground); border-bottom-color: #4dabf7; }
+  .cv-tab-active { color: #081b2c; background: linear-gradient(135deg, #7dd3fc, #4dabf7); box-shadow: 0 6px 18px #4dabf733; }
   .cv-hidden { display: none; }
   button { font-family: inherit; font-size: 0.85rem; padding: 5px 12px; border: 1px solid var(--vscode-button-border, transparent); border-radius: 4px; cursor: pointer; background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
   button:hover { background: var(--vscode-button-hoverBackground); }
@@ -381,11 +463,12 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-badge { font-size: 0.78rem; padding: 3px 10px; border-radius: 999px; border: 1px solid transparent; }
   .cv-on { background: #51cf6622; border-color: #51cf6655; color: #51cf66; }
   .cv-off { background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
-  .cards { display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0 12px; }
-  .card { flex: 1 1 160px; min-width: 150px; padding: 12px 14px; border-radius: 8px; border-left: 4px solid var(--vscode-panel-border); background: var(--vscode-editorWidget-background); box-shadow: 0 1px 2px rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 3px; transition: box-shadow 0.15s ease, transform 0.15s ease; }
-  .card:hover { box-shadow: 0 3px 8px rgba(0,0,0,0.2); transform: translateY(-1px); }
+  .cv-overview { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; margin-top: 8px; }
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 8px 0 12px; }
+  .card { min-width: 0; padding: 14px 15px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 82%, transparent); border-left: 4px solid var(--vscode-panel-border); background: linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 92%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 4%)); box-shadow: 0 6px 18px rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 4px; transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease; }
+  .card:hover { box-shadow: 0 10px 26px rgba(0,0,0,0.18); transform: translateY(-2px); border-color: color-mix(in srgb, var(--vscode-focusBorder) 55%, var(--vscode-panel-border)); }
   .card span { font-size: 0.8rem; color: var(--vscode-descriptionForeground); }
-  .card b { font-size: 1.6rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .card b { font-size: 1.7rem; font-variant-numeric: tabular-nums; line-height: 1.05; letter-spacing: -0.02em; }
   .card small { font-size: 0.72rem; color: var(--vscode-descriptionForeground); }
   .accent-green { border-left-color: #51cf66; }
   .accent-purple { border-left-color: #b197fc; }
@@ -396,16 +479,29 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-down { color: #ffa94d; }
   .cv-flat { color: var(--vscode-descriptionForeground); }
   .cv-note, .cv-empty { padding: 12px 14px; background: var(--vscode-editorWidget-background); border-radius: 8px; }
-  .provider-grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; margin-top: 8px; }
-  .cv-provider { padding: 4px 16px 16px; border: 1px solid var(--vscode-panel-border); border-radius: 8px; background: var(--vscode-editorWidget-background); min-width: 0; }
-  .cv-provider h2 { margin-top: 12px; }
+  .provider-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; margin-top: 8px; }
+  .cv-provider { padding: 16px 16px 18px; border: 1px solid var(--vscode-panel-border); border-radius: 16px; background: linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 94%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 3%)); min-width: 0; box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
+  .cv-provider h2 { margin: 0; border-bottom: none; padding-bottom: 0; }
+  .cv-provider-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .cv-provider-mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; background: color-mix(in srgb, var(--vscode-button-background) 18%, transparent); color: var(--vscode-textLink-foreground); }
+  .cv-provider-mark .cv-ico { width: 18px; height: 18px; }
+  .cv-provider-sub { margin-top: 2px; }
   .cv-provider .cards { flex-direction: row; flex-wrap: wrap; }
   .cv-provider .card { flex: 1 1 160px; }
   .chart { width: 100%; max-width: 640px; height: auto; }
   .axis { fill: var(--vscode-descriptionForeground); font-size: 10px; }
   .grid { stroke: var(--vscode-panel-border); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.6; }
   .cv-ico { display: block; }
-  .cv-panel { margin-top: 18px; padding: 18px 20px; border: 1px solid var(--vscode-panel-border); border-radius: 12px; background: var(--vscode-editorWidget-background); }
+  .cv-signal-rail { display: grid; gap: 14px; }
+  .cv-rail-card { padding: 16px; border: 1px solid var(--vscode-panel-border); border-radius: 16px; background: linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 95%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 4%)); box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
+  .cv-rail-eyebrow { text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.69rem; font-weight: 700; color: #8ecae6; margin-bottom: 8px; }
+  .cv-rail-card h3 { margin: 0 0 10px; font-size: 0.98rem; }
+  .cv-rail-line, .cv-step { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid color-mix(in srgb, var(--vscode-panel-border) 75%, transparent); font-size: 0.83rem; line-height: 1.45; }
+  .cv-rail-line:first-of-type, .cv-step:first-of-type { border-top: none; padding-top: 0; }
+  .cv-rail-line span { color: var(--vscode-descriptionForeground); }
+  .cv-rail-line strong { text-align: right; font-size: 0.81rem; }
+  .cv-step { display: block; color: var(--vscode-descriptionForeground); }
+  .cv-panel { margin-top: 18px; padding: 18px 20px; border: 1px solid var(--vscode-panel-border); border-radius: 16px; background: linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 94%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 4%)); box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
   .cv-installer { border-left: 3px solid #4dabf7; }
   .cv-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
   .cv-panel-title { display: flex; align-items: center; gap: 12px; }
@@ -414,8 +510,6 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-panel-title h3 { margin: 0; font-size: 1.02rem; }
   .cv-panel-sub { font-size: 0.8rem; color: var(--vscode-descriptionForeground); margin-top: 2px; }
   .cv-panel-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-  #check-update, .cv-hero { display: inline-flex; align-items: center; gap: 7px; font-weight: 600; padding: 7px 14px; border-radius: 8px; }
-  #check-update .cv-ico, .cv-hero .cv-ico { width: 15px; height: 15px; }
   .cv-ghost { background: transparent; color: var(--vscode-foreground); border: 1px solid var(--vscode-panel-border); }
   .cv-ghost:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.14)); border-color: var(--vscode-focusBorder, #4dabf7); }
   .cv-hero { background: #4dabf7; color: #08203a; border: 1px solid #4dabf7; box-shadow: 0 2px 10px #4dabf73d; }
@@ -436,9 +530,10 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-month { margin: 12px 0 6px; }
   .cv-reset { opacity: 0.7; }
   .cv-history { margin-top: 14px; }
-  .cv-table { border-collapse: collapse; width: 100%; max-width: 520px; font-size: 0.85rem; margin-top: 4px; }
+  .cv-table { border-collapse: collapse; width: 100%; max-width: 100%; font-size: 0.85rem; margin-top: 6px; overflow: hidden; border-radius: 12px; }
   .cv-table th, .cv-table td { padding: 5px 10px; border-bottom: 1px solid var(--vscode-panel-border); text-align: left; }
   .cv-table th { color: var(--vscode-descriptionForeground); font-weight: 600; }
+  .cv-table tbody tr:hover { background: rgba(128,128,128,0.08); }
   .cv-table .num { text-align: right; font-variant-numeric: tabular-nums; }
   .cv-cur-row { background: #51cf6614; }
   .cv-cur { font-size: 0.7rem; color: #51cf66; border: 1px solid #51cf6655; border-radius: 999px; padding: 1px 6px; margin-left: 6px; }
@@ -452,11 +547,20 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-version-pill { text-decoration: none; text-transform: uppercase; letter-spacing: 0.6px; font-size: 0.72rem; font-weight: 600; color: var(--vscode-descriptionForeground); padding: 3px 11px; border: 1px solid var(--vscode-panel-border); border-radius: 999px; transition: border-color 0.15s ease, color 0.15s ease; }
   .cv-version-pill:hover { border-color: #c77dff; color: var(--vscode-foreground); }
   .cv-version-beta { text-transform: uppercase; letter-spacing: 0.6px; font-size: 0.72rem; font-weight: 700; color: #1a1205; background: #ffa94d; padding: 3px 11px; border-radius: 999px; }
+  @media (max-width: 980px) {
+    .cv-overview, .provider-grid, .cv-hero-shell { grid-template-columns: 1fr; }
+    .cv-hero-actions { justify-content: flex-start; }
+  }
+  @media (max-width: 760px) {
+    body { padding: 14px; }
+    .cards { grid-template-columns: 1fr; }
+    .cv-shell { max-width: none; }
+  }
 </style>
 </head>
 <body>
-  <h1>Caveman Dashboard</h1>
-  <div class="muted">Estimated savings from the <a href="https://github.com/JuliusBrussee/caveman">caveman</a> output-compression plugin, split by provider.</div>
+  <div class="cv-shell">
+  ${renderHeaderHero(data, updateStatus)}
 
   <div class="cv-tabs" role="tablist">
     <button class="cv-tab" data-tab="overview" role="tab">Overview</button>
@@ -464,21 +568,22 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   </div>
 
   <section class="cv-tabpanel" data-panel="overview" role="tabpanel">
-    <div class="toolbar">
-      <button id="refresh">Refresh</button>
-    </div>
+    <div class="cv-overview">
+      <div>
+        ${renderTotals(claude, copilot, cost)}
 
-    ${renderTotals(claude, copilot, cost)}
-
-    <div class="provider-grid">
-      <section class="cv-provider">
-        <h2>Claude Code</h2>
+        <div class="provider-grid">
+          <section class="cv-provider">
+            ${renderProviderHeader('Claude Code', 'Measured from caveman activity and local ledger history.', 'layers')}
         ${renderClaude(claude, cost)}
-      </section>
-      <section class="cv-provider">
-        <h2>GitHub Copilot <em>(estimated)</em></h2>
+          </section>
+          <section class="cv-provider">
+            ${renderProviderHeader('GitHub Copilot', 'Estimated from local chat transcripts and tokenizer counts.', 'package')}
         ${renderCopilot(copilot)}
-      </section>
+          </section>
+        </div>
+      </div>
+      ${renderSignalRail(claude, copilot, cost)}
     </div>
   </section>
 
@@ -487,6 +592,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   </section>
 
   ${renderVersionFooter(version, cavemanVersion)}
+  </div>
 
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
@@ -501,8 +607,10 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     // Restore the last-viewed tab so re-renders (Refresh, update check) keep the user in place.
     activateTab((vscode.getState() || {}).activeTab || 'overview');
 
-    document.getElementById('refresh').addEventListener('click', () => vscode.postMessage({ command: 'refresh' }));
-    document.getElementById('check-update').addEventListener('click', () => vscode.postMessage({ command: 'checkUpdate' }));
+    document.querySelectorAll('[data-command="refresh"]').forEach(b =>
+      b.addEventListener('click', () => vscode.postMessage({ command: 'refresh' })));
+    document.querySelectorAll('[data-command="checkUpdate"]').forEach(b =>
+      b.addEventListener('click', () => vscode.postMessage({ command: 'checkUpdate' })));
     document.querySelectorAll('[data-cv]').forEach(b =>
       b.addEventListener('click', () => vscode.postMessage({ command: 'cavemanCli', action: b.getAttribute('data-cv') })));
   </script>
