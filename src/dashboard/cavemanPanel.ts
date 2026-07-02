@@ -102,17 +102,54 @@ function getNonce(): string {
   return text;
 }
 
-// Installer CLI actions exposed as buttons. data-cv maps to cavemanDashboard.cavemanCli.
-const CAVEMAN_ACTIONS = `
-  <div class="cv-actions">
-    <button class="cv-btn" data-cv="install" title="--non-interactive">Install</button>
-    <button class="cv-btn" data-cv="all" title="--all (hooks + per-repo init)">Install + hooks/init</button>
-    <button class="cv-btn" data-cv="minimal" title="--minimal (plugin only)">Install minimal</button>
-    <button class="cv-btn cv-safe" data-cv="dry-run" title="--dry-run (no changes)">Dry run</button>
-    <button class="cv-btn cv-safe" data-cv="list" title="--list (provider matrix)">List providers</button>
-    <button class="cv-btn" data-cv="force" title="--force (reinstall)">Force reinstall</button>
-    <button class="cv-btn cv-danger" data-cv="uninstall" title="--uninstall">Uninstall</button>
+// Installer CLI actions, grouped by intent. data-cv maps to cavemanDashboard.cavemanCli.
+// Each action carries a caption so its effect is clear without hovering for the tooltip.
+type CavemanAction = { cv: string; label: string; caption: string; cls?: string; flag: string };
+const INSTALL_ACTIONS: CavemanAction[] = [
+  { cv: 'install', label: 'Install', caption: 'Plugin + defaults', flag: '--non-interactive' },
+  { cv: 'all', label: 'Install + hooks/init', caption: 'Hooks + per-repo init', flag: '--all' },
+  { cv: 'minimal', label: 'Install minimal', caption: 'Plugin only', flag: '--minimal' },
+];
+const INSPECT_ACTIONS: CavemanAction[] = [
+  { cv: 'dry-run', label: 'Dry run', caption: 'Preview — no changes', cls: 'cv-safe', flag: '--dry-run' },
+  { cv: 'list', label: 'List providers', caption: 'Provider matrix', cls: 'cv-safe', flag: '--list' },
+];
+const MAINTAIN_ACTIONS: CavemanAction[] = [
+  { cv: 'force', label: 'Force reinstall', caption: 'Overwrite latest', flag: '--force' },
+  { cv: 'uninstall', label: 'Uninstall', caption: 'Remove from machine', cls: 'cv-danger', flag: '--uninstall' },
+];
+
+function renderAction(a: CavemanAction): string {
+  return `<button class="cv-btn ${a.cls ?? ''}" data-cv="${a.cv}" title="${escapeHtml(a.flag)}">
+    <span class="cv-btn-label">${escapeHtml(a.label)}</span>
+    <span class="cv-btn-cap">${escapeHtml(a.caption)}</span>
+  </button>`;
+}
+
+function renderActionGroup(title: string, actions: CavemanAction[]): string {
+  return `<div class="cv-group">
+    <div class="cv-group-label">${escapeHtml(title)}</div>
+    <div class="cv-actions">${actions.map(renderAction).join('')}</div>
   </div>`;
+}
+
+/** Consolidated "updates & installer" panel: update check + banner + grouped CLI actions. */
+function renderCavemanPanel(updateStatus: CavemanUpdateStatus | undefined): string {
+  return `<div class="cv-panel cv-installer">
+    <div class="cv-panel-head">
+      <h3>caveman — updates &amp; installer</h3>
+      <div class="cv-panel-actions">
+        <button id="check-update" class="cv-safe">Check for update</button>
+        <button class="cv-btn cv-primary" data-cv="force" title="--force (reinstall latest)">Update caveman</button>
+      </div>
+    </div>
+    ${renderUpdateBanner(updateStatus)}
+    ${renderActionGroup('Install', INSTALL_ACTIONS)}
+    ${renderActionGroup('Inspect (read-only)', INSPECT_ACTIONS)}
+    ${renderActionGroup('Maintenance', MAINTAIN_ACTIONS)}
+    <div class="muted cv-foot">Actions download and run the <b>latest</b> installer (<code>curl … main/install.sh | bash</code>) in a terminal; state-changing actions confirm first. Slash commands (<code>/caveman</code>, <code>/caveman-stats</code>, …) run inside Claude Code, not here. Savings are estimated (only <code>full</code> mode benchmarked, ≈65% output reduction) — output-token value, not billed.</div>
+  </div>`;
+}
 
 /** Minimal inline SVG line chart for a single daily series. */
 function renderLineChart(
@@ -326,10 +363,22 @@ function renderHtml(data: CombinedSavings, updateStatus?: CavemanUpdateStatus): 
   .chart { width: 100%; max-width: 640px; height: auto; }
   .axis { fill: var(--vscode-descriptionForeground); font-size: 10px; }
   .grid { stroke: var(--vscode-panel-border); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.6; }
-  .cv-panel { margin-top: 16px; padding: 14px; border: 1px solid var(--vscode-panel-border); border-radius: 8px; }
-  .cv-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .cv-panel { margin-top: 16px; padding: 14px 16px; border: 1px solid var(--vscode-panel-border); border-radius: 8px; background: var(--vscode-editorWidget-background); }
+  .cv-installer { border-left: 4px solid #4dabf7; }
+  .cv-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  .cv-panel-head h3 { margin: 0; }
+  .cv-panel-actions { display: flex; gap: 8px; }
+  .cv-group { margin-top: 10px; }
+  .cv-group-label { font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vscode-descriptionForeground); margin-bottom: 5px; }
+  .cv-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cv-btn { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; line-height: 1.25; padding: 6px 12px; }
+  .cv-btn-label { font-weight: 600; }
+  .cv-btn-cap { font-size: 0.7rem; opacity: 0.72; }
+  .cv-primary { background: #4dabf7; color: #0b1a2b; border-color: #4dabf7; font-weight: 600; }
+  .cv-primary:hover { background: #74c0fc; }
   .cv-safe { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
   .cv-danger { background: #e0384522; color: #ff6b6b; border-color: #e0384555; }
+  .cv-danger:hover { background: #e0384533; }
   .cv-foot { margin-top: 8px; }
   .cv-month { margin: 12px 0 6px; }
   .cv-reset { opacity: 0.7; }
@@ -351,11 +400,9 @@ function renderHtml(data: CombinedSavings, updateStatus?: CavemanUpdateStatus): 
   <div class="muted">Estimated savings from the <a href="https://github.com/JuliusBrussee/caveman">caveman</a> output-compression plugin, split by provider.</div>
   <div class="toolbar">
     <button id="refresh">Refresh</button>
-    <button id="check-update" class="cv-safe">Check for caveman update</button>
-    <button class="cv-btn" data-cv="force" title="reinstall latest caveman (--force)">Update caveman</button>
   </div>
 
-  ${renderUpdateBanner(updateStatus)}
+  ${renderCavemanPanel(updateStatus)}
 
   ${renderTotals(claude, copilot, cost)}
 
@@ -368,12 +415,6 @@ function renderHtml(data: CombinedSavings, updateStatus?: CavemanUpdateStatus): 
       <h2>GitHub Copilot <em>(estimated)</em></h2>
       ${renderCopilot(copilot)}
     </section>
-  </div>
-
-  <div class="cv-panel">
-    <h3>Installer &amp; CLI actions</h3>
-    ${CAVEMAN_ACTIONS}
-    <div class="muted cv-foot">Installer actions download and run the <b>latest</b> installer (<code>curl … main/install.sh | bash</code>) in a terminal (state-changing actions confirm first). Slash commands (<code>/caveman</code>, <code>/caveman-stats</code>, …) run inside Claude Code, not here. Savings are estimated (only <code>full</code> mode benchmarked, ≈65% output reduction) — output-token value, not billed.</div>
   </div>
 
   <script nonce="${nonce}">
