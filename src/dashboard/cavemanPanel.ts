@@ -148,9 +148,83 @@ function renderAction(a: CavemanAction): string {
   </button>`;
 }
 
+function bestMonth(rows: { month: string; savedTokens: number }[]): { month: string; savedTokens: number } | null {
+  if (!rows.length) return null;
+  return rows.reduce((best, row) => row.savedTokens > best.savedTokens ? row : best, rows[0]);
+}
+
+function trackedMonthCount(rows: { month: string; savedTokens: number }[]): number {
+  return rows.filter(r => r.savedTokens > 0).length;
+}
+
+function renderOverviewLead(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
+  const leader = claude.savedTokens >= copilot.savedTokens ? 'Claude Code is leading savings this month.' : 'GitHub Copilot is leading savings this month.';
+  const confidence = claude.source === 'ledger'
+    ? 'Claude is ledger-backed.'
+    : claude.source === 'mixed'
+      ? 'Claude blends ledger and estimate data.'
+      : 'Claude is estimate-only right now.';
+  const costView = cost ? 'USD projection is enabled for Claude.' : 'USD projection is currently hidden.';
+  return `<div class="cv-page-intro">
+    <div>
+      <div class="cv-page-eyebrow">Overview</div>
+      <h2 class="cv-page-title">Current month performance</h2>
+      <div class="cv-page-copy">A high-signal snapshot of provider savings, usage coverage, and whether the current month is trending above the last one.</div>
+    </div>
+    <div class="cv-inline-facts">
+      <span class="cv-inline-pill">${escapeHtml(leader)}</span>
+      <span class="cv-inline-pill">${escapeHtml(confidence)}</span>
+      <span class="cv-inline-pill">${escapeHtml(costView)}</span>
+    </div>
+  </div>`;
+}
+
+function renderOverviewHighlights(claude: CavemanSavings, copilot: CopilotSavings): string {
+  const totalCurrent = claude.savedTokens + copilot.savedTokens;
+  const prev = prevMonthKey(claude.currentMonth);
+  const totalPrevious = savedInMonth(claude.byMonth, prev) + savedInMonth(copilot.byMonth, prev);
+  const trend = totalPrevious > 0
+    ? `${Math.abs(Math.round(((totalCurrent - totalPrevious) / totalPrevious) * 100))}% ${totalCurrent >= totalPrevious ? 'above' : 'below'} last month`
+    : 'No previous-month baseline yet';
+  const recommendation = !claude.installed
+    ? 'Install caveman first so savings can be measured from real usage.'
+    : !claude.active
+      ? 'Run a Claude session with caveman enabled, then refresh this dashboard.'
+      : !copilot.active
+        ? 'Copilot has no transcript signal yet; use it for a few turns to estimate impact.'
+        : 'Review provider split and compare it with the monthly history tab.';
+  const coverage = `${claude.sessions} Claude sessions · ${copilot.sessions} Copilot chats · ${copilot.turns} Copilot turns`;
+  return `<div class="cv-insight-grid">
+    <div class="cv-mini-card">
+      <span class="cv-mini-label">Momentum</span>
+      <strong class="cv-mini-value">${escapeHtml(trend)}</strong>
+      <small class="cv-mini-copy">Based on combined current-month savings across both providers.</small>
+    </div>
+    <div class="cv-mini-card">
+      <span class="cv-mini-label">Coverage</span>
+      <strong class="cv-mini-value">${escapeHtml(coverage)}</strong>
+      <small class="cv-mini-copy">Use this to judge whether the snapshot is representative or still sparse.</small>
+    </div>
+    <div class="cv-mini-card">
+      <span class="cv-mini-label">Recommended next move</span>
+      <strong class="cv-mini-value">${escapeHtml(recommendation)}</strong>
+      <small class="cv-mini-copy">The dashboard should tell developers what to do next, not only what happened.</small>
+    </div>
+  </div>`;
+}
+
+function renderActionGroup(title: string, copy: string, actions: CavemanAction[]): string {
+  return `<section class="cv-action-group">
+    <div class="cv-action-head">
+      <h4>${escapeHtml(title)}</h4>
+      <div class="muted">${escapeHtml(copy)}</div>
+    </div>
+    <div class="cv-actions cv-actions-group">${actions.map(renderAction).join('')}</div>
+  </section>`;
+}
+
 /** Consolidated "updates & installer" panel: update check + banner + CLI action tiles (2 rows). */
 function renderCavemanPanel(updateStatus: CavemanUpdateStatus | undefined): string {
-  const actions = [...INSTALL_ACTIONS, ...INSPECT_ACTIONS, ...MAINTAIN_ACTIONS];
   return `<div class="cv-panel cv-installer">
     <div class="cv-panel-head">
       <div class="cv-panel-title">
@@ -166,7 +240,18 @@ function renderCavemanPanel(updateStatus: CavemanUpdateStatus | undefined): stri
       </div>
     </div>
     ${renderUpdateBanner(updateStatus)}
-    <div class="cv-actions cv-actions-flat">${actions.map(renderAction).join('')}</div>
+    <div class="cv-page-intro cv-page-intro-tight">
+      <div>
+        <div class="cv-page-eyebrow">Operations</div>
+        <h2 class="cv-page-title">Install, inspect, or repair caveman</h2>
+        <div class="cv-page-copy">Organized by the jobs developers actually do: first-time setup, verification, and maintenance.</div>
+      </div>
+    </div>
+    <div class="cv-action-layout">
+      ${renderActionGroup('Install', 'Set up caveman for normal use or initialize repo-specific hooks.', INSTALL_ACTIONS)}
+      ${renderActionGroup('Inspect', 'Check what would happen before changing anything.', INSPECT_ACTIONS)}
+      ${renderActionGroup('Maintain', 'Repair or remove an existing installation.', MAINTAIN_ACTIONS)}
+    </div>
     <div class="muted cv-foot">Actions download and run the <b>latest</b> installer (<code>curl … main/install.sh | bash</code>) in a terminal; state-changing actions confirm first. Slash commands (<code>/caveman</code>, <code>/caveman-stats</code>, …) run inside Claude Code, not here. Savings are estimated (only <code>full</code> mode benchmarked, ≈65% output reduction) — output-token value, not billed.</div>
   </div>`;
 }
@@ -258,14 +343,38 @@ function renderMonthlyHistory(
 function renderHistoryTab(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
   const claudeHistory = renderMonthlyHistory(claude.byMonth, claude.currentMonth, cost);
   const copilotHistory = renderMonthlyHistory(copilot.byMonth, copilot.currentMonth, false);
+  const claudeBest = bestMonth(claude.byMonth);
+  const copilotBest = bestMonth(copilot.byMonth);
+  const totalTrackedMonths = Math.max(trackedMonthCount(claude.byMonth), trackedMonthCount(copilot.byMonth));
+  const leader = (claudeBest?.savedTokens ?? 0) >= (copilotBest?.savedTokens ?? 0)
+    ? `Claude peak: ${claudeBest ? `${fmtTokens(claudeBest.savedTokens)} in ${fmtMonth(claudeBest.month)}` : 'No peak yet'}`
+    : `Copilot peak: ${copilotBest ? `${fmtTokens(copilotBest.savedTokens)} in ${fmtMonth(copilotBest.month)}` : 'No peak yet'}`;
   if (!claudeHistory && !copilotHistory) {
     return `<div class="cv-panel"><div class="muted cv-empty">No monthly history yet — a month-by-month breakdown appears once caveman has usage spanning more than one calendar month.</div></div>`;
   }
   const block = (header: string, table: string) =>
     table ? `<section class="cv-provider">${header}${table}</section>` : '';
-  return `<div class="provider-grid">
+  return `<div>
+    <div class="cv-page-intro">
+      <div>
+        <div class="cv-page-eyebrow">History</div>
+        <h2 class="cv-page-title">Monthly adoption and savings</h2>
+        <div class="cv-page-copy">Use the long view to see whether caveman usage is growing, flattening, or shifting between Claude and Copilot workflows.</div>
+      </div>
+      <div class="cv-inline-facts">
+        <span class="cv-inline-pill">${totalTrackedMonths} tracked months</span>
+        <span class="cv-inline-pill">${escapeHtml(leader)}</span>
+      </div>
+    </div>
+    <div class="cards cv-summary-cards">
+      <div class="card accent-green"><span>Claude best month</span><b>${claudeBest ? fmtTokens(claudeBest.savedTokens) : '—'}</b><small>${claudeBest ? escapeHtml(fmtMonth(claudeBest.month)) : 'No historical data yet'}</small></div>
+      <div class="card accent-purple"><span>Copilot best month</span><b>${copilotBest ? fmtTokens(copilotBest.savedTokens) : '—'}</b><small>${copilotBest ? escapeHtml(fmtMonth(copilotBest.month)) : 'No historical data yet'}</small></div>
+      <div class="card accent-blue"><span>Tracked calendar months</span><b>${totalTrackedMonths}</b><small>Months with non-zero recorded savings</small></div>
+    </div>
+    <div class="provider-grid">
     ${block(renderProviderHeader('Claude Code', 'Saved output tokens by month.', 'layers'), claudeHistory)}
     ${block(renderProviderHeader('GitHub Copilot', 'Estimated saved tokens by month.', 'package'), copilotHistory)}
+    </div>
   </div>`;
 }
 
@@ -455,6 +564,18 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   a { color: var(--vscode-textLink-foreground); }
   code { background: var(--vscode-textCodeBlock-background); padding: 1px 4px; border-radius: 3px; }
   .cv-shell { max-width: 1240px; margin: 0 auto; }
+  .cv-page-intro { display: flex; justify-content: space-between; gap: 18px; align-items: end; margin: 6px 0 14px; }
+  .cv-page-intro-tight { margin-top: 4px; }
+  .cv-page-eyebrow { color: #8ecae6; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.72rem; font-weight: 700; margin-bottom: 6px; }
+  .cv-page-title { margin: 0; font-size: 1.15rem; border-bottom: none; padding-bottom: 0; }
+  .cv-page-copy { margin-top: 5px; max-width: 72ch; color: var(--vscode-descriptionForeground); line-height: 1.55; font-size: 0.9rem; }
+  .cv-inline-facts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+  .cv-inline-pill { display: inline-flex; align-items: center; min-height: 28px; padding: 4px 10px; border-radius: 999px; background: rgba(128,128,128,0.08); border: 1px solid var(--vscode-panel-border); color: var(--vscode-descriptionForeground); font-size: 0.76rem; font-weight: 600; }
+  .cv-insight-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 16px; }
+  .cv-mini-card { padding: 14px 15px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 82%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 95%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 4%)); box-shadow: 0 6px 18px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 6px; }
+  .cv-mini-label { color: #8ecae6; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.71rem; font-weight: 700; }
+  .cv-mini-value { font-size: 0.95rem; line-height: 1.45; }
+  .cv-mini-copy { color: var(--vscode-descriptionForeground); font-size: 0.75rem; line-height: 1.45; }
   .toolbar { display: flex; gap: 8px; margin: 0; }
   .cv-hero-shell { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: end; padding: 22px 22px 18px; border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 88%, transparent); border-radius: 18px; background: linear-gradient(135deg, color-mix(in srgb, var(--vscode-editorWidget-background) 94%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 4%)); box-shadow: 0 14px 40px rgba(0,0,0,0.16); }
   .cv-kicker { color: #ffa94d; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.72rem; font-weight: 700; margin-bottom: 8px; }
@@ -478,6 +599,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-off { background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
   .cv-overview { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; margin-top: 8px; }
   .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 8px 0 12px; }
+  .cv-summary-cards { margin-top: 0; margin-bottom: 16px; }
   .card { min-width: 0; padding: 14px 15px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 82%, transparent); border-left: 4px solid var(--vscode-panel-border); background: linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 92%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 4%)); box-shadow: 0 6px 18px rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 4px; transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease; }
   .card:hover { box-shadow: 0 10px 26px rgba(0,0,0,0.18); transform: translateY(-2px); border-color: color-mix(in srgb, var(--vscode-focusBorder) 55%, var(--vscode-panel-border)); }
   .card span { font-size: 0.8rem; color: var(--vscode-descriptionForeground); }
@@ -527,10 +649,12 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-ghost:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.14)); border-color: var(--vscode-focusBorder, #4dabf7); }
   .cv-hero { background: #4dabf7; color: #08203a; border: 1px solid #4dabf7; box-shadow: 0 2px 10px #4dabf73d; }
   .cv-hero:hover { background: #74c0fc; }
+  .cv-action-layout { display: grid; gap: 16px; margin-top: 8px; }
+  .cv-action-group { padding: 14px; border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 84%, transparent); border-radius: 14px; background: rgba(128,128,128,0.03); }
+  .cv-action-head { display: flex; justify-content: space-between; gap: 16px; align-items: end; margin-bottom: 12px; }
+  .cv-action-head h4 { margin: 0; font-size: 0.95rem; }
   .cv-actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 10px; }
-  /* All 7 installer tiles in exactly 2 rows (4 + 3) on wide layouts. */
-  .cv-actions-flat { margin-top: 16px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  @media (max-width: 720px) { .cv-actions-flat { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .cv-actions-group { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
   .cv-btn { display: flex; align-items: flex-start; gap: 11px; text-align: left; line-height: 1.3; padding: 12px 13px; border-radius: 10px; background: var(--vscode-editorWidget-background); border: 1px solid var(--vscode-panel-border); color: var(--vscode-foreground); transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease; }
   .cv-btn:hover { border-color: var(--cv-accent, #4dabf7); transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,0.2); }
   .cv-btn-ico { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; flex: none; background: var(--cv-accent-soft, #4dabf722); color: var(--cv-accent, #4dabf7); }
@@ -563,10 +687,14 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   @media (max-width: 980px) {
     .cv-overview, .provider-grid, .cv-hero-shell { grid-template-columns: 1fr; }
     .cv-hero-actions { justify-content: flex-start; }
+    .cv-page-intro, .cv-action-head { align-items: start; }
+    .cv-page-intro, .cv-action-head { flex-direction: column; }
+    .cv-inline-facts { justify-content: flex-start; }
   }
   @media (max-width: 760px) {
     body { padding: 14px; }
     .cards { grid-template-columns: 1fr; }
+    .cv-insight-grid { grid-template-columns: 1fr; }
     .cv-shell { max-width: none; }
   }
 </style>
@@ -584,7 +712,9 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   <section class="cv-tabpanel" data-panel="overview" role="tabpanel">
     <div class="cv-overview">
       <div>
+        ${renderOverviewLead(claude, copilot, cost)}
         ${renderTotals(claude, copilot, cost)}
+        ${renderOverviewHighlights(claude, copilot)}
 
         <div class="provider-grid">
           <section class="cv-provider">
