@@ -157,6 +157,12 @@ function trackedMonthCount(rows: { month: string; savedTokens: number }[]): numb
   return rows.filter(r => r.savedTokens > 0).length;
 }
 
+function latestTrackedMonth<T extends { month: string; savedTokens: number }>(rows: T[]): T | null {
+  const activeRows = rows.filter(r => r.savedTokens > 0);
+  if (!activeRows.length) return null;
+  return [...activeRows].sort((a, b) => b.month.localeCompare(a.month))[0];
+}
+
 function bestDay(rows: { day: string; savedTokens: number; savedUsd: number }[]): { day: string; savedTokens: number; savedUsd: number } | null {
   if (!rows.length) return null;
   return rows.reduce((best, row) => row.savedTokens > best.savedTokens ? row : best, rows[0]);
@@ -341,8 +347,10 @@ function renderOverviewHighlights(claude: CavemanSavings, copilot: CopilotSaving
 function renderActionGroup(title: string, copy: string, actions: CavemanAction[]): string {
   return `<section class="cv-action-group">
     <div class="cv-action-head">
-      <h4>${escapeHtml(title)}</h4>
-      <div class="muted">${escapeHtml(copy)}</div>
+      <div>
+        <h4>${escapeHtml(title)}</h4>
+        <div class="muted cv-action-copy">${escapeHtml(copy)}</div>
+      </div>
     </div>
     <div class="cv-actions cv-actions-group">${actions.map(renderAction).join('')}</div>
   </section>`;
@@ -352,32 +360,39 @@ function renderActionGroup(title: string, copy: string, actions: CavemanAction[]
 function renderCavemanPanel(updateStatus: CavemanUpdateStatus | undefined): string {
   return `<div class="cv-panel cv-installer">
     <div class="cv-panel-head">
-      <div class="cv-panel-title">
-        <span class="cv-panel-ico">${svgIcon('rocket')}</span>
-        <div>
-          <h3>Updates &amp; installer</h3>
-          <div class="cv-panel-sub">Manage the caveman plugin on this machine</div>
+      <div class="cv-panel-hero">
+        <div class="cv-panel-title">
+          <span class="cv-panel-ico">${svgIcon('rocket')}</span>
+          <div>
+            <div class="cv-page-eyebrow">Operations</div>
+            <h3>Updates &amp; installer</h3>
+            <div class="cv-panel-sub">Install, inspect, update, or repair caveman from one place.</div>
+          </div>
+        </div>
+        <div class="cv-panel-facts">
+          <span class="cv-inline-pill">Machine-level setup</span>
+          <span class="cv-inline-pill">Safe checks first</span>
+          <span class="cv-inline-pill">Repair path included</span>
         </div>
       </div>
-      <div class="cv-panel-actions">
-        <button id="check-update" class="cv-ghost">${svgIcon('refresh')}<span>Check for update</span></button>
-        <button class="cv-hero" data-cv="force" title="--force (reinstall latest)">${svgIcon('download')}<span>Update caveman</span></button>
+      <div class="cv-panel-actions cv-panel-actions-hero">
+        <button id="check-update" class="cv-ghost cv-cta">${svgIcon('refresh')}<span>Check for update</span></button>
+        <button class="cv-hero cv-cta" data-cv="force" title="--force (reinstall latest)">${svgIcon('download')}<span>Update caveman</span></button>
       </div>
     </div>
     ${renderUpdateBanner(updateStatus)}
     <div class="cv-page-intro cv-page-intro-tight">
       <div>
-        <div class="cv-page-eyebrow">Operations</div>
-        <h2 class="cv-page-title">Install, inspect, or repair caveman</h2>
-        <div class="cv-page-copy">Organized by the jobs developers actually do: first-time setup, verification, and maintenance.</div>
+        <h2 class="cv-page-title">Choose the job, then run the smallest action that fits</h2>
+        <div class="cv-page-copy">The page is grouped by the real workflow: install for first-time setup, inspect before changing anything, and maintain when an existing install needs attention.</div>
       </div>
     </div>
     <div class="cv-action-layout">
-      ${renderActionGroup('Install', 'Set up caveman for normal use or initialize repo-specific hooks.', INSTALL_ACTIONS)}
-      ${renderActionGroup('Inspect', 'Check what would happen before changing anything.', INSPECT_ACTIONS)}
-      ${renderActionGroup('Maintain', 'Repair or remove an existing installation.', MAINTAIN_ACTIONS)}
+      ${renderActionGroup('Install', 'Start here for a first install, standard setup, or repo hook initialization.', INSTALL_ACTIONS)}
+      ${renderActionGroup('Inspect', 'Preview or audit the current setup before you make changes.', INSPECT_ACTIONS)}
+      ${renderActionGroup('Maintain', 'Reinstall the latest build or remove caveman cleanly from this machine.', MAINTAIN_ACTIONS)}
     </div>
-    <div class="muted cv-foot">Actions download and run the <b>latest</b> installer (<code>curl … main/install.sh | bash</code>) in a terminal; state-changing actions confirm first. Slash commands (<code>/caveman</code>, <code>/caveman-stats</code>, …) run inside Claude Code, not here. Savings are estimated (only <code>full</code> mode benchmarked, ≈65% output reduction) — output-token value, not billed.</div>
+    <div class="muted cv-foot">These actions download and run the latest caveman installer in a terminal. Read-only actions preview state; state-changing actions ask for confirmation first. Slash commands such as <code>/caveman</code> and <code>/caveman-stats</code> still run inside Claude Code, not from this dashboard.</div>
   </div>`;
 }
 
@@ -541,9 +556,12 @@ function renderClaude(c: CavemanSavings, cost: boolean): string {
 
 function renderCopilot(c: CopilotSavings): string {
   const badge = (on: boolean, text: string) => `<span class="cv-badge ${on ? 'cv-on' : 'cv-off'}">${escapeHtml(text)}</span>`;
+  const lastMonth = latestTrackedMonth(c.byMonth);
+  const noCurrentMonthActivity = c.active && c.turns === 0;
   const status = `<div class="cv-status">
     ${badge(c.configured, c.configured ? 'caveman installed' : 'caveman not installed')}
-    ${badge(c.active, c.active ? `${c.sessions} chats · ${c.turns} turns` : 'No Copilot chats found')}
+    ${badge(c.active, c.active ? `${c.sessions} chats · ${c.turns} turns this month` : 'No Copilot chats found')}
+    ${noCurrentMonthActivity && lastMonth ? badge(true, `History seen in ${fmtMonth(lastMonth.month)}`) : ''}
   </div>`;
   if (!c.active) {
     return `${status}<div class="muted cv-empty">No Copilot chat transcripts found under the VS Code User directory. Override the path with <code>cavemanDashboard.vscodeUserPath</code> if needed.</div>`;
@@ -554,6 +572,7 @@ function renderCopilot(c: CopilotSavings): string {
     : '';
   const models = c.models.length ? `<div class="muted">Models: ${escapeHtml(c.models.join(', '))}</div>` : '';
   return `${status}
+    ${noCurrentMonthActivity && lastMonth ? `<div class="muted cv-note">Current month has no Copilot transcript activity yet. The model list and monthly history below come from earlier sessions, most recently <b>${escapeHtml(fmtMonth(lastMonth.month))}</b>.</div>` : ''}
     <div class="cards">
       <div class="card accent-purple"><span>Saved Output Tokens <em>(est)</em></span><b>${fmtTokens(c.savedTokens)}</b></div>
       <div class="card accent-blue"><span>Output Tokens</span><b>${fmtTokens(c.outputTokens)}</b></div>
@@ -668,6 +687,7 @@ function renderClaudeRail(claude: CavemanSavings, cost: boolean): string {
 function renderCopilotRail(copilot: CopilotSavings): string {
   const models = copilot.models.length ? copilot.models.join(', ') : 'No model metadata yet';
   const avgOutput = copilot.sessions > 0 ? fmtTokens(Math.round(copilot.outputTokens / copilot.sessions)) : '—';
+  const lastMonth = latestTrackedMonth(copilot.byMonth);
   const historyLine = trackedMonthCount(copilot.byMonth) > 1
     ? 'Monthly trend is ready for cross-month comparison.'
     : 'One more active month will make the trend more meaningful.';
@@ -677,6 +697,7 @@ function renderCopilotRail(copilot: CopilotSavings): string {
       <h3>Copilot readout</h3>
       <div class="cv-rail-line"><span>Models</span><strong>${escapeHtml(models)}</strong></div>
       <div class="cv-rail-line"><span>Avg output / chat</span><strong>${escapeHtml(avgOutput)}</strong></div>
+      <div class="cv-rail-line"><span>Last active month</span><strong>${escapeHtml(lastMonth ? fmtMonth(lastMonth.month) : 'None yet')}</strong></div>
       <div class="cv-rail-line"><span>Billing lens</span><strong>Subscription only</strong></div>
     </div>
     <div class="cv-rail-card">
@@ -725,7 +746,8 @@ function renderClaudeTab(claude: CavemanSavings, cost: boolean): string {
 
 function renderCopilotTab(copilot: CopilotSavings): string {
   const modelLabel = copilot.models.length ? `${copilot.models.length} model${copilot.models.length === 1 ? '' : 's'} seen` : 'No models seen yet';
-  const activity = copilot.active ? `${copilot.sessions} chats · ${copilot.turns} turns` : 'No chat activity yet';
+  const lastMonth = latestTrackedMonth(copilot.byMonth);
+  const activity = copilot.active ? `${copilot.sessions} chats · ${copilot.turns} turns this month` : 'No chat activity yet';
   const config = copilot.configured ? 'caveman installed' : 'caveman not installed';
   return `<div class="cv-overview">
     <div>
@@ -738,14 +760,15 @@ function renderCopilotTab(copilot: CopilotSavings): string {
       <div class="cv-inline-facts">
         <span class="cv-inline-pill">${escapeHtml(modelLabel)}</span>
         <span class="cv-inline-pill">${escapeHtml(activity)}</span>
+        <span class="cv-inline-pill">${escapeHtml(lastMonth ? `Last active ${fmtMonth(lastMonth.month)}` : 'No tracked month yet')}</span>
         <span class="cv-inline-pill">${escapeHtml(config)}</span>
       </div>
     </div>
-    ${renderCopilotInsights(copilot)}
     <section class="cv-provider">
       ${renderProviderHeader('GitHub Copilot', 'Estimated from local chat transcripts and tokenizer counts.', 'package')}
       ${renderCopilot(copilot)}
     </section>
+    ${renderCopilotInsights(copilot)}
     </div>
     ${renderCopilotRail(copilot)}
   </div>`;
@@ -884,20 +907,24 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-panel { margin-top: 18px; padding: 18px 20px; border: 1px solid var(--vscode-panel-border); border-radius: 16px; background: linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 94%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 4%)); box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
   .cv-installer { border-left: 3px solid #4dabf7; }
   .cv-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .cv-panel-hero { display: grid; gap: 10px; min-width: min(720px, 100%); }
   .cv-panel-title { display: flex; align-items: center; gap: 12px; }
   .cv-panel-ico { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: #4dabf71f; color: #4dabf7; flex: none; }
   .cv-panel-ico .cv-ico { width: 20px; height: 20px; }
   .cv-panel-title h3 { margin: 0; font-size: 1.02rem; }
   .cv-panel-sub { font-size: 0.8rem; color: var(--vscode-descriptionForeground); margin-top: 2px; }
+  .cv-panel-facts { display: flex; flex-wrap: wrap; gap: 8px; }
   .cv-panel-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .cv-panel-actions-hero { align-items: stretch; }
   .cv-ghost { background: transparent; color: var(--vscode-foreground); border: 1px solid var(--vscode-panel-border); }
   .cv-ghost:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.14)); border-color: var(--vscode-focusBorder, #4dabf7); }
   .cv-hero { background: #4dabf7; color: #08203a; border: 1px solid #4dabf7; box-shadow: 0 2px 10px #4dabf73d; }
   .cv-hero:hover { background: #74c0fc; }
   .cv-action-layout { display: grid; gap: 16px; margin-top: 8px; }
   .cv-action-group { padding: 14px; border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 84%, transparent); border-radius: 14px; background: rgba(128,128,128,0.03); }
-  .cv-action-head { display: flex; justify-content: space-between; gap: 16px; align-items: end; margin-bottom: 12px; }
+  .cv-action-head { display: flex; justify-content: flex-start; gap: 16px; align-items: start; margin-bottom: 12px; }
   .cv-action-head h4 { margin: 0; font-size: 0.95rem; }
+  .cv-action-copy { margin-top: 5px; max-width: 70ch; }
   .cv-actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 10px; }
   .cv-actions-group { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
   .cv-btn { display: flex; align-items: flex-start; gap: 11px; text-align: left; line-height: 1.3; padding: 12px 13px; border-radius: 10px; background: var(--vscode-editorWidget-background); border: 1px solid var(--vscode-panel-border); color: var(--vscode-foreground); transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease; }
@@ -942,6 +969,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     .cv-page-intro, .cv-action-head { align-items: start; }
     .cv-page-intro, .cv-action-head { flex-direction: column; }
     .cv-inline-facts { justify-content: flex-start; }
+    .cv-panel-actions-hero { width: 100%; }
   }
   @media (max-width: 760px) {
     body { padding: 14px; }
