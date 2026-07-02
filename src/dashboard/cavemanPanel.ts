@@ -13,6 +13,7 @@ export class CavemanPanel {
   private readonly panel: vscode.WebviewPanel;
   private data: CombinedSavings;
   private updateStatus: CavemanUpdateStatus | undefined;
+  private readonly version: string;
 
   static show(context: vscode.ExtensionContext, data: CombinedSavings) {
     if (CavemanPanel.currentPanel) {
@@ -31,6 +32,7 @@ export class CavemanPanel {
   private constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext, data: CombinedSavings) {
     this.panel = panel;
     this.data = data;
+    this.version = (context.extension.packageJSON as { version?: string })?.version ?? '';
     this.panel.webview.onDidReceiveMessage(message => {
       if (message?.command === 'refresh') vscode.commands.executeCommand('cavemanDashboard.refresh');
       if (message?.command === 'checkUpdate') vscode.commands.executeCommand('cavemanDashboard.checkUpdate');
@@ -51,7 +53,7 @@ export class CavemanPanel {
   }
 
   private render() {
-    this.panel.webview.html = renderHtml(this.data, this.updateStatus);
+    this.panel.webview.html = renderHtml(this.data, this.updateStatus, this.version);
   }
 }
 
@@ -328,7 +330,22 @@ function renderUpdateBanner(status: CavemanUpdateStatus | undefined): string {
   return `<div class="cv-update cv-update-new">Update available: <code>${escapeHtml(shortSha(status.installedSha))}</code> → <code>${escapeHtml(shortSha(status.latestSha))}</code>${link}. Use <b>Update caveman</b> to install the latest.</div>`;
 }
 
-function renderHtml(data: CombinedSavings, updateStatus?: CavemanUpdateStatus): string {
+// Upstream caveman plugin — linked from the footer badge.
+const CAVEMAN_REPO = 'https://github.com/JuliusBrussee/caveman';
+
+/** Bottom badge (ClaudeLens-style): gradient extension version + pill link to the original caveman repo. */
+function renderVersionFooter(version: string): string {
+  const ver = version ? ` v${escapeHtml(version)}` : '';
+  return `<footer class="cv-version">
+    <span class="cv-version-brand">Caveman Dashboard${ver}</span>
+    <span class="cv-version-sep">·</span>
+    <a class="cv-version-pill" href="${CAVEMAN_REPO}">caveman original repo ↗</a>
+    <span class="cv-version-sep">·</span>
+    <span class="cv-version-beta">BETA</span>
+  </footer>`;
+}
+
+function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, version: string): string {
   const nonce = getNonce();
   const cost = showCost();
   const { claude, copilot } = data;
@@ -421,6 +438,12 @@ function renderHtml(data: CombinedSavings, updateStatus?: CavemanUpdateStatus): 
   .cv-update-ok { background: #51cf6614; border-color: #51cf6655; }
   .cv-update-new { background: #ffa94d1a; border-color: #ffa94d66; }
   .cv-update-warn { background: #e0384522; border-color: #e0384555; color: #ff6b6b; }
+  .cv-version { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--vscode-panel-border); display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; font-size: 0.82rem; }
+  .cv-version-brand { font-weight: 700; letter-spacing: 0.2px; background: linear-gradient(90deg, #ff8c42, #c77dff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .cv-version-sep { opacity: 0.45; color: var(--vscode-descriptionForeground); }
+  .cv-version-pill { text-decoration: none; text-transform: uppercase; letter-spacing: 0.6px; font-size: 0.72rem; font-weight: 600; color: var(--vscode-descriptionForeground); padding: 3px 11px; border: 1px solid var(--vscode-panel-border); border-radius: 999px; transition: border-color 0.15s ease, color 0.15s ease; }
+  .cv-version-pill:hover { border-color: #c77dff; color: var(--vscode-foreground); }
+  .cv-version-beta { text-transform: uppercase; letter-spacing: 0.6px; font-size: 0.72rem; font-weight: 700; color: #1a1205; background: #ffa94d; padding: 3px 11px; border-radius: 999px; }
 </style>
 </head>
 <body>
@@ -444,6 +467,8 @@ function renderHtml(data: CombinedSavings, updateStatus?: CavemanUpdateStatus): 
       ${renderCopilot(copilot)}
     </section>
   </div>
+
+  ${renderVersionFooter(version)}
 
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
