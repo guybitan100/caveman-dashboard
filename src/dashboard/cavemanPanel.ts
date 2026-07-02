@@ -572,6 +572,39 @@ function renderCopilot(c: CopilotSavings): string {
     <div class="muted cv-foot">Copilot keeps no local token log — output tokens are <b>counted</b> from chat transcripts with a real o200k_base tokenizer, but saved tokens are a <b>projection</b> (assume caveman compression, ~65%, was active — Copilot leaves no per-message marker). Copilot is subscription-billed, so no USD figure is shown.</div>`;
 }
 
+function renderCopilotCredits(copilot: CopilotSavings): string {
+  const lastMonth = latestTrackedMonth(copilot.byMonth);
+  const usageLabel = copilot.active
+    ? 'Credit usage is managed by GitHub and not exposed to this extension.'
+    : 'No local credit feed is available to extensions.';
+  return `<section class="cv-credit-card">
+    <div class="cv-credit-head">
+      <div>
+        <div class="cv-credit-title">GitHub Copilot credits</div>
+        <div class="cv-credit-sub">Mirrors the Copilot account area, but local extensions cannot read the live credit balance.</div>
+      </div>
+      <span class="cv-credit-badge">Unavailable locally</span>
+    </div>
+    <div class="cv-credit-body">
+      <div class="cv-credit-row">
+        <span>Credits</span>
+        <strong>Open Copilot menu</strong>
+      </div>
+      <div class="cv-credit-row">
+        <span>Usage status</span>
+        <strong>${escapeHtml(copilot.configured ? 'Copilot installed' : 'Copilot not installed')}</strong>
+      </div>
+      <div class="cv-credit-value">Live percentage unavailable</div>
+      <div class="cv-credit-meter" aria-hidden="true"><span></span></div>
+      <div class="cv-credit-meta">
+        <span>${escapeHtml(lastMonth ? `Last transcript activity ${fmtMonth(lastMonth.month)}` : 'No tracked activity month yet')}</span>
+        <span>Reset date is not exposed</span>
+      </div>
+      <div class="muted cv-credit-note">${escapeHtml(usageLabel)} Use the Copilot account popover in VS Code to see your actual credit percentage and reset time.</div>
+    </div>
+  </section>`;
+}
+
 /** Banner reflecting the last caveman update check (empty until the user checks). */
 function renderUpdateBanner(status: CavemanUpdateStatus | undefined): string {
   if (!status) return '';
@@ -664,22 +697,6 @@ function renderClaudeRail(claude: CavemanSavings, cost: boolean): string {
   </aside>`;
 }
 
-function renderCopilotRail(copilot: CopilotSavings): string {
-  const models = renderModelCloud(copilot.models, 4);
-  const avgOutput = copilot.sessions > 0 ? fmtTokens(Math.round(copilot.outputTokens / copilot.sessions)) : '—';
-  const lastMonth = latestTrackedMonth(copilot.byMonth);
-  return `<aside class="cv-signal-rail">
-    <div class="cv-rail-card">
-      <div class="cv-rail-eyebrow">Signal quality</div>
-      <h3>Copilot readout</h3>
-      <div class="cv-rail-stack"><span class="cv-rail-stack-label">Models</span>${models}</div>
-      <div class="cv-rail-line"><span>Avg output / chat</span><strong>${escapeHtml(avgOutput)}</strong></div>
-      <div class="cv-rail-line"><span>Last active month</span><strong>${escapeHtml(lastMonth ? fmtMonth(lastMonth.month) : 'None yet')}</strong></div>
-      <div class="cv-rail-line"><span>Billing lens</span><strong>Subscription only</strong></div>
-    </div>
-  </aside>`;
-}
-
 function renderClaudeTab(claude: CavemanSavings, cost: boolean): string {
   const confidence = claude.source === 'ledger'
     ? 'Ledger-backed'
@@ -718,8 +735,7 @@ function renderCopilotTab(copilot: CopilotSavings): string {
   const lastMonth = latestTrackedMonth(copilot.byMonth);
   const activity = copilot.active ? `${copilot.sessions} chats · ${copilot.turns} turns this month` : 'No activity yet';
   const config = copilot.configured ? 'Installed' : 'Not installed';
-  return `<div class="cv-overview">
-    <div>
+  return `<div>
     <div class="cv-page-intro">
       <div>
         <div class="cv-page-eyebrow">GitHub Copilot</div>
@@ -733,12 +749,11 @@ function renderCopilotTab(copilot: CopilotSavings): string {
         </div>
       </div>
     </div>
+    ${renderCopilotCredits(copilot)}
     <section class="cv-provider">
       ${renderProviderHeader('GitHub Copilot', 'Estimated from local chat transcripts and tokenizer counts.', 'package')}
       ${renderCopilot(copilot)}
     </section>
-    </div>
-    ${renderCopilotRail(copilot)}
   </div>`;
 }
 
@@ -804,6 +819,19 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-inline-facts-start { justify-content: flex-start; }
   .cv-inline-facts-soft { margin-top: 12px; }
   .cv-inline-pill { display: inline-flex; align-items: center; min-height: 28px; padding: 4px 10px; border-radius: 999px; background: rgba(128,128,128,0.08); border: 1px solid var(--vscode-panel-border); color: var(--vscode-descriptionForeground); font-size: 0.76rem; font-weight: 600; }
+  .cv-credit-card { margin: 0 0 16px; padding: 16px 18px; border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 84%, transparent); border-radius: 16px; background: linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 96%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 4%)); box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
+  .cv-credit-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; margin-bottom: 14px; }
+  .cv-credit-title { font-size: 1.02rem; font-weight: 700; }
+  .cv-credit-sub { margin-top: 4px; max-width: 64ch; color: var(--vscode-descriptionForeground); font-size: 0.82rem; line-height: 1.45; }
+  .cv-credit-badge { display: inline-flex; align-items: center; min-height: 28px; padding: 4px 10px; border-radius: 999px; background: rgba(128,128,128,0.08); border: 1px solid var(--vscode-panel-border); color: var(--vscode-descriptionForeground); font-size: 0.76rem; font-weight: 700; white-space: nowrap; }
+  .cv-credit-body { display: grid; gap: 10px; }
+  .cv-credit-row { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid color-mix(in srgb, var(--vscode-panel-border) 72%, transparent); color: var(--vscode-descriptionForeground); font-size: 0.84rem; }
+  .cv-credit-row strong { color: var(--vscode-foreground); text-align: right; }
+  .cv-credit-value { font-size: 1.65rem; line-height: 1.05; letter-spacing: -0.02em; font-weight: 700; }
+  .cv-credit-meter { height: 8px; border-radius: 999px; background: rgba(128,128,128,0.12); overflow: hidden; }
+  .cv-credit-meter span { display: block; width: 0%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #4dabf7, #74c0fc); }
+  .cv-credit-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--vscode-descriptionForeground); font-size: 0.8rem; }
+  .cv-credit-note { line-height: 1.5; }
   .cv-insight-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin: 0 0 16px; }
   .cv-mini-card { grid-column: span 2; padding: 14px 15px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 82%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 95%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 4%)); box-shadow: 0 6px 18px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 6px; }
   .cv-mini-card-wide { grid-column: span 2; }
@@ -947,6 +975,8 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     .cv-page-intro, .cv-action-head { flex-direction: column; }
     .cv-inline-facts { justify-content: flex-start; }
     .cv-panel-actions-hero { width: 100%; }
+    .cv-credit-head, .cv-credit-meta, .cv-credit-row { flex-direction: column; align-items: start; }
+    .cv-credit-row strong { text-align: left; }
   }
   @media (max-width: 760px) {
     body { padding: 14px; }
