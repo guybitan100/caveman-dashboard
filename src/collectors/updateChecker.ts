@@ -67,6 +67,33 @@ export function readInstalledCaveman(explicitDir?: string): CavemanInstallInfo {
 }
 
 /**
+ * Read the installed caveman plugin's declared version from its package.json.
+ * The plugin is unpacked at ~/.claude/plugins/cache/caveman/<marketplace>/<commit>/,
+ * so walk that cache root a few levels deep and return the first package.json version.
+ * Returns null when caveman is absent or its manifest carries no version field.
+ */
+export function readCavemanVersion(explicitDir?: string): string | null {
+  const cacheRoot = path.join(claudeDir(explicitDir), 'plugins', 'cache', 'caveman');
+  let level = [cacheRoot];
+  for (let depth = 0; depth < 3 && level.length; depth++) {
+    const next: string[] = [];
+    for (const d of level) {
+      try {
+        const j = JSON.parse(fs.readFileSync(path.join(d, 'package.json'), 'utf8'));
+        if (typeof j?.version === 'string' && j.version) return j.version;
+      } catch { /* no manifest here — keep walking */ }
+      try {
+        for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+          if (e.isDirectory()) next.push(path.join(d, e.name));
+        }
+      } catch { /* not a directory */ }
+    }
+    level = next;
+  }
+  return null;
+}
+
+/**
  * Fetch the latest commit sha on the repo's default branch via the GitHub API.
  * Uses the `application/vnd.github.sha` media type, which returns the raw sha as the
  * body (tiny response), with a JSON fallback if the server ignores the media type.

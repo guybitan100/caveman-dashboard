@@ -2,11 +2,11 @@
   "name": "caveman-dashboard",
   "displayName": "Caveman Dashboard",
   "description": "Track token savings from the caveman output-compression plugin across Claude Code and GitHub Copilot, right inside VS Code.",
-  "version": "0.9.2",
-  "publisher": "tokenlint",
+  "version": "0.1.4",
+  "publisher": "caveman-dashboard",
   "repository": {
     "type": "git",
-    "url": "https://github.com/clbt-8d14fd5e/token-lint"
+    "url": "https://github.com/clbt-8d14fd5e/caveman-dashboard"
   },
   "license": "MIT",
   "engines": {

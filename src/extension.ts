@@ -33,7 +33,8 @@ export function activate(context: vscode.ExtensionContext) {
   cavemanCollector = new CavemanCollector(explicitDir && explicitDir.trim() ? explicitDir.trim() : undefined);
   copilotCollector = new CopilotCollector(vscodeUserPath && vscodeUserPath.trim() ? vscodeUserPath.trim() : undefined);
 
-  statusBar = new CavemanStatusBar();
+  const version = (context.extension.packageJSON as { version?: string })?.version;
+  statusBar = new CavemanStatusBar(version);
   statusBar.showLoading();
 
   context.subscriptions.push(

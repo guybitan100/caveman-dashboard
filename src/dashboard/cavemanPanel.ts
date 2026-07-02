@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from '../types';
-import { CavemanUpdateStatus } from '../collectors/updateChecker';
+import { CavemanUpdateStatus, readCavemanVersion } from '../collectors/updateChecker';
 import { showCost, shortSha } from '../util';
 
 /**
@@ -14,6 +14,7 @@ export class CavemanPanel {
   private data: CombinedSavings;
   private updateStatus: CavemanUpdateStatus | undefined;
   private readonly version: string;
+  private readonly cavemanVersion: string | null;
 
   static show(context: vscode.ExtensionContext, data: CombinedSavings) {
     if (CavemanPanel.currentPanel) {
@@ -33,6 +34,7 @@ export class CavemanPanel {
     this.panel = panel;
     this.data = data;
     this.version = (context.extension.packageJSON as { version?: string })?.version ?? '';
+    this.cavemanVersion = readCavemanVersion();
     this.panel.webview.onDidReceiveMessage(message => {
       if (message?.command === 'refresh') vscode.commands.executeCommand('cavemanDashboard.refresh');
       if (message?.command === 'checkUpdate') vscode.commands.executeCommand('cavemanDashboard.checkUpdate');
@@ -53,7 +55,7 @@ export class CavemanPanel {
   }
 
   private render() {
-    this.panel.webview.html = renderHtml(this.data, this.updateStatus, this.version);
+    this.panel.webview.html = renderHtml(this.data, this.updateStatus, this.version, this.cavemanVersion);
   }
 }
 
@@ -333,19 +335,20 @@ function renderUpdateBanner(status: CavemanUpdateStatus | undefined): string {
 // Upstream caveman plugin — linked from the footer badge.
 const CAVEMAN_REPO = 'https://github.com/JuliusBrussee/caveman';
 
-/** Bottom badge (ClaudeLens-style): gradient extension version + pill link to the original caveman repo. */
-function renderVersionFooter(version: string): string {
+/** Bottom badge (ClaudeLens-style): gradient extension version + pill link to the original caveman repo (with its version). */
+function renderVersionFooter(version: string, cavemanVersion: string | null): string {
   const ver = version ? ` v${escapeHtml(version)}` : '';
+  const cav = cavemanVersion ? `caveman v${escapeHtml(cavemanVersion)} ↗` : 'caveman original repo ↗';
   return `<footer class="cv-version">
     <span class="cv-version-brand">Caveman Dashboard${ver}</span>
     <span class="cv-version-sep">·</span>
-    <a class="cv-version-pill" href="${CAVEMAN_REPO}">caveman original repo ↗</a>
+    <a class="cv-version-pill" href="${CAVEMAN_REPO}">${cav}</a>
     <span class="cv-version-sep">·</span>
     <span class="cv-version-beta">BETA</span>
   </footer>`;
 }
 
-function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, version: string): string {
+function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, version: string, cavemanVersion: string | null): string {
   const nonce = getNonce();
   const cost = showCost();
   const { claude, copilot } = data;
@@ -468,7 +471,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     </section>
   </div>
 
-  ${renderVersionFooter(version)}
+  ${renderVersionFooter(version, cavemanVersion)}
 
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
