@@ -575,32 +575,35 @@ function renderCopilot(c: CopilotSavings): string {
 function renderCopilotCredits(copilot: CopilotSavings): string {
   const lastMonth = latestTrackedMonth(copilot.byMonth);
   const usageLabel = copilot.active
-    ? 'Credit usage is managed by GitHub and not exposed to this extension.'
-    : 'No local credit feed is available to extensions.';
+    ? 'Check the Copilot account menu in VS Code for your live credit balance and reset date.'
+    : 'Extensions can detect local transcript activity, but not your account credit balance.';
   return `<section class="cv-credit-card">
     <div class="cv-credit-head">
       <div>
-        <div class="cv-credit-title">GitHub Copilot credits</div>
-        <div class="cv-credit-sub">Mirrors the Copilot account area, but local extensions cannot read the live credit balance.</div>
+        <div class="cv-credit-title">GitHub Copilot account status</div>
+        <div class="cv-credit-sub">This dashboard can read local transcript activity, but GitHub does not expose live credit percentage or reset timing to local extensions.</div>
       </div>
-      <span class="cv-credit-badge">Unavailable locally</span>
+      <span class="cv-credit-badge">Account data stays in Copilot</span>
     </div>
     <div class="cv-credit-body">
-      <div class="cv-credit-row">
-        <span>Credits</span>
-        <strong>Open Copilot menu</strong>
-      </div>
-      <div class="cv-credit-row">
-        <span>Usage status</span>
-        <strong>${escapeHtml(copilot.configured ? 'Copilot installed' : 'Copilot not installed')}</strong>
-      </div>
-      <div class="cv-credit-value">Live percentage unavailable</div>
+      <div class="cv-credit-value">Live credits unavailable here</div>
+      <div class="cv-credit-summary">Use the Copilot account menu in VS Code for the real percentage, plan usage, and reset date.</div>
       <div class="cv-credit-meter" aria-hidden="true"><span></span></div>
+      <div class="cv-credit-grid">
+        <div class="cv-credit-stat">
+          <span class="cv-credit-label">Account view</span>
+          <strong class="cv-credit-strong">Open Copilot menu</strong>
+        </div>
+        <div class="cv-credit-stat">
+          <span class="cv-credit-label">Extension state</span>
+          <strong class="cv-credit-strong">${escapeHtml(copilot.configured ? 'Copilot installed' : 'Copilot not installed')}</strong>
+        </div>
+      </div>
       <div class="cv-credit-meta">
         <span>${escapeHtml(lastMonth ? `Last transcript activity ${fmtMonth(lastMonth.month)}` : 'No tracked activity month yet')}</span>
-        <span>Reset date is not exposed</span>
+        <span>Reset date is not exposed locally</span>
       </div>
-      <div class="muted cv-credit-note">${escapeHtml(usageLabel)} Use the Copilot account popover in VS Code to see your actual credit percentage and reset time.</div>
+      <div class="muted cv-credit-note">${escapeHtml(usageLabel)}</div>
     </div>
   </section>`;
 }
@@ -825,11 +828,14 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-credit-sub { margin-top: 4px; max-width: 64ch; color: var(--vscode-descriptionForeground); font-size: 0.82rem; line-height: 1.45; }
   .cv-credit-badge { display: inline-flex; align-items: center; min-height: 28px; padding: 4px 10px; border-radius: 999px; background: rgba(128,128,128,0.08); border: 1px solid var(--vscode-panel-border); color: var(--vscode-descriptionForeground); font-size: 0.76rem; font-weight: 700; white-space: nowrap; }
   .cv-credit-body { display: grid; gap: 10px; }
-  .cv-credit-row { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid color-mix(in srgb, var(--vscode-panel-border) 72%, transparent); color: var(--vscode-descriptionForeground); font-size: 0.84rem; }
-  .cv-credit-row strong { color: var(--vscode-foreground); text-align: right; }
   .cv-credit-value { font-size: 1.65rem; line-height: 1.05; letter-spacing: -0.02em; font-weight: 700; }
+  .cv-credit-summary { color: var(--vscode-descriptionForeground); font-size: 0.86rem; line-height: 1.5; max-width: 62ch; }
   .cv-credit-meter { height: 8px; border-radius: 999px; background: rgba(128,128,128,0.12); overflow: hidden; }
   .cv-credit-meter span { display: block; width: 0%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #4dabf7, #74c0fc); }
+  .cv-credit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .cv-credit-stat { padding: 12px 13px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 76%, transparent); background: rgba(128,128,128,0.04); display: grid; gap: 4px; }
+  .cv-credit-label { color: var(--vscode-descriptionForeground); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+  .cv-credit-strong { color: var(--vscode-foreground); font-size: 0.9rem; }
   .cv-credit-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--vscode-descriptionForeground); font-size: 0.8rem; }
   .cv-credit-note { line-height: 1.5; }
   .cv-insight-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin: 0 0 16px; }
@@ -975,8 +981,8 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     .cv-page-intro, .cv-action-head { flex-direction: column; }
     .cv-inline-facts { justify-content: flex-start; }
     .cv-panel-actions-hero { width: 100%; }
-    .cv-credit-head, .cv-credit-meta, .cv-credit-row { flex-direction: column; align-items: start; }
-    .cv-credit-row strong { text-align: left; }
+    .cv-credit-head, .cv-credit-meta { flex-direction: column; align-items: start; }
+    .cv-credit-grid { grid-template-columns: 1fr; }
   }
   @media (max-width: 760px) {
     body { padding: 14px; }
