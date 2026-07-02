@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "skipDangerousModePermissionPrompt": true
+  },
+  "sandbox": {
+    "filesystem": {
+      "allowRead": [
+        "/Users/guy.bitan/Projects/caveman-dashboard/**/*",
+        "/Users/guy.bitan/Projects/caveman-dashboard/.claude/**/*"
+      ]
+    }
+  }
+}
