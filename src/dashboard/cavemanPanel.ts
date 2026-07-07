@@ -331,6 +331,57 @@ function renderOverviewHighlights(claude: CavemanSavings, copilot: CopilotSaving
   </div>`;
 }
 
+function renderOverviewRail(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
+  const totalSaved = claude.savedTokens + copilot.savedTokens;
+  const totalSessions = claude.sessions + copilot.sessions;
+  const claudeConfidence = claude.source === 'ledger'
+    ? 'Ledger-backed'
+    : claude.source === 'mixed'
+      ? 'Ledger + estimate'
+      : claude.source === 'estimated'
+        ? 'Estimate-only'
+        : 'No signal yet';
+  const copilotModels = copilot.models.length > 0 ? `${copilot.models.length} model${copilot.models.length === 1 ? '' : 's'} seen` : 'No model metadata yet';
+  const nextStep = !claude.installed
+    ? 'Install caveman from the Updates tab, then rerun a Claude session.'
+    : !claude.active
+      ? 'Generate the first Claude session so the dashboard can switch from setup to measured savings.'
+      : !copilot.active
+        ? 'Use Copilot for a few turns so transcript-based estimates can populate.'
+        : 'Review Monthly history to confirm the current month is sustaining momentum.';
+  return `<aside class="cv-signal-rail">
+    <section class="cv-rail-card">
+      <div class="cv-rail-eyebrow">At a glance</div>
+      <h3>Signal health</h3>
+      <div class="cv-rail-line"><span>Total saved this month</span><strong>${fmtTokens(totalSaved)}</strong></div>
+      <div class="cv-rail-line"><span>Observed sessions</span><strong>${totalSessions}</strong></div>
+      <div class="cv-rail-line"><span>Claude confidence</span><strong>${escapeHtml(claudeConfidence)}</strong></div>
+      <div class="cv-rail-line"><span>Copilot model coverage</span><strong>${escapeHtml(copilotModels)}</strong></div>
+      <div class="cv-rail-line"><span>USD projection</span><strong>${cost ? 'Enabled for Claude' : 'Hidden'}</strong></div>
+    </section>
+    <section class="cv-rail-card">
+      <div class="cv-rail-eyebrow">Operator guidance</div>
+      <h3>Recommended sequence</h3>
+      <div class="cv-step">1. Check that Claude is producing measured savings instead of only installer state.</div>
+      <div class="cv-step">2. Compare provider share and streaks to spot whether adoption is broad or isolated.</div>
+      <div class="cv-step">3. ${escapeHtml(nextStep)}</div>
+    </section>
+  </aside>`;
+}
+
+function renderOverviewTab(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
+  return `<div>
+    ${renderOverviewLead(claude, copilot, cost)}
+    ${renderTotals(claude, copilot, cost)}
+    <div class="cv-overview">
+      <div>
+        ${renderOverviewHighlights(claude, copilot)}
+      </div>
+      ${renderOverviewRail(claude, copilot, cost)}
+    </div>
+  </div>`;
+}
+
 function renderActionGroup(title: string, copy: string, actions: CavemanAction[]): string {
   return `<section class="cv-action-group">
     <div class="cv-action-head">
@@ -630,6 +681,7 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
   const { claude, copilot } = data;
   const totalSessions = claude.sessions + copilot.sessions;
   const month = fmtMonth(claude.currentMonth);
+  const totalSaved = fmtTokens(claude.savedTokens + copilot.savedTokens);
   const updateLabel = !updateStatus
     ? 'Update status unknown'
     : updateStatus.error
@@ -647,6 +699,7 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
       <div class="cv-hero-copy">Track real Claude savings, compare them with estimated Copilot impact, and keep the caveman install path close to the data.</div>
       <div class="cv-hero-chips">
         <span class="cv-chip cv-chip-good">${escapeHtml(month)}</span>
+        <span class="cv-chip">${totalSaved} saved tokens this month</span>
         <span class="cv-chip">${escapeHtml(modeLabel)}</span>
         <span class="cv-chip">${totalSessions} total sessions observed</span>
         <span class="cv-chip">${escapeHtml(updateLabel)}</span>
@@ -954,25 +1007,30 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   ${renderHeaderHero(data, updateStatus)}
 
   <div class="cv-tabs" role="tablist">
-    <button class="cv-tab" data-tab="copilot" role="tab">GitHub Copilot</button>
-    <button class="cv-tab" data-tab="claude" role="tab">Claude Code</button>
-    <button class="cv-tab" data-tab="history" role="tab">Monthly history</button>
-    <button class="cv-tab" data-tab="updates" role="tab">Updates &amp; installer</button>
+    <button class="cv-tab" id="tab-overview" data-tab="overview" role="tab" aria-selected="false" tabindex="-1">Overview</button>
+    <button class="cv-tab" id="tab-copilot" data-tab="copilot" role="tab" aria-selected="false" tabindex="-1">GitHub Copilot</button>
+    <button class="cv-tab" id="tab-claude" data-tab="claude" role="tab" aria-selected="false" tabindex="-1">Claude Code</button>
+    <button class="cv-tab" id="tab-history" data-tab="history" role="tab" aria-selected="false" tabindex="-1">Monthly history</button>
+    <button class="cv-tab" id="tab-updates" data-tab="updates" role="tab" aria-selected="false" tabindex="-1">Updates &amp; installer</button>
   </div>
 
-  <section class="cv-tabpanel cv-hidden" data-panel="claude" role="tabpanel">
+  <section class="cv-tabpanel" data-panel="overview" role="tabpanel" aria-labelledby="tab-overview">
+    ${renderOverviewTab(claude, copilot, cost)}
+  </section>
+
+  <section class="cv-tabpanel cv-hidden" data-panel="claude" role="tabpanel" aria-labelledby="tab-claude">
     ${renderClaudeTab(claude, cost)}
   </section>
 
-  <section class="cv-tabpanel cv-hidden" data-panel="copilot" role="tabpanel">
+  <section class="cv-tabpanel cv-hidden" data-panel="copilot" role="tabpanel" aria-labelledby="tab-copilot">
     ${renderCopilotTab(copilot)}
   </section>
 
-  <section class="cv-tabpanel" data-panel="history" role="tabpanel">
+  <section class="cv-tabpanel cv-hidden" data-panel="history" role="tabpanel" aria-labelledby="tab-history">
     ${renderHistoryTab(claude, copilot, cost)}
   </section>
 
-  <section class="cv-tabpanel" data-panel="updates" role="tabpanel">
+  <section class="cv-tabpanel cv-hidden" data-panel="updates" role="tabpanel" aria-labelledby="tab-updates">
     ${renderCavemanPanel(updateStatus)}
   </section>
 
@@ -986,7 +1044,12 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     const validTabs = new Set(Array.from(tabs, t => t.getAttribute('data-tab')));
     requestAnimationFrame(() => document.body.classList.add('cv-ready'));
     function activateTab(tab) {
-      tabs.forEach(t => t.classList.toggle('cv-tab-active', t.getAttribute('data-tab') === tab));
+      tabs.forEach(t => {
+        const isActive = t.getAttribute('data-tab') === tab;
+        t.classList.toggle('cv-tab-active', isActive);
+        t.setAttribute('aria-selected', String(isActive));
+        t.setAttribute('tabindex', isActive ? '0' : '-1');
+      });
       panels.forEach(p => {
         const isActive = p.getAttribute('data-panel') === tab;
         p.classList.toggle('cv-hidden', !isActive);
@@ -999,9 +1062,22 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
       vscode.setState({ ...(vscode.getState() || {}), activeTab: tab });
     }
     tabs.forEach(t => t.addEventListener('click', () => activateTab(t.getAttribute('data-tab'))));
+    tabs.forEach((t, index) => t.addEventListener('keydown', event => {
+      if (!(event instanceof KeyboardEvent)) return;
+      if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft' && event.key !== 'Home' && event.key !== 'End') return;
+      event.preventDefault();
+      const nextIndex = event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? tabs.length - 1
+          : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+      const nextTab = tabs[nextIndex];
+      activateTab(nextTab.getAttribute('data-tab'));
+      nextTab.focus();
+    }));
     // Restore the last-viewed tab so re-renders (Refresh, update check) keep the user in place.
     const savedTab = (vscode.getState() || {}).activeTab;
-    activateTab(validTabs.has(savedTab) ? savedTab : 'copilot');
+    activateTab(validTabs.has(savedTab) ? savedTab : 'overview');
 
     document.querySelectorAll('[data-command="refresh"]').forEach(b =>
       b.addEventListener('click', () => vscode.postMessage({ command: 'refresh' })));
