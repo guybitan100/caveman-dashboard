@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from '../types';
 import { CavemanUpdateStatus, readCavemanVersion } from '../collectors/updateChecker';
-import { showCost, shortSha } from '../util';
+import { claudeDirOverride, showCost, shortSha } from '../util';
 
 /**
  * Standalone webview for caveman savings, split by provider (Claude Code + Copilot).
@@ -34,7 +34,7 @@ export class CavemanPanel {
     this.panel = panel;
     this.data = data;
     this.version = (context.extension.packageJSON as { version?: string })?.version ?? '';
-    this.cavemanVersion = readCavemanVersion();
+    this.cavemanVersion = readCavemanVersion(claudeDirOverride());
     this.panel.webview.onDidReceiveMessage(message => {
       if (message?.command === 'refresh') vscode.commands.executeCommand('cavemanDashboard.refresh');
       if (message?.command === 'checkUpdate') vscode.commands.executeCommand('cavemanDashboard.checkUpdate');
@@ -212,6 +212,17 @@ function sharePct(part: number, total: number): number {
   return Math.round((part / total) * 100);
 }
 
+/** Human label for the Claude data-source confidence, shared across views. */
+function claudeConfidenceLabel(source: CavemanSavings['source']): string {
+  return source === 'ledger'
+    ? 'Ledger-backed'
+    : source === 'mixed'
+      ? 'Ledger + estimate'
+      : source === 'estimated'
+        ? 'Estimate-only'
+        : 'No signal yet';
+}
+
 function renderOverviewLead(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
   const leader = claude.savedTokens >= copilot.savedTokens ? 'Claude Code is leading savings this month.' : 'GitHub Copilot is leading savings this month.';
   const confidence = claude.source === 'ledger'
@@ -341,13 +352,7 @@ function renderOverviewHighlights(claude: CavemanSavings, copilot: CopilotSaving
 function renderOverviewRail(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
   const totalSaved = claude.savedTokens + copilot.savedTokens;
   const totalSessions = claude.sessions + copilot.sessions;
-  const claudeConfidence = claude.source === 'ledger'
-    ? 'Ledger-backed'
-    : claude.source === 'mixed'
-      ? 'Ledger + estimate'
-      : claude.source === 'estimated'
-        ? 'Estimate-only'
-        : 'No signal yet';
+  const claudeConfidence = claudeConfidenceLabel(claude.source);
   const copilotModels = copilot.models.length > 0 ? `${copilot.models.length} model${copilot.models.length === 1 ? '' : 's'} seen` : 'No model metadata yet';
   const nextStep = !claude.installed
     ? 'Install caveman from the Updates tab, then rerun a Claude session.'
@@ -715,13 +720,7 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
 }
 
 function renderClaudeTab(claude: CavemanSavings, cost: boolean): string {
-  const confidence = claude.source === 'ledger'
-    ? 'Ledger-backed'
-    : claude.source === 'mixed'
-      ? 'Ledger + estimate'
-      : claude.source === 'estimated'
-        ? 'Estimate-only'
-        : 'No signal yet';
+  const confidence = claudeConfidenceLabel(claude.source);
   const usdState = cost ? 'USD view on' : 'USD view off';
   const mode = claude.activeMode ? `Mode ${claude.activeMode}` : 'Mode inactive';
   return `<div>

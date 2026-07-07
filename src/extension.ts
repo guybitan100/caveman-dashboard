@@ -6,7 +6,7 @@ import { CavemanPanel } from './dashboard/cavemanPanel';
 import { CavemanStatusBar } from './statusbar/statusBar';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from './types';
 import { currentMonthKey } from './analytics/cavemanEngine';
-import { showCost, shortSha } from './util';
+import { claudeDirOverride, showCost, shortSha } from './util';
 
 let cavemanCollector: CavemanCollector;
 let copilotCollector: CopilotCollector;
@@ -28,9 +28,9 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(outputChannel);
 
   const config = vscode.workspace.getConfiguration('cavemanDashboard');
-  const explicitDir = config.get<string>('claudeProjectsPath');
+  const explicitDir = claudeDirOverride();
   const vscodeUserPath = config.get<string>('vscodeUserPath');
-  cavemanCollector = new CavemanCollector(explicitDir && explicitDir.trim() ? explicitDir.trim() : undefined);
+  cavemanCollector = new CavemanCollector(explicitDir);
   copilotCollector = new CopilotCollector(vscodeUserPath && vscodeUserPath.trim() ? vscodeUserPath.trim() : undefined);
 
   const version = (context.extension.packageJSON as { version?: string })?.version;
@@ -48,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage('Caveman Dashboard refreshed');
     }),
     vscode.commands.registerCommand('cavemanDashboard.checkUpdate', async () => {
-      const dir = explicitDir && explicitDir.trim() ? explicitDir.trim() : undefined;
+      const dir = explicitDir;
       const status = await vscode.window.withProgress(
         { location: vscode.ProgressLocation.Notification, title: 'Checking for caveman update…' },
         () => checkCavemanUpdate(dir),

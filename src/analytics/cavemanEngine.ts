@@ -1,5 +1,5 @@
 import { CavemanDayPoint, CavemanMonthPoint, CavemanSavings } from '../types';
-import { calculateCostBreakdown } from './costEngine';
+import { calculateCostBreakdown, round2 } from './costEngine';
 
 /** Current calendar month as YYYY-MM. */
 export function currentMonthKey(): string {
@@ -78,7 +78,7 @@ export function aggregateCaveman(
     const month = s.day.slice(0, 7);
     const m = months.get(month) ?? { month, savedTokens: 0, savedUsd: 0, sessions: 0, outputTokens: 0 };
     m.savedTokens += sTokens;
-    m.savedUsd = Math.round((m.savedUsd + sUsd) * 100) / 100;
+    m.savedUsd = round2(m.savedUsd + sUsd);
     m.sessions += 1;
     m.outputTokens += s.outputTokens;
     months.set(month, m);
@@ -87,7 +87,7 @@ export function aggregateCaveman(
     if (month === currentMonth) {
       const d = days.get(s.day) ?? { day: s.day, savedTokens: 0, savedUsd: 0 };
       d.savedTokens += sTokens;
-      d.savedUsd = Math.round((d.savedUsd + sUsd) * 100) / 100;
+      d.savedUsd = round2(d.savedUsd + sUsd);
       days.set(s.day, d);
     }
   }
