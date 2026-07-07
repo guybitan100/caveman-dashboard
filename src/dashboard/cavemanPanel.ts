@@ -99,6 +99,15 @@ function deltaChip(current: number, previous: number): string {
 function escapeHtml(value: string): string {
   return String(value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch] as string));
 }
+
+function renderInlinePills(items: string[]): string {
+  return items.map(item => `<span class="cv-inline-pill">${escapeHtml(item)}</span>`).join('');
+}
+
+function renderStatusBadge(on: boolean, text: string): string {
+  return `<span class="cv-badge ${on ? 'cv-on' : 'cv-off'}">${escapeHtml(text)}</span>`;
+}
+
 function getNonce(): string {
   let text = '';
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -218,9 +227,7 @@ function renderOverviewLead(claude: CavemanSavings, copilot: CopilotSavings, cos
       <div class="cv-page-copy">A high-signal snapshot of provider savings, usage coverage, and whether the current month is trending above the last one.</div>
     </div>
     <div class="cv-inline-facts">
-      <span class="cv-inline-pill">${escapeHtml(leader)}</span>
-      <span class="cv-inline-pill">${escapeHtml(confidence)}</span>
-      <span class="cv-inline-pill">${escapeHtml(costView)}</span>
+      ${renderInlinePills([leader, confidence, costView])}
     </div>
   </div>`;
 }
@@ -408,9 +415,7 @@ function renderCavemanPanel(updateStatus: CavemanUpdateStatus | undefined): stri
           </div>
         </div>
         <div class="cv-panel-facts">
-          <span class="cv-inline-pill">Machine-level setup</span>
-          <span class="cv-inline-pill">Safe checks first</span>
-          <span class="cv-inline-pill">Repair path included</span>
+          ${renderInlinePills(['Machine-level setup', 'Safe checks first', 'Repair path included'])}
         </div>
       </div>
       <div class="cv-panel-actions cv-panel-actions-hero">
@@ -542,8 +547,7 @@ function renderHistoryTab(claude: CavemanSavings, copilot: CopilotSavings, cost:
         <div class="cv-page-copy">Use the long view to see whether caveman usage is growing, flattening, or shifting between Claude and Copilot workflows.</div>
       </div>
       <div class="cv-inline-facts">
-        <span class="cv-inline-pill">${totalTrackedMonths} tracked months</span>
-        <span class="cv-inline-pill">${escapeHtml(leader)}</span>
+        ${renderInlinePills([`${totalTrackedMonths} tracked months`, leader])}
       </div>
     </div>
     <div class="cards cv-summary-cards">
@@ -562,11 +566,10 @@ function renderHistoryTab(claude: CavemanSavings, copilot: CopilotSavings, cost:
 }
 
 function renderClaudeStatus(c: CavemanSavings): string {
-  const badge = (on: boolean, text: string) => `<span class="cv-badge ${on ? 'cv-on' : 'cv-off'}">${escapeHtml(text)}</span>`;
   return `<div class="cv-status">
-    ${badge(c.installed, c.installed ? 'Installed' : 'Not installed')}
-    ${badge(!!c.activeMode, c.activeMode ? `Active: ${c.activeMode}` : 'Mode off')}
-    ${badge(c.active, c.active ? `${c.sessions} session${c.sessions === 1 ? '' : 's'} detected` : 'No usage detected')}
+    ${renderStatusBadge(c.installed, c.installed ? 'Installed' : 'Not installed')}
+    ${renderStatusBadge(!!c.activeMode, c.activeMode ? `Active: ${c.activeMode}` : 'Mode off')}
+    ${renderStatusBadge(c.active, c.active ? `${c.sessions} session${c.sessions === 1 ? '' : 's'} detected` : 'No usage detected')}
   </div>`;
 }
 
@@ -593,13 +596,12 @@ function renderClaude(c: CavemanSavings, cost: boolean): string {
 }
 
 function renderCopilot(c: CopilotSavings): string {
-  const badge = (on: boolean, text: string) => `<span class="cv-badge ${on ? 'cv-on' : 'cv-off'}">${escapeHtml(text)}</span>`;
   const lastMonth = latestTrackedMonth(c.byMonth);
   const noCurrentMonthActivity = c.active && c.turns === 0;
   const status = `<div class="cv-status">
-    ${badge(c.configured, c.configured ? 'caveman installed' : 'caveman not installed')}
-    ${badge(c.active, c.active ? `${c.sessions} chats · ${c.turns} turns this month` : 'No Copilot chats found')}
-    ${noCurrentMonthActivity && lastMonth ? badge(true, `History seen in ${fmtMonth(lastMonth.month)}`) : ''}
+    ${renderStatusBadge(c.configured, c.configured ? 'caveman installed' : 'caveman not installed')}
+    ${renderStatusBadge(c.active, c.active ? `${c.sessions} chats · ${c.turns} turns this month` : 'No Copilot chats found')}
+    ${noCurrentMonthActivity && lastMonth ? renderStatusBadge(true, `History seen in ${fmtMonth(lastMonth.month)}`) : ''}
   </div>`;
   if (!c.active) {
     return `${status}<div class="muted cv-empty">No Copilot chat transcripts found under the VS Code User directory. Override the path with <code>cavemanDashboard.vscodeUserPath</code> if needed.</div>`;
@@ -730,9 +732,7 @@ function renderClaudeTab(claude: CavemanSavings, cost: boolean): string {
         <div class="cv-page-copy">This view is dedicated to Claude Code usage, with caveman session detection, measured saved tokens, and optional USD estimates from the local ledger.</div>
       </div>
       <div class="cv-inline-facts">
-        <span class="cv-inline-pill">${escapeHtml(confidence)}</span>
-        <span class="cv-inline-pill">${escapeHtml(mode)}</span>
-        <span class="cv-inline-pill">${escapeHtml(usdState)}</span>
+        ${renderInlinePills([confidence, mode, usdState])}
       </div>
     </div>
     <section class="cv-provider">
@@ -754,10 +754,7 @@ function renderCopilotTab(copilot: CopilotSavings): string {
         <h2 class="cv-page-title">Projected transcript-based savings</h2>
         <div class="cv-page-copy">This view isolates GitHub Copilot activity using local chat transcripts, real tokenizer counts for output tokens, and a projected caveman compression impact.</div>
         <div class="cv-inline-facts cv-inline-facts-start cv-inline-facts-soft">
-          <span class="cv-inline-pill">${escapeHtml(modelLabel)}</span>
-          <span class="cv-inline-pill">${escapeHtml(activity)}</span>
-          <span class="cv-inline-pill">${escapeHtml(lastMonth ? `Last active ${fmtMonth(lastMonth.month)}` : 'No tracked month yet')}</span>
-          <span class="cv-inline-pill">${escapeHtml(config)}</span>
+          ${renderInlinePills([modelLabel, activity, lastMonth ? `Last active ${fmtMonth(lastMonth.month)}` : 'No tracked month yet', config])}
         </div>
       </div>
     </div>
