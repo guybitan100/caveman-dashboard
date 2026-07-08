@@ -56,6 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
       if (CavemanPanel.currentPanel) CavemanPanel.currentPanel.setUpdateStatus(status);
       await presentUpdateStatus(status);
     }),
+    vscode.commands.registerCommand('cavemanDashboard.updatePlugin', () => updateCavemanPlugin()),
     vscode.commands.registerCommand('cavemanDashboard.cavemanCli', async (action?: unknown) => {
       // Map dashboard actions to caveman installer CLI flags (bin/install.js).
       const FLAGS: Record<string, string> = {
@@ -126,6 +127,28 @@ export function deactivate() {
   statusBar?.dispose();
 }
 
+/**
+ * Update caveman through Claude Code's native plugin manager.
+ *
+ * This is the ONLY update path that refreshes ~/.claude/plugins/installed_plugins.json's
+ * gitCommitSha — the sha the update banner compares against. The `curl | npx` installer
+ * (cavemanCli 'force') reinstalls files but never rewrites that registry, so the banner
+ * would stay stuck on "update available" after using it. Routing the primary "Update
+ * caveman" button here keeps the button and the banner in agreement.
+ */
+async function updateCavemanPlugin(): Promise<void> {
+  const cmd = 'claude plugin update caveman@caveman';
+  const answer = await vscode.window.showWarningMessage(
+    'Update caveman to the latest version?',
+    { modal: true, detail: `${cmd}\n\nUpdates the caveman plugin via Claude Code's plugin manager. A Claude Code restart is required to apply, and you may need to re-run "Check for update" afterwards to refresh this banner.` },
+    'Update',
+  );
+  if (answer !== 'Update') return;
+  const term = vscode.window.createTerminal('Caveman');
+  term.show(true);
+  term.sendText(cmd, true);
+}
+
 /** Show the update-check result as a notification with follow-up actions. */
 async function presentUpdateStatus(s: CavemanUpdateStatus): Promise<void> {
   if (s.error) {
@@ -147,7 +170,7 @@ async function presentUpdateStatus(s: CavemanUpdateStatus): Promise<void> {
     `caveman update available: ${shortSha(s.installedSha)} → ${shortSha(s.latestSha)}.`,
     'Update', 'View changes',
   );
-  if (pick === 'Update') vscode.commands.executeCommand('cavemanDashboard.cavemanCli', 'force');
+  if (pick === 'Update') vscode.commands.executeCommand('cavemanDashboard.updatePlugin');
   else if (pick === 'View changes' && s.compareUrl) vscode.env.openExternal(vscode.Uri.parse(s.compareUrl));
 }
 

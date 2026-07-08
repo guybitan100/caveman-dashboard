@@ -40,6 +40,7 @@ export class CavemanPanel {
     this.panel.webview.onDidReceiveMessage(message => {
       if (message?.command === 'refresh') vscode.commands.executeCommand('cavemanDashboard.refresh');
       if (message?.command === 'checkUpdate') vscode.commands.executeCommand('cavemanDashboard.checkUpdate');
+      if (message?.command === 'updatePlugin') vscode.commands.executeCommand('cavemanDashboard.updatePlugin');
       if (message?.command === 'cavemanCli') vscode.commands.executeCommand('cavemanDashboard.cavemanCli', message.action);
     }, undefined, context.subscriptions);
     this.render();
@@ -426,8 +427,8 @@ function renderCavemanPanel(updateStatus: CavemanUpdateStatus | undefined): stri
         </div>
       </div>
       <div class="cv-panel-actions cv-panel-actions-hero">
-        <button id="check-update" class="cv-ghost cv-cta">${svgIcon('refresh')}<span>Check for update</span></button>
-        <button class="cv-hero cv-cta" data-cv="force" title="--force (reinstall latest)">${svgIcon('download')}<span>Update caveman</span></button>
+        <button id="check-update" class="cv-ghost cv-cta" data-command="checkUpdate">${svgIcon('refresh')}<span>Check for update</span></button>
+        <button class="cv-hero cv-cta" data-command="updatePlugin" title="claude plugin update caveman@caveman">${svgIcon('download')}<span>Update caveman</span></button>
       </div>
     </div>
     ${renderUpdateBanner(updateStatus)}
@@ -1088,6 +1089,8 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
       b.addEventListener('click', () => vscode.postMessage({ command: 'refresh' })));
     document.querySelectorAll('[data-command="checkUpdate"]').forEach(b =>
       b.addEventListener('click', () => vscode.postMessage({ command: 'checkUpdate' })));
+    document.querySelectorAll('[data-command="updatePlugin"]').forEach(b =>
+      b.addEventListener('click', () => vscode.postMessage({ command: 'updatePlugin' })));
     document.querySelectorAll('[data-cv]').forEach(b =>
       b.addEventListener('click', () => vscode.postMessage({ command: 'cavemanCli', action: b.getAttribute('data-cv') })));
   </script>
