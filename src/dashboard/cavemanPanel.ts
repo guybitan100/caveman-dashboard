@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from '../types';
-import { CavemanUpdateStatus, readCavemanVersion } from '../collectors/updateChecker';
+import { CavemanUpdateStatus, readCavemanVersion, readInstalledCaveman } from '../collectors/updateChecker';
 import { claudeDirOverride, showCost, shortSha } from '../util';
 
 /**
@@ -15,6 +15,7 @@ export class CavemanPanel {
   private updateStatus: CavemanUpdateStatus | undefined;
   private readonly version: string;
   private readonly cavemanVersion: string | null;
+  private readonly cavemanSha: string | null;
 
   static show(context: vscode.ExtensionContext, data: CombinedSavings) {
     if (CavemanPanel.currentPanel) {
@@ -35,6 +36,7 @@ export class CavemanPanel {
     this.data = data;
     this.version = (context.extension.packageJSON as { version?: string })?.version ?? '';
     this.cavemanVersion = readCavemanVersion(claudeDirOverride());
+    this.cavemanSha = readInstalledCaveman(claudeDirOverride()).sha;
     this.panel.webview.onDidReceiveMessage(message => {
       if (message?.command === 'refresh') vscode.commands.executeCommand('cavemanDashboard.refresh');
       if (message?.command === 'checkUpdate') vscode.commands.executeCommand('cavemanDashboard.checkUpdate');
@@ -55,7 +57,7 @@ export class CavemanPanel {
   }
 
   private render() {
-    this.panel.webview.html = renderHtml(this.data, this.updateStatus, this.version, this.cavemanVersion);
+    this.panel.webview.html = renderHtml(this.data, this.updateStatus, this.version, this.cavemanVersion, this.cavemanSha);
   }
 }
 
@@ -778,20 +780,26 @@ function renderProviderHeader(title: string, subtitle: string, icon: string): st
 // Upstream caveman plugin — linked from the footer badge.
 const CAVEMAN_REPO = 'https://github.com/JuliusBrussee/caveman';
 
-/** Bottom badge (ClaudeLens-style): gradient extension version + pill link to the original caveman repo (with its version). */
-function renderVersionFooter(version: string, cavemanVersion: string | null): string {
+/** Bottom badge (ClaudeLens-style): gradient extension version + pill link to the original caveman repo (with its version + installed commit). */
+function renderVersionFooter(version: string, cavemanVersion: string | null, cavemanSha: string | null): string {
   const ver = version ? ` v${escapeHtml(version)}` : '';
   const cav = cavemanVersion ? `caveman v${escapeHtml(cavemanVersion)} ↗` : 'caveman original repo ↗';
+  // Commit sha is the real "version" signal — the plugin's package.json version rarely bumps,
+  // so surface the installed commit here to make updates visible at a glance.
+  const sha = cavemanSha
+    ? `<span class="cv-version-sep">·</span><code class="cv-version-sha" title="installed caveman commit">${escapeHtml(shortSha(cavemanSha))}</code>`
+    : '';
   return `<footer class="cv-version">
     <span class="cv-version-brand">Caveman Dashboard${ver}</span>
     <span class="cv-version-sep">·</span>
     <a class="cv-version-pill" href="${CAVEMAN_REPO}">${cav}</a>
+    ${sha}
     <span class="cv-version-sep">·</span>
     <span class="cv-version-beta">BETA</span>
   </footer>`;
 }
 
-function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, version: string, cavemanVersion: string | null): string {
+function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, version: string, cavemanVersion: string | null, cavemanSha: string | null): string {
   const nonce = getNonce();
   const cost = showCost();
   const { claude, copilot } = data;
@@ -972,6 +980,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-version-pill { text-decoration: none; text-transform: uppercase; letter-spacing: 0.6px; font-size: 0.72rem; font-weight: 600; color: var(--vscode-descriptionForeground); padding: 3px 11px; border: 1px solid var(--vscode-panel-border); border-radius: 999px; transition: border-color 0.15s ease, color 0.15s ease; }
   .cv-version-pill:hover { border-color: #c77dff; color: var(--vscode-foreground); }
   .cv-version-beta { text-transform: uppercase; letter-spacing: 0.6px; font-size: 0.72rem; font-weight: 700; color: #1a1205; background: #ffa94d; padding: 3px 11px; border-radius: 999px; }
+  .cv-version-sha { font-family: var(--vscode-editor-font-family, monospace); font-size: 0.72rem; color: var(--vscode-descriptionForeground); background: color-mix(in srgb, var(--vscode-foreground) 8%, transparent); padding: 3px 8px; border-radius: 6px; }
   @keyframes cv-fade-up {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
@@ -1030,7 +1039,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     ${renderCavemanPanel(updateStatus)}
   </section>
 
-  ${renderVersionFooter(version, cavemanVersion)}
+  ${renderVersionFooter(version, cavemanVersion, cavemanSha)}
   </div>
 
   <script nonce="${nonce}">
