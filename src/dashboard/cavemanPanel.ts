@@ -52,6 +52,11 @@ export class CavemanPanel {
     this.render();
   }
 
+  /** True once an update check has populated the version/update status. */
+  get updateKnown(): boolean {
+    return this.updateStatus !== undefined;
+  }
+
   /** Reflect the latest caveman update-check result in the dashboard banner. */
   setUpdateStatus(status: CavemanUpdateStatus) {
     this.updateStatus = status;
