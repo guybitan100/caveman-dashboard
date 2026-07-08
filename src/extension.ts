@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { CavemanCollector } from './collectors/cavemanCollector';
 import { CopilotCollector } from './collectors/copilotCollector';
-import { checkCavemanUpdate, CavemanUpdateStatus } from './collectors/updateChecker';
+import { checkCavemanUpdate, CavemanUpdateStatus, readCavemanVersion } from './collectors/updateChecker';
 import { CavemanPanel } from './dashboard/cavemanPanel';
 import { CavemanStatusBar } from './statusbar/statusBar';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from './types';
@@ -138,7 +138,9 @@ async function presentUpdateStatus(s: CavemanUpdateStatus): Promise<void> {
     return;
   }
   if (!s.updateAvailable) {
-    vscode.window.showInformationMessage(`caveman is up to date (${shortSha(s.installedSha)}).`);
+    const version = readCavemanVersion(claudeDirOverride());
+    const label = version ? `v${version}` : shortSha(s.installedSha);
+    vscode.window.showInformationMessage(`caveman is on the latest version (${label}).`);
     return;
   }
   const pick = await vscode.window.showInformationMessage(
