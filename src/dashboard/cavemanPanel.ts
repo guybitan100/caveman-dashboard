@@ -149,23 +149,6 @@ function trackedMonthCount(rows: { month: string; savedTokens: number }[]): numb
   return rows.filter(r => r.savedTokens > 0).length;
 }
 
-function latestTrackedMonth<T extends { month: string; savedTokens: number }>(rows: T[]): T | null {
-  const activeRows = rows.filter(r => r.savedTokens > 0);
-  if (!activeRows.length) return null;
-  return [...activeRows].sort((a, b) => b.month.localeCompare(a.month))[0];
-}
-
-function shortModelName(model: string): string {
-  return model.replace(/^copilot\//, '');
-}
-
-function renderModelCloud(models: string[], maxVisible = 4): string {
-  if (!models.length) return '<div class="muted">No model metadata yet.</div>';
-  const visible = models.slice(0, maxVisible);
-  const hiddenCount = models.length - visible.length;
-  return `<div class="cv-model-cloud">${visible.map(model => `<span class="cv-model-pill">${escapeHtml(shortModelName(model))}</span>`).join('')}${hiddenCount > 0 ? `<span class="cv-model-pill cv-model-pill-muted">+${hiddenCount} more</span>` : ''}</div>`;
-}
-
 function bestDay(rows: { day: string; savedTokens: number; savedUsd: number }[]): { day: string; savedTokens: number; savedUsd: number } | null {
   if (!rows.length) return null;
   return rows.reduce((best, row) => row.savedTokens > best.savedTokens ? row : best, rows[0]);
@@ -510,72 +493,6 @@ function renderClaude(c: CavemanSavings, cost: boolean): string {
     ${chart}`;
 }
 
-function renderCopilot(c: CopilotSavings): string {
-  const lastMonth = latestTrackedMonth(c.byMonth);
-  const noCurrentMonthActivity = c.active && c.turns === 0;
-  const status = `<div class="cv-status">
-    ${renderStatusBadge(c.configured, c.configured ? 'caveman installed' : 'caveman not installed')}
-    ${renderStatusBadge(c.active, c.active ? `${c.sessions} chats · ${c.turns} turns this month` : 'No Copilot chats found')}
-    ${noCurrentMonthActivity && lastMonth ? renderStatusBadge(true, `History seen in ${fmtMonth(lastMonth.month)}`) : ''}
-  </div>`;
-  if (!c.active) {
-    return `${status}<div class="muted cv-empty">No Copilot chat transcripts found under the VS Code User directory. Override the path with <code>cavemanDashboard.vscodeUserPath</code> if needed.</div>`;
-  }
-  const days = c.byDay.map(d => d.day);
-  const chart = days.length >= 2
-    ? `<div class="cv-chart"><h3>Daily saved tokens this month (est)</h3>${renderLineChart(days, c.byDay.map(d => d.savedTokens), fmtTokens, { color: '#b197fc', id: 'copilot' })}</div>`
-    : '';
-  const models = c.models.length
-    ? `<div class="cv-models-block"><div class="cv-models-label">Models seen in history</div>${renderModelCloud(c.models, 5)}</div>`
-    : '';
-  return `${status}
-    ${noCurrentMonthActivity && lastMonth ? `<div class="muted cv-note">Current month has no Copilot transcript activity yet. The model list and monthly history below come from earlier sessions, most recently <b>${escapeHtml(fmtMonth(lastMonth.month))}</b>.</div>` : ''}
-    <div class="cards">
-      <div class="card accent-purple"><span>Saved Output Tokens <em>(est)</em></span><b>${fmtTokens(c.savedTokens)}</b></div>
-      <div class="card accent-blue"><span>Output Tokens</span><b>${fmtTokens(c.outputTokens)}</b></div>
-      <div class="card accent-orange"><span>Chats / Turns</span><b>${c.sessions} / ${c.turns}</b></div>
-    </div>
-    ${models}
-    ${chart}
-    <div class="muted cv-foot">Copilot keeps no local token log — output tokens are <b>counted</b> from chat transcripts with a real o200k_base tokenizer, but saved tokens are a <b>projection</b> (assume caveman compression, ~65%, was active — Copilot leaves no per-message marker). Copilot is subscription-billed, so no USD figure is shown.</div>`;
-}
-
-function renderCopilotCredits(copilot: CopilotSavings): string {
-  const lastMonth = latestTrackedMonth(copilot.byMonth);
-  const usageLabel = copilot.active
-    ? 'Check the Copilot account menu in VS Code for your live credit balance and reset date.'
-    : 'Extensions can detect local transcript activity, but not your account credit balance.';
-  return `<section class="cv-credit-card">
-    <div class="cv-credit-head">
-      <div>
-        <div class="cv-credit-title">GitHub Copilot account status</div>
-        <div class="cv-credit-sub">This dashboard can read local transcript activity, but GitHub does not expose live credit percentage or reset timing to local extensions.</div>
-      </div>
-      <span class="cv-credit-badge">Account data stays in Copilot</span>
-    </div>
-    <div class="cv-credit-body">
-      <div class="cv-credit-value">Live credits unavailable here</div>
-      <div class="cv-credit-summary">Use the Copilot account menu in VS Code for the real percentage, plan usage, and reset date.</div>
-      <div class="cv-credit-meter" aria-hidden="true"><span></span></div>
-      <div class="cv-credit-grid">
-        <div class="cv-credit-stat">
-          <span class="cv-credit-label">Account view</span>
-          <strong class="cv-credit-strong">Open Copilot menu</strong>
-        </div>
-        <div class="cv-credit-stat">
-          <span class="cv-credit-label">Extension state</span>
-          <strong class="cv-credit-strong">${escapeHtml(copilot.configured ? 'Copilot installed' : 'Copilot not installed')}</strong>
-        </div>
-      </div>
-      <div class="cv-credit-meta">
-        <span>${escapeHtml(lastMonth ? `Last transcript activity ${fmtMonth(lastMonth.month)}` : 'No tracked activity month yet')}</span>
-        <span>Reset date is not exposed locally</span>
-      </div>
-      <div class="muted cv-credit-note">${escapeHtml(usageLabel)}</div>
-    </div>
-  </section>`;
-}
-
 function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined): string {
   const { claude, copilot } = data;
   const totalSessions = claude.sessions + copilot.sessions;
@@ -630,30 +547,6 @@ function renderClaudeTab(claude: CavemanSavings, cost: boolean): string {
     <section class="cv-provider">
       ${renderProviderHeader('Claude Code', 'Measured from caveman activity and local ledger history.', 'layers')}
       ${renderClaude(claude, cost)}
-    </section>
-  </div>`;
-}
-
-function renderCopilotTab(copilot: CopilotSavings): string {
-  const modelLabel = copilot.models.length ? `${copilot.models.length} model${copilot.models.length === 1 ? '' : 's'}` : 'No models yet';
-  const lastMonth = latestTrackedMonth(copilot.byMonth);
-  const activity = copilot.active ? `${copilot.sessions} chats · ${copilot.turns} turns this month` : 'No activity yet';
-  const config = copilot.configured ? 'Installed' : 'Not installed';
-  return `<div>
-    <div class="cv-page-intro">
-      <div>
-        <div class="cv-page-eyebrow">GitHub Copilot</div>
-        <h2 class="cv-page-title">Projected transcript-based savings</h2>
-        <div class="cv-page-copy">This view isolates GitHub Copilot activity using local chat transcripts, real tokenizer counts for output tokens, and a projected caveman compression impact.</div>
-        <div class="cv-inline-facts cv-inline-facts-start cv-inline-facts-soft">
-          ${renderInlinePills([modelLabel, activity, lastMonth ? `Last active ${fmtMonth(lastMonth.month)}` : 'No tracked month yet', config])}
-        </div>
-      </div>
-    </div>
-    ${renderCopilotCredits(copilot)}
-    <section class="cv-provider">
-      ${renderProviderHeader('GitHub Copilot', 'Estimated from local chat transcripts and tokenizer counts.', 'package')}
-      ${renderCopilot(copilot)}
     </section>
   </div>`;
 }
@@ -906,7 +799,6 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
 
   <div class="cv-tabs" role="tablist">
     <button class="cv-tab" id="tab-overview" data-tab="overview" role="tab" aria-selected="false" tabindex="-1">Overview</button>
-    <button class="cv-tab" id="tab-copilot" data-tab="copilot" role="tab" aria-selected="false" tabindex="-1">GitHub Copilot</button>
     <button class="cv-tab" id="tab-claude" data-tab="claude" role="tab" aria-selected="false" tabindex="-1">Claude Code</button>
     <button class="cv-tab" id="tab-history" data-tab="history" role="tab" aria-selected="false" tabindex="-1">Monthly history</button>
   </div>
@@ -917,10 +809,6 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
 
   <section class="cv-tabpanel cv-hidden" data-panel="claude" role="tabpanel" aria-labelledby="tab-claude">
     ${renderClaudeTab(claude, cost)}
-  </section>
-
-  <section class="cv-tabpanel cv-hidden" data-panel="copilot" role="tabpanel" aria-labelledby="tab-copilot">
-    ${renderCopilotTab(copilot)}
   </section>
 
   <section class="cv-tabpanel cv-hidden" data-panel="history" role="tabpanel" aria-labelledby="tab-history">
