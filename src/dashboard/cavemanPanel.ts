@@ -656,9 +656,14 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-cta-danger { border-color: #e0384555; color: #ff6b6b; }
   .cv-cta-danger:hover { background: #e0384518; border-color: #ff6b6b; color: #ff6b6b; }
   .cv-tabs { display: inline-flex; gap: 6px; margin: 18px 0 10px; padding: 6px; border: 1px solid var(--vscode-panel-border); border-radius: 14px; background: color-mix(in srgb, var(--vscode-editorWidget-background) 88%, transparent); }
-  .cv-tab { background: transparent; color: var(--vscode-descriptionForeground); border: none; border-radius: 10px; padding: 8px 14px; font-weight: 700; }
+  .cv-sectionnav { position: sticky; top: 8px; z-index: 30; background: color-mix(in srgb, var(--vscode-editorWidget-background) 92%, transparent); backdrop-filter: blur(10px); box-shadow: 0 8px 24px rgba(0,0,0,0.14); }
+  .cv-tab { display: inline-flex; align-items: center; text-decoration: none; background: transparent; color: var(--vscode-descriptionForeground); border: none; border-radius: 10px; padding: 8px 14px; font-weight: 700; transition: color 0.15s ease, background 0.15s ease; }
   .cv-tab:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.12)); color: var(--vscode-foreground); }
   .cv-tab-active { color: #081b2c; background: linear-gradient(135deg, #7dd3fc, #4dabf7); box-shadow: 0 6px 18px #4dabf733; }
+  .cv-tab-active:hover { color: #081b2c; }
+  .cv-stack { display: flex; flex-direction: column; }
+  .cv-section { scroll-margin-top: 68px; padding-top: 6px; }
+  .cv-section + .cv-section { margin-top: 26px; padding-top: 26px; border-top: 1px solid color-mix(in srgb, var(--vscode-panel-border) 68%, transparent); }
   .cv-tabpanel.cv-panel-live { animation: cv-fade-up 220ms cubic-bezier(.2,.8,.2,1); }
   .cv-hidden { display: none; }
   button { font-family: inherit; font-size: 0.85rem; padding: 5px 12px; border: 1px solid var(--vscode-button-border, transparent); border-radius: 4px; cursor: pointer; background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
@@ -797,68 +802,58 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   <div class="cv-shell">
   ${renderHeaderHero(data, updateStatus)}
 
-  <div class="cv-tabs" role="tablist">
-    <button class="cv-tab" id="tab-overview" data-tab="overview" role="tab" aria-selected="false" tabindex="-1">Overview</button>
-    <button class="cv-tab" id="tab-claude" data-tab="claude" role="tab" aria-selected="false" tabindex="-1">Claude Code</button>
-    <button class="cv-tab" id="tab-history" data-tab="history" role="tab" aria-selected="false" tabindex="-1">Monthly history</button>
-  </div>
+  <nav class="cv-tabs cv-sectionnav" aria-label="Dashboard sections">
+    <a class="cv-tab" href="#sec-overview" data-nav="sec-overview">Overview</a>
+    <a class="cv-tab" href="#sec-claude" data-nav="sec-claude">Claude Code</a>
+    <a class="cv-tab" href="#sec-history" data-nav="sec-history">Monthly history</a>
+  </nav>
 
-  <section class="cv-tabpanel" data-panel="overview" role="tabpanel" aria-labelledby="tab-overview">
-    ${renderOverviewTab(claude, cost)}
-  </section>
+  <main class="cv-stack">
+    <section class="cv-section" id="sec-overview" aria-label="Overview">
+      ${renderOverviewTab(claude, cost)}
+    </section>
 
-  <section class="cv-tabpanel cv-hidden" data-panel="claude" role="tabpanel" aria-labelledby="tab-claude">
-    ${renderClaudeTab(claude, cost)}
-  </section>
+    <section class="cv-section" id="sec-claude" aria-label="Claude Code">
+      ${renderClaudeTab(claude, cost)}
+    </section>
 
-  <section class="cv-tabpanel cv-hidden" data-panel="history" role="tabpanel" aria-labelledby="tab-history">
-    ${renderHistoryTab(claude, copilot, cost)}
-  </section>
+    <section class="cv-section" id="sec-history" aria-label="Monthly history">
+      ${renderHistoryTab(claude, copilot, cost)}
+    </section>
+  </main>
 
   ${renderVersionFooter(version, cavemanVersion, cavemanSha)}
   </div>
 
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
-    const tabs = document.querySelectorAll('.cv-tab');
-    const panels = document.querySelectorAll('.cv-tabpanel');
-    const validTabs = new Set(Array.from(tabs, t => t.getAttribute('data-tab')));
+    const navLinks = Array.from(document.querySelectorAll('.cv-sectionnav .cv-tab'));
+    const sections = Array.from(document.querySelectorAll('.cv-section'));
     requestAnimationFrame(() => document.body.classList.add('cv-ready'));
-    function activateTab(tab) {
-      tabs.forEach(t => {
-        const isActive = t.getAttribute('data-tab') === tab;
-        t.classList.toggle('cv-tab-active', isActive);
-        t.setAttribute('aria-selected', String(isActive));
-        t.setAttribute('tabindex', isActive ? '0' : '-1');
+    function setActiveNav(id) {
+      navLinks.forEach(a => {
+        const on = a.getAttribute('data-nav') === id;
+        a.classList.toggle('cv-tab-active', on);
+        if (on) a.setAttribute('aria-current', 'true');
+        else a.removeAttribute('aria-current');
       });
-      panels.forEach(p => {
-        const isActive = p.getAttribute('data-panel') === tab;
-        p.classList.toggle('cv-hidden', !isActive);
-        p.classList.remove('cv-panel-live');
-        if (isActive) {
-          void p.offsetWidth;
-          p.classList.add('cv-panel-live');
-        }
-      });
-      vscode.setState({ ...(vscode.getState() || {}), activeTab: tab });
     }
-    tabs.forEach(t => t.addEventListener('click', () => activateTab(t.getAttribute('data-tab'))));
-    tabs.forEach((t, index) => t.addEventListener('keydown', event => {
-      if (!(event instanceof KeyboardEvent)) return;
-      if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft' && event.key !== 'Home' && event.key !== 'End') return;
+    // Highlight the section nearest the viewport center as the page scrolls.
+    if ('IntersectionObserver' in window && sections.length) {
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting) setActiveNav(e.target.id); });
+      }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 });
+      sections.forEach(s => io.observe(s));
+    }
+    setActiveNav('sec-overview');
+    // Smooth-scroll to a section instead of a hard anchor jump.
+    navLinks.forEach(a => a.addEventListener('click', event => {
       event.preventDefault();
-      const nextIndex = event.key === 'Home'
-        ? 0
-        : event.key === 'End'
-          ? tabs.length - 1
-          : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-      const nextTab = tabs[nextIndex];
-      activateTab(nextTab.getAttribute('data-tab'));
-      nextTab.focus();
+      const id = a.getAttribute('data-nav');
+      const target = document.getElementById(id);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setActiveNav(id);
     }));
-    // Restore the last-viewed tab so re-renders (Refresh, update check) keep the user in place.
-    const savedTab = (vscode.getState() || {}).activeTab;
-    activateTab(validTabs.has(savedTab) ? savedTab : 'overview');
 
     document.querySelectorAll('[data-command="refresh"]').forEach(b =>
       b.addEventListener('click', () => vscode.postMessage({ command: 'refresh' })));
