@@ -228,8 +228,8 @@ function claudeConfidenceLabel(source: CavemanSavings['source']): string {
         : 'No signal yet';
 }
 
-function renderOverviewLead(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
-  const leader = claude.savedTokens >= copilot.savedTokens ? 'Claude Code is leading savings this month.' : 'GitHub Copilot is leading savings this month.';
+function renderOverviewLead(claude: CavemanSavings, cost: boolean): string {
+  const savings = `${fmtTokens(claude.savedTokens)} saved this month.`;
   const confidence = claude.source === 'ledger'
     ? 'Claude is ledger-backed.'
     : claude.source === 'mixed'
@@ -240,10 +240,10 @@ function renderOverviewLead(claude: CavemanSavings, copilot: CopilotSavings, cos
     <div>
       <div class="cv-page-eyebrow">Executive summary</div>
       <h2 class="cv-page-title">Current month performance</h2>
-      <div class="cv-page-copy">A high-signal snapshot of provider savings, usage coverage, and whether the current month is trending above the last one.</div>
+      <div class="cv-page-copy">A high-signal snapshot of Claude savings, usage coverage, and whether the current month is trending above the last one.</div>
     </div>
     <div class="cv-inline-facts">
-      ${renderInlinePills([leader, confidence, costView])}
+      ${renderInlinePills([savings, confidence, costView])}
     </div>
   </div>`;
 }
