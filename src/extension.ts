@@ -132,9 +132,9 @@ export function deactivate() {
  * Update caveman through Claude Code's native plugin manager.
  *
  * This is the ONLY update path that refreshes ~/.claude/plugins/installed_plugins.json's
- * gitCommitSha — the sha the update banner compares against. The `curl | npx` installer
- * (cavemanCli 'force') reinstalls files but never rewrites that registry, so the banner
- * would stay stuck on "update available" after using it. Routing the primary "Update
+ * installPath/version — the live commit the update banner compares against. The `curl | npx`
+ * installer (cavemanCli 'force') reinstalls files but never rewrites that registry, so the
+ * banner would stay stuck on "update available" after using it. Routing the primary "Update
  * caveman" button here keeps the button and the banner in agreement.
  */
 async function updateCavemanPlugin(): Promise<void> {

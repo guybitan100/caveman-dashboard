@@ -55,7 +55,16 @@ export function readInstalledCaveman(explicitDir?: string): CavemanInstallInfo {
     const entries = reg?.plugins?.['caveman@caveman'];
     const first = Array.isArray(entries) ? entries[0] : undefined;
     if (first) {
-      sha = typeof first.gitCommitSha === 'string' ? first.gitCommitSha
+      // The commit currently loaded is the one in installPath's basename (== `version` for
+      // git-sourced plugins). `claude plugin update` refreshes installPath/version/lastUpdated
+      // but leaves gitCommitSha at its install-time value, so gitCommitSha goes stale after an
+      // update and would falsely report "update available". Trust the live install dir first,
+      // then version, and fall back to gitCommitSha only when neither is a usable sha.
+      const isSha = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{7,40}$/i.test(s.trim());
+      const installBase = typeof first.installPath === 'string' ? path.basename(first.installPath) : '';
+      sha = isSha(installBase) ? installBase
+        : isSha(first.version) ? first.version
+        : typeof first.gitCommitSha === 'string' ? first.gitCommitSha
         : typeof first.version === 'string' ? first.version
         : null;
       installedAt = typeof first.installedAt === 'string' ? first.installedAt : null;
