@@ -338,6 +338,22 @@ function renderOverviewTab(claude: CavemanSavings, cost: boolean): string {
   </div>`;
 }
 
+function renderUnifiedDashboard(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
+  return `<main class="cv-story">
+    <section class="cv-story-section cv-story-section-hero" id="sec-overview" aria-label="Overview">
+      ${renderOverviewTab(claude, cost)}
+    </section>
+
+    <section class="cv-story-section" id="sec-claude" aria-label="Claude Code details">
+      ${renderClaudeTab(claude, cost)}
+    </section>
+
+    <section class="cv-story-section" id="sec-history" aria-label="Monthly history details">
+      ${renderHistoryTab(claude, copilot, cost)}
+    </section>
+  </main>`;
+}
+
 /** Minimal inline SVG line chart for a single daily series. */
 function renderLineChart(
   days: string[],
@@ -655,16 +671,10 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-cta .cv-ico { width: 15px; height: 15px; }
   .cv-cta-danger { border-color: #e0384555; color: #ff6b6b; }
   .cv-cta-danger:hover { background: #e0384518; border-color: #ff6b6b; color: #ff6b6b; }
-  .cv-tabs { display: inline-flex; gap: 6px; margin: 18px 0 10px; padding: 6px; border: 1px solid var(--vscode-panel-border); border-radius: 14px; background: color-mix(in srgb, var(--vscode-editorWidget-background) 88%, transparent); }
-  .cv-sectionnav { position: sticky; top: 8px; z-index: 30; background: color-mix(in srgb, var(--vscode-editorWidget-background) 92%, transparent); backdrop-filter: blur(10px); box-shadow: 0 8px 24px rgba(0,0,0,0.14); }
-  .cv-tab { display: inline-flex; align-items: center; text-decoration: none; background: transparent; color: var(--vscode-descriptionForeground); border: none; border-radius: 10px; padding: 8px 14px; font-weight: 700; transition: color 0.15s ease, background 0.15s ease; }
-  .cv-tab:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.12)); color: var(--vscode-foreground); }
-  .cv-tab-active { color: #081b2c; background: linear-gradient(135deg, #7dd3fc, #4dabf7); box-shadow: 0 6px 18px #4dabf733; }
-  .cv-tab-active:hover { color: #081b2c; }
-  .cv-stack { display: flex; flex-direction: column; }
-  .cv-section { scroll-margin-top: 68px; padding-top: 6px; }
-  .cv-section + .cv-section { margin-top: 26px; padding-top: 26px; border-top: 1px solid color-mix(in srgb, var(--vscode-panel-border) 68%, transparent); }
-  .cv-tabpanel.cv-panel-live { animation: cv-fade-up 220ms cubic-bezier(.2,.8,.2,1); }
+  .cv-story { display: grid; gap: 22px; margin-top: 22px; }
+  .cv-story-section { position: relative; padding: 22px; border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 80%, transparent); border-radius: 20px; background: linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 96%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 4%)); box-shadow: 0 14px 34px rgba(0,0,0,0.12); }
+  .cv-story-section::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 1px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--vscode-focusBorder) 55%, transparent), transparent); }
+  .cv-story-section-hero { padding-top: 24px; }
   .cv-hidden { display: none; }
   button { font-family: inherit; font-size: 0.85rem; padding: 5px 12px; border: 1px solid var(--vscode-button-border, transparent); border-radius: 4px; cursor: pointer; background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
   button:hover { background: var(--vscode-button-hoverBackground); }
@@ -802,58 +812,14 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   <div class="cv-shell">
   ${renderHeaderHero(data, updateStatus)}
 
-  <nav class="cv-tabs cv-sectionnav" aria-label="Dashboard sections">
-    <a class="cv-tab" href="#sec-overview" data-nav="sec-overview">Overview</a>
-    <a class="cv-tab" href="#sec-claude" data-nav="sec-claude">Claude Code</a>
-    <a class="cv-tab" href="#sec-history" data-nav="sec-history">Monthly history</a>
-  </nav>
-
-  <main class="cv-stack">
-    <section class="cv-section" id="sec-overview" aria-label="Overview">
-      ${renderOverviewTab(claude, cost)}
-    </section>
-
-    <section class="cv-section" id="sec-claude" aria-label="Claude Code">
-      ${renderClaudeTab(claude, cost)}
-    </section>
-
-    <section class="cv-section" id="sec-history" aria-label="Monthly history">
-      ${renderHistoryTab(claude, copilot, cost)}
-    </section>
-  </main>
+  ${renderUnifiedDashboard(claude, copilot, cost)}
 
   ${renderVersionFooter(version, cavemanVersion, cavemanSha)}
   </div>
 
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
-    const navLinks = Array.from(document.querySelectorAll('.cv-sectionnav .cv-tab'));
-    const sections = Array.from(document.querySelectorAll('.cv-section'));
     requestAnimationFrame(() => document.body.classList.add('cv-ready'));
-    function setActiveNav(id) {
-      navLinks.forEach(a => {
-        const on = a.getAttribute('data-nav') === id;
-        a.classList.toggle('cv-tab-active', on);
-        if (on) a.setAttribute('aria-current', 'true');
-        else a.removeAttribute('aria-current');
-      });
-    }
-    // Highlight the section nearest the viewport center as the page scrolls.
-    if ('IntersectionObserver' in window && sections.length) {
-      const io = new IntersectionObserver(entries => {
-        entries.forEach(e => { if (e.isIntersecting) setActiveNav(e.target.id); });
-      }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 });
-      sections.forEach(s => io.observe(s));
-    }
-    setActiveNav('sec-overview');
-    // Smooth-scroll to a section instead of a hard anchor jump.
-    navLinks.forEach(a => a.addEventListener('click', event => {
-      event.preventDefault();
-      const id = a.getAttribute('data-nav');
-      const target = document.getElementById(id);
-      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setActiveNav(id);
-    }));
 
     document.querySelectorAll('[data-command="refresh"]').forEach(b =>
       b.addEventListener('click', () => vscode.postMessage({ command: 'refresh' })));
