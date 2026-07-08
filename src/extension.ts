@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { CavemanCollector } from './collectors/cavemanCollector';
 import { CopilotCollector } from './collectors/copilotCollector';
-import { checkCavemanUpdate, CavemanUpdateStatus, readCavemanVersion } from './collectors/updateChecker';
+import { checkCavemanUpdate, CavemanUpdateStatus } from './collectors/updateChecker';
 import { CavemanPanel } from './dashboard/cavemanPanel';
 import { CavemanStatusBar } from './statusbar/statusBar';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from './types';
@@ -184,9 +184,9 @@ async function presentUpdateStatus(s: CavemanUpdateStatus): Promise<void> {
     return;
   }
   if (!s.updateAvailable) {
-    const version = readCavemanVersion(claudeDirOverride());
-    const label = version ? `v${version}` : shortSha(s.installedSha);
-    vscode.window.showInformationMessage(`caveman is on the latest version (${label}).`);
+    // Report the installed commit sha, not the plugin's package.json version — the
+    // version rarely bumps, so the sha is the real "which build am I on" signal.
+    vscode.window.showInformationMessage(`caveman is on the latest version (${shortSha(s.installedSha)}).`);
     return;
   }
   const pick = await vscode.window.showInformationMessage(
