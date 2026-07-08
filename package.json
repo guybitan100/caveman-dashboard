@@ -36,6 +36,11 @@
         "command": "cavemanDashboard.checkUpdate",
         "title": "Check for Caveman Update",
         "category": "Caveman"
+      },
+      {
+        "command": "cavemanDashboard.restart",
+        "title": "Restart (Reload Window)",
+        "category": "Caveman"
       }
     ],
     "configuration": {

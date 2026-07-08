@@ -41,6 +41,7 @@ export class CavemanPanel {
       if (message?.command === 'refresh') vscode.commands.executeCommand('cavemanDashboard.refresh');
       if (message?.command === 'checkUpdate') vscode.commands.executeCommand('cavemanDashboard.checkUpdate');
       if (message?.command === 'updatePlugin') vscode.commands.executeCommand('cavemanDashboard.updatePlugin');
+      if (message?.command === 'restart') vscode.commands.executeCommand('cavemanDashboard.restart');
       if (message?.command === 'cavemanCli') vscode.commands.executeCommand('cavemanDashboard.cavemanCli', message.action);
     }, undefined, context.subscriptions);
     this.render();
@@ -128,6 +129,7 @@ const ICONS: Record<string, string> = {
   refresh: '<path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/>',
   trash: '<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
   rocket: '<path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2 0-2.8a2 2 0 0 0-2.8 0zM12 15l-3-3a22 22 0 0 1 8-10c3 0 5 2 5 5a22 22 0 0 1-10 8zM9 12H4l3-3h3M12 15v5l3-3v-3"/>',
+  power: '<path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>',
 };
 function svgIcon(name: string): string {
   return `<svg class="cv-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] ?? ''}</svg>`;
@@ -429,6 +431,7 @@ function renderCavemanPanel(updateStatus: CavemanUpdateStatus | undefined): stri
       <div class="cv-panel-actions cv-panel-actions-hero">
         <button id="check-update" class="cv-ghost cv-cta" data-command="checkUpdate">${svgIcon('refresh')}<span>Check for update</span></button>
         <button class="cv-hero cv-cta" data-command="updatePlugin" title="claude plugin update caveman@caveman">${svgIcon('download')}<span>Update caveman</span></button>
+        <button class="cv-ghost cv-cta" data-command="restart" title="Reload the VS Code window to apply a caveman update">${svgIcon('power')}<span>Restart</span></button>
       </div>
     </div>
     ${renderUpdateBanner(updateStatus)}
@@ -1091,6 +1094,8 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
       b.addEventListener('click', () => vscode.postMessage({ command: 'checkUpdate' })));
     document.querySelectorAll('[data-command="updatePlugin"]').forEach(b =>
       b.addEventListener('click', () => vscode.postMessage({ command: 'updatePlugin' })));
+    document.querySelectorAll('[data-command="restart"]').forEach(b =>
+      b.addEventListener('click', () => vscode.postMessage({ command: 'restart' })));
     document.querySelectorAll('[data-cv]').forEach(b =>
       b.addEventListener('click', () => vscode.postMessage({ command: 'cavemanCli', action: b.getAttribute('data-cv') })));
   </script>

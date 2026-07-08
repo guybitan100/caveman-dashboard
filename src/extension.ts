@@ -57,6 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
       await presentUpdateStatus(status);
     }),
     vscode.commands.registerCommand('cavemanDashboard.updatePlugin', () => updateCavemanPlugin()),
+    vscode.commands.registerCommand('cavemanDashboard.restart', () => restartClaudeCode()),
     vscode.commands.registerCommand('cavemanDashboard.cavemanCli', async (action?: unknown) => {
       // Map dashboard actions to caveman installer CLI flags (bin/install.js).
       const FLAGS: Record<string, string> = {
@@ -147,6 +148,28 @@ async function updateCavemanPlugin(): Promise<void> {
   const term = vscode.window.createTerminal('Caveman');
   term.show(true);
   term.sendText(cmd, true);
+}
+
+/**
+ * Reload the VS Code window to apply a caveman plugin update.
+ *
+ * A caveman plugin update only takes effect after Claude Code restarts. From an
+ * extension the closest we can do is `workbench.action.reloadWindow`, which restarts
+ * the extension host (and the Claude Code IDE extension with it). A Claude Code CLI
+ * session running in a terminal must still be restarted manually — the modal says so.
+ * Reloading closes all editors/terminals, so confirm first.
+ */
+async function restartClaudeCode(): Promise<void> {
+  const answer = await vscode.window.showWarningMessage(
+    'Reload the VS Code window now?',
+    {
+      modal: true,
+      detail: 'Applies a caveman plugin update by reloading this window. All editors and terminals close and reopen. A Claude Code CLI session running in a terminal must be restarted manually. Run "Check for update" afterwards to refresh the banner.',
+    },
+    'Reload',
+  );
+  if (answer !== 'Reload') return;
+  await vscode.commands.executeCommand('workbench.action.reloadWindow');
 }
 
 /** Show the update-check result as a notification with follow-up actions. */
