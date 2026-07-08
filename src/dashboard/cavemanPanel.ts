@@ -212,11 +212,6 @@ function activeStreak(rows: { day: string; savedTokens: number }[]): number {
   return streak;
 }
 
-function sharePct(part: number, total: number): number {
-  if (total <= 0) return 0;
-  return Math.round((part / total) * 100);
-}
-
 /** Human label for the Claude data-source confidence, shared across views. */
 function claudeConfidenceLabel(source: CavemanSavings['source']): string {
   return source === 'ledger'
@@ -302,18 +297,13 @@ function renderCopilotInsights(copilot: CopilotSavings): string {
   </div>`;
 }
 
-function renderOverviewHighlights(claude: CavemanSavings, copilot: CopilotSavings): string {
-  const totalCurrent = claude.savedTokens + copilot.savedTokens;
+function renderOverviewHighlights(claude: CavemanSavings): string {
+  const totalCurrent = claude.savedTokens;
   const prev = prevMonthKey(claude.currentMonth);
-  const totalPrevious = savedInMonth(claude.byMonth, prev) + savedInMonth(copilot.byMonth, prev);
-  const claudeShare = sharePct(claude.savedTokens, totalCurrent);
-  const copilotShare = sharePct(copilot.savedTokens, totalCurrent);
+  const totalPrevious = savedInMonth(claude.byMonth, prev);
   const bestClaudeDay = bestDay(claude.byDay);
-  const bestCopilotDay = bestDay(copilot.byDay);
-  const strongestDay = !bestCopilotDay || (bestClaudeDay && bestClaudeDay.savedTokens >= bestCopilotDay.savedTokens)
-    ? (bestClaudeDay ? `Claude · ${fmtTokens(bestClaudeDay.savedTokens)} on ${bestClaudeDay.day.slice(5)}` : 'No active day yet')
-    : `Copilot · ${fmtTokens(bestCopilotDay.savedTokens)} on ${bestCopilotDay.day.slice(5)}`;
-  const streak = Math.max(activeStreak(claude.byDay), activeStreak(copilot.byDay));
+  const strongestDay = bestClaudeDay ? `${fmtTokens(bestClaudeDay.savedTokens)} on ${bestClaudeDay.day.slice(5)}` : 'No active day yet';
+  const streak = activeStreak(claude.byDay);
   const trend = totalPrevious > 0
     ? `${Math.abs(Math.round(((totalCurrent - totalPrevious) / totalPrevious) * 100))}% ${totalCurrent >= totalPrevious ? 'above' : 'below'} last month`
     : 'No previous-month baseline yet';
@@ -321,20 +311,12 @@ function renderOverviewHighlights(claude: CavemanSavings, copilot: CopilotSaving
     ? 'Install caveman first so savings can be measured from real usage.'
     : !claude.active
       ? 'Run a Claude session with caveman enabled, then refresh this dashboard.'
-      : !copilot.active
-        ? 'Copilot has no transcript signal yet; use it for a few turns to estimate impact.'
-        : 'Review provider split and compare it with the monthly history tab.';
+      : 'Review the monthly history tab to confirm momentum is sustaining.';
   return `<div class="cv-insight-grid">
     <div class="cv-mini-card">
       <span class="cv-mini-label">Momentum</span>
       <strong class="cv-mini-value">${escapeHtml(trend)}</strong>
-      <small class="cv-mini-copy">Based on combined current-month savings across both providers.</small>
-    </div>
-    <div class="cv-mini-card">
-      <span class="cv-mini-label">Provider share</span>
-      <strong class="cv-mini-value">Claude ${claudeShare}% · Copilot ${copilotShare}%</strong>
-      <small class="cv-mini-copy">Current-month saved-token contribution split across providers.</small>
-      <div class="cv-share-bar" aria-hidden="true"><span style="width:${claudeShare}%"></span></div>
+      <small class="cv-mini-copy">Based on current-month Claude savings.</small>
     </div>
     <div class="cv-mini-card">
       <span class="cv-mini-label">Best day</span>
@@ -354,18 +336,15 @@ function renderOverviewHighlights(claude: CavemanSavings, copilot: CopilotSaving
   </div>`;
 }
 
-function renderOverviewRail(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
-  const totalSaved = claude.savedTokens + copilot.savedTokens;
-  const totalSessions = claude.sessions + copilot.sessions;
+function renderOverviewRail(claude: CavemanSavings, cost: boolean): string {
+  const totalSaved = claude.savedTokens;
+  const totalSessions = claude.sessions;
   const claudeConfidence = claudeConfidenceLabel(claude.source);
-  const copilotModels = copilot.models.length > 0 ? `${copilot.models.length} model${copilot.models.length === 1 ? '' : 's'} seen` : 'No model metadata yet';
   const nextStep = !claude.installed
     ? 'Install caveman from the Updates tab, then rerun a Claude session.'
     : !claude.active
       ? 'Generate the first Claude session so the dashboard can switch from setup to measured savings.'
-      : !copilot.active
-        ? 'Use Copilot for a few turns so transcript-based estimates can populate.'
-        : 'Review Monthly history to confirm the current month is sustaining momentum.';
+      : 'Review Monthly history to confirm the current month is sustaining momentum.';
   return `<aside class="cv-signal-rail">
     <section class="cv-rail-card">
       <div class="cv-rail-eyebrow">At a glance</div>
@@ -373,28 +352,27 @@ function renderOverviewRail(claude: CavemanSavings, copilot: CopilotSavings, cos
       <div class="cv-rail-line"><span>Total saved this month</span><strong>${fmtTokens(totalSaved)}</strong></div>
       <div class="cv-rail-line"><span>Observed sessions</span><strong>${totalSessions}</strong></div>
       <div class="cv-rail-line"><span>Claude confidence</span><strong>${escapeHtml(claudeConfidence)}</strong></div>
-      <div class="cv-rail-line"><span>Copilot model coverage</span><strong>${escapeHtml(copilotModels)}</strong></div>
       <div class="cv-rail-line"><span>USD projection</span><strong>${cost ? 'Enabled for Claude' : 'Hidden'}</strong></div>
     </section>
     <section class="cv-rail-card">
       <div class="cv-rail-eyebrow">Operator guidance</div>
       <h3>Recommended sequence</h3>
       <div class="cv-step">1. Check that Claude is producing measured savings instead of only installer state.</div>
-      <div class="cv-step">2. Compare provider share and streaks to spot whether adoption is broad or isolated.</div>
+      <div class="cv-step">2. Track streaks and momentum to spot whether adoption is sustaining.</div>
       <div class="cv-step">3. ${escapeHtml(nextStep)}</div>
     </section>
   </aside>`;
 }
 
-function renderOverviewTab(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
+function renderOverviewTab(claude: CavemanSavings, cost: boolean): string {
   return `<div>
-    ${renderOverviewLead(claude, copilot, cost)}
-    ${renderTotals(claude, copilot, cost)}
+    ${renderOverviewLead(claude, cost)}
+    ${renderTotals(claude, cost)}
     <div class="cv-overview">
       <div>
-        ${renderOverviewHighlights(claude, copilot)}
+        ${renderOverviewHighlights(claude)}
       </div>
-      ${renderOverviewRail(claude, copilot, cost)}
+      ${renderOverviewRail(claude, cost)}
     </div>
   </div>`;
 }
@@ -491,18 +469,17 @@ function renderLineChart(
 }
 
 /** Top row: per-provider saved totals for the current month. */
-function renderTotals(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
-  const total = claude.savedTokens + copilot.savedTokens;
+function renderTotals(claude: CavemanSavings, cost: boolean): string {
+  const total = claude.savedTokens;
   const claudeUsd = cost ? `<small>${money(claude.savedUsd)} saved</small>` : '';
   const label = fmtMonth(claude.currentMonth);
   const prev = prevMonthKey(claude.currentMonth);
-  const prevTotal = savedInMonth(claude.byMonth, prev) + savedInMonth(copilot.byMonth, prev);
+  const prevTotal = savedInMonth(claude.byMonth, prev);
   const trend = deltaChip(total, prevTotal);
   return `<div class="muted cv-month">This month · <b>${escapeHtml(label)}</b> <span class="cv-reset">(resets on the 1st — history kept below)</span></div>
   <div class="cards">
-    <div class="card accent-green"><span>Total Saved Tokens</span><b>${fmtTokens(total)}</b>${trend || '<small>Claude + Copilot</small>'}</div>
+    <div class="card accent-green"><span>Total Saved Tokens</span><b>${fmtTokens(total)}</b>${trend || '<small>Claude Code</small>'}</div>
     <div class="card accent-orange"><span>Claude Saved</span><b>${fmtTokens(claude.savedTokens)}</b>${claudeUsd || '<small>Claude Code</small>'}</div>
-    <div class="card accent-purple"><span>Copilot Saved <em>(est)</em></span><b>${fmtTokens(copilot.savedTokens)}</b><small>subscription — no USD</small></div>
   </div>`;
 }
 
@@ -1024,7 +1001,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   </div>
 
   <section class="cv-tabpanel" data-panel="overview" role="tabpanel" aria-labelledby="tab-overview">
-    ${renderOverviewTab(claude, copilot, cost)}
+    ${renderOverviewTab(claude, cost)}
   </section>
 
   <section class="cv-tabpanel cv-hidden" data-panel="claude" role="tabpanel" aria-labelledby="tab-claude">
