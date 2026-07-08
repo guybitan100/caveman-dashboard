@@ -140,33 +140,6 @@ function svgIcon(name: string): string {
   return `<svg class="cv-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] ?? ''}</svg>`;
 }
 
-// Installer CLI actions, grouped by intent. data-cv maps to cavemanDashboard.cavemanCli.
-// icon/accent drive the tile glyph + its color; caption makes each effect clear without hovering.
-type CavemanAction = { cv: string; label: string; caption: string; icon: string; accent: string; cls?: string; flag: string };
-const INSTALL_ACTIONS: CavemanAction[] = [
-  { cv: 'install', label: 'Install', caption: 'Plugin + defaults', icon: 'download', accent: '#4dabf7', flag: '--non-interactive' },
-  { cv: 'all', label: 'Install + hooks/init', caption: 'Hooks + per-repo init', icon: 'layers', accent: '#4dabf7', flag: '--all' },
-  { cv: 'minimal', label: 'Install minimal', caption: 'Plugin only', icon: 'package', accent: '#4dabf7', flag: '--minimal' },
-];
-const INSPECT_ACTIONS: CavemanAction[] = [
-  { cv: 'dry-run', label: 'Dry run', caption: 'Preview — no changes', icon: 'eye', accent: '#8b98a5', flag: '--dry-run' },
-  { cv: 'list', label: 'List providers', caption: 'Provider matrix', icon: 'list', accent: '#8b98a5', flag: '--list' },
-];
-const MAINTAIN_ACTIONS: CavemanAction[] = [
-  { cv: 'force', label: 'Force reinstall', caption: 'Overwrite latest', icon: 'refresh', accent: '#ffa94d', flag: '--force' },
-  { cv: 'uninstall', label: 'Uninstall', caption: 'Remove from machine', icon: 'trash', accent: '#ff6b6b', cls: 'cv-danger', flag: '--uninstall' },
-];
-
-function renderAction(a: CavemanAction): string {
-  return `<button class="cv-btn ${a.cls ?? ''}" data-cv="${a.cv}" title="${escapeHtml(a.flag)}" style="--cv-accent:${a.accent};--cv-accent-soft:${a.accent}22">
-    <span class="cv-btn-ico">${svgIcon(a.icon)}</span>
-    <span class="cv-btn-text">
-      <span class="cv-btn-label">${escapeHtml(a.label)}</span>
-      <span class="cv-btn-cap">${escapeHtml(a.caption)}</span>
-    </span>
-  </button>`;
-}
-
 function bestMonth(rows: { month: string; savedTokens: number }[]): { month: string; savedTokens: number } | null {
   if (!rows.length) return null;
   return rows.reduce((best, row) => row.savedTokens > best.savedTokens ? row : best, rows[0]);
@@ -379,57 +352,6 @@ function renderOverviewTab(claude: CavemanSavings, cost: boolean): string {
       </div>
       ${renderOverviewRail(claude, cost)}
     </div>
-  </div>`;
-}
-
-function renderActionGroup(title: string, copy: string, actions: CavemanAction[]): string {
-  return `<section class="cv-action-group">
-    <div class="cv-action-head">
-      <div>
-        <h4>${escapeHtml(title)}</h4>
-        <div class="muted cv-action-copy">${escapeHtml(copy)}</div>
-      </div>
-    </div>
-    <div class="cv-actions cv-actions-group">${actions.map(renderAction).join('')}</div>
-  </section>`;
-}
-
-/** Consolidated "updates & installer" panel: update check + banner + CLI action tiles (2 rows). */
-function renderCavemanPanel(updateStatus: CavemanUpdateStatus | undefined): string {
-  return `<div class="cv-panel cv-installer">
-    <div class="cv-panel-head">
-      <div class="cv-panel-hero">
-        <div class="cv-panel-title">
-          <span class="cv-panel-ico">${svgIcon('rocket')}</span>
-          <div>
-            <div class="cv-page-eyebrow">Operations</div>
-            <h3>Updates &amp; installer</h3>
-            <div class="cv-panel-sub">Install, inspect, update, or repair caveman from one place.</div>
-          </div>
-        </div>
-        <div class="cv-panel-facts">
-          ${renderInlinePills(['Machine-level setup', 'Safe checks first', 'Repair path included'])}
-        </div>
-      </div>
-      <div class="cv-panel-actions cv-panel-actions-hero">
-        <button id="check-update" class="cv-ghost cv-cta" data-command="checkUpdate">${svgIcon('refresh')}<span>Check for update</span></button>
-        <button class="cv-hero cv-cta" data-command="updatePlugin" title="claude plugin update caveman@caveman">${svgIcon('download')}<span>Update caveman</span></button>
-        <button class="cv-ghost cv-cta" data-command="restart" title="Reload the VS Code window to apply a caveman update">${svgIcon('power')}<span>Restart</span></button>
-      </div>
-    </div>
-    ${renderUpdateBanner(updateStatus)}
-    <div class="cv-page-intro cv-page-intro-tight">
-      <div>
-        <h2 class="cv-page-title">Choose the job, then run the smallest action that fits</h2>
-        <div class="cv-page-copy">The page is grouped by the real workflow: install for first-time setup, inspect before changing anything, and maintain when an existing install needs attention.</div>
-      </div>
-    </div>
-    <div class="cv-action-layout">
-      ${renderActionGroup('Install', 'Start here for a first install, standard setup, or repo hook initialization.', INSTALL_ACTIONS)}
-      ${renderActionGroup('Inspect', 'Preview or audit the current setup before you make changes.', INSPECT_ACTIONS)}
-      ${renderActionGroup('Maintain', 'Reinstall the latest build or remove caveman cleanly from this machine.', MAINTAIN_ACTIONS)}
-    </div>
-    <div class="muted cv-foot">These actions download and run the latest caveman installer in a terminal. Read-only actions preview state; state-changing actions ask for confirmation first. Slash commands such as <code>/caveman</code> and <code>/caveman-stats</code> still run inside Claude Code, not from this dashboard.</div>
   </div>`;
 }
 
@@ -654,24 +576,6 @@ function renderCopilotCredits(copilot: CopilotSavings): string {
   </section>`;
 }
 
-/** Banner reflecting the last caveman update check (empty until the user checks). */
-function renderUpdateBanner(status: CavemanUpdateStatus | undefined): string {
-  if (!status) return '';
-  if (status.error) {
-    return `<div class="cv-update cv-update-warn">Update check failed: ${escapeHtml(status.error)}</div>`;
-  }
-  if (!status.installed) {
-    return `<div class="cv-update cv-update-warn">caveman is not installed on this machine.</div>`;
-  }
-  if (!status.updateAvailable) {
-    return `<div class="cv-update cv-update-ok">caveman is up to date <code>${escapeHtml(shortSha(status.installedSha))}</code>.</div>`;
-  }
-  const link = status.compareUrl
-    ? ` — <a href="${escapeHtml(status.compareUrl)}">view changes</a>`
-    : '';
-  return `<div class="cv-update cv-update-new">Update available: <code>${escapeHtml(shortSha(status.installedSha))}</code> → <code>${escapeHtml(shortSha(status.latestSha))}</code>${link}. Use <b>Update caveman</b> to install the latest.</div>`;
-}
-
 function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined): string {
   const { claude, copilot } = data;
   const totalSessions = claude.sessions + copilot.sessions;
@@ -701,6 +605,7 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
       </div>
     </div>
     <div class="cv-hero-actions">
+      <button class="cv-ghost cv-cta cv-cta-danger" data-cv="uninstall" title="Uninstall caveman from this machine">${svgIcon('trash')}<span>Uninstall</span></button>
       <button class="cv-ghost cv-cta" data-command="checkUpdate">${svgIcon('refresh')}<span>Check update</span></button>
       <button class="cv-hero cv-cta" data-command="refresh">${svgIcon('download')}<span>Refresh dashboard</span></button>
     </div>
@@ -855,6 +760,8 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-hero-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
   .cv-cta { min-height: 38px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 10px; font-weight: 700; }
   .cv-cta .cv-ico { width: 15px; height: 15px; }
+  .cv-cta-danger { border-color: #e0384555; color: #ff6b6b; }
+  .cv-cta-danger:hover { background: #e0384518; border-color: #ff6b6b; color: #ff6b6b; }
   .cv-tabs { display: inline-flex; gap: 6px; margin: 18px 0 10px; padding: 6px; border: 1px solid var(--vscode-panel-border); border-radius: 14px; background: color-mix(in srgb, var(--vscode-editorWidget-background) 88%, transparent); }
   .cv-tab { background: transparent; color: var(--vscode-descriptionForeground); border: none; border-radius: 10px; padding: 8px 14px; font-weight: 700; }
   .cv-tab:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.12)); color: var(--vscode-foreground); }
@@ -1002,7 +909,6 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     <button class="cv-tab" id="tab-copilot" data-tab="copilot" role="tab" aria-selected="false" tabindex="-1">GitHub Copilot</button>
     <button class="cv-tab" id="tab-claude" data-tab="claude" role="tab" aria-selected="false" tabindex="-1">Claude Code</button>
     <button class="cv-tab" id="tab-history" data-tab="history" role="tab" aria-selected="false" tabindex="-1">Monthly history</button>
-    <button class="cv-tab" id="tab-updates" data-tab="updates" role="tab" aria-selected="false" tabindex="-1">Updates &amp; installer</button>
   </div>
 
   <section class="cv-tabpanel" data-panel="overview" role="tabpanel" aria-labelledby="tab-overview">
@@ -1019,10 +925,6 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
 
   <section class="cv-tabpanel cv-hidden" data-panel="history" role="tabpanel" aria-labelledby="tab-history">
     ${renderHistoryTab(claude, copilot, cost)}
-  </section>
-
-  <section class="cv-tabpanel cv-hidden" data-panel="updates" role="tabpanel" aria-labelledby="tab-updates">
-    ${renderCavemanPanel(updateStatus)}
   </section>
 
   ${renderVersionFooter(version, cavemanVersion, cavemanSha)}
