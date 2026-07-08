@@ -135,11 +135,14 @@ export async function fetchLatestCommitSha(repo: string, timeoutMs = 8000): Prom
       { 'User-Agent': UA },
       timeoutMs,
     );
-    // The advertisement lists HEAD first; the first 40-hex token is the default-branch tip.
-    // (pkt-line length prefixes are only 4 hex chars, so they can't false-match.)
+    // The advertisement lists HEAD first as `<sha> HEAD\0<caps>`. Anchor on the ` HEAD`
+    // suffix so we don't false-match the pkt-line framing: the flush `0000` + length
+    // prefix (e.g. `0159`) are also hex, and `0000<len>` + the first 32 sha chars form a
+    // spurious 40-hex run right before the real sha. Requiring ` HEAD` pins the window to
+    // the actual tip.
     if (status >= 200 && status < 300) {
-      const m = /[0-9a-f]{40}/i.exec(body);
-      if (m) return m[0];
+      const m = /([0-9a-f]{40})\s+HEAD/i.exec(body);
+      if (m) return m[1];
     }
   } catch { /* fall through to the REST API */ }
 
