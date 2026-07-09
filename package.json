@@ -48,7 +48,7 @@
       "properties": {
         "cavemanDashboard.showCost": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Show estimated USD cost figures alongside token savings (Claude Code only)."
         },
         "cavemanDashboard.claudeProjectsPath": {

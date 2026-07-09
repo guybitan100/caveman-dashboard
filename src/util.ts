@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 
-/** Whether to surface estimated USD cost figures (opt-in via the showCost setting). */
+/** Whether to surface estimated USD cost figures (on by default via the showCost setting). */
 export function showCost(): boolean {
-  return vscode.workspace.getConfiguration('cavemanDashboard').get<boolean>('showCost', false);
+  return vscode.workspace.getConfiguration('cavemanDashboard').get<boolean>('showCost', true);
 }
 
 /** Trimmed `claudeProjectsPath` override, or undefined when unset/blank. */
