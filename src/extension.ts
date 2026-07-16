@@ -8,6 +8,8 @@ import { CavemanSavings, CombinedSavings, CopilotSavings } from './types';
 import { currentMonthKey } from './analytics/cavemanEngine';
 import { claudeDirOverride, showCost, shortSha } from './util';
 
+type InstallerAction = 'install' | 'uninstall';
+
 let cavemanCollector: CavemanCollector;
 let copilotCollector: CopilotCollector;
 let statusBar: CavemanStatusBar;
@@ -99,10 +101,33 @@ export function activate(context: vscode.ExtensionContext) {
         );
         if (!answer) return;
       }
-      CavemanPanel.currentPanel?.applyInstallerAction(key);
-      const term = vscode.window.createTerminal('Caveman');
-      term.show(true);
-      term.sendText(cmd, true);
+      const installerAction = normalizeInstallerAction(key);
+      if (installerAction) CavemanPanel.currentPanel?.setInstallerActionPending(installerAction);
+
+      let exitCode: number | undefined;
+      try {
+        exitCode = await runTrackedTerminalCommand('Caveman', cmd);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        logError('Caveman installer command failed to launch', error);
+        vscode.window.showErrorMessage(`Caveman Dashboard: ${message}`);
+        return;
+      } finally {
+        if (installerAction) {
+          const data = refreshData();
+          CavemanPanel.currentPanel?.setInstallerActionPending(undefined);
+          CavemanPanel.currentPanel?.update(data);
+        }
+      }
+
+      if (!installerAction) return;
+      if (exitCode === undefined) {
+        vscode.window.showWarningMessage(`Caveman ${installerAction} finished but no exit code was reported. Dashboard state was refreshed from disk.`);
+        return;
+      }
+      if (exitCode !== 0) {
+        vscode.window.showErrorMessage(`Caveman ${installerAction} failed with exit code ${exitCode}. Dashboard state was refreshed from disk.`);
+      }
     })
   );
 
@@ -237,4 +262,57 @@ async function presentUpdateStatus(s: CavemanUpdateStatus): Promise<void> {
 function logError(message: string, error: unknown): void {
   const details = error instanceof Error ? `${error.message}\n${error.stack ?? ''}` : String(error);
   outputChannel?.appendLine(`[${new Date().toISOString()}] ${message}: ${details}`);
+}
+
+function normalizeInstallerAction(action: string): InstallerAction | undefined {
+  if (action === 'uninstall') return 'uninstall';
+  if (action === 'install' || action === 'all' || action === 'minimal' || action === 'force') return 'install';
+  return undefined;
+}
+
+async function runTrackedTerminalCommand(name: string, commandLine: string): Promise<number | undefined> {
+  const term = vscode.window.createTerminal(name);
+  term.show(true);
+  const shellIntegration = await waitForShellIntegration(term);
+  if (!shellIntegration) {
+    term.dispose();
+    throw new Error('Terminal shell integration did not activate, so install/uninstall progress cannot be tracked.');
+  }
+
+  const execution = shellIntegration.executeCommand(commandLine);
+  return new Promise<number | undefined>(resolve => {
+    const endDisposable = vscode.window.onDidEndTerminalShellExecution(event => {
+      if (event.terminal !== term || event.execution !== execution) return;
+      cleanup();
+      resolve(event.exitCode);
+    });
+    const closeDisposable = vscode.window.onDidCloseTerminal(closed => {
+      if (closed !== term) return;
+      cleanup();
+      resolve(term.exitStatus?.code);
+    });
+    const cleanup = () => {
+      endDisposable.dispose();
+      closeDisposable.dispose();
+    };
+  });
+}
+
+async function waitForShellIntegration(term: vscode.Terminal, timeoutMs = 5000): Promise<vscode.TerminalShellIntegration | undefined> {
+  if (term.shellIntegration) return term.shellIntegration;
+  return new Promise(resolve => {
+    const disposable = vscode.window.onDidChangeTerminalShellIntegration(event => {
+      if (event.terminal !== term) return;
+      cleanup();
+      resolve(event.shellIntegration);
+    });
+    const timer = setTimeout(() => {
+      cleanup();
+      resolve(term.shellIntegration);
+    }, timeoutMs);
+    const cleanup = () => {
+      clearTimeout(timer);
+      disposable.dispose();
+    };
+  });
 }

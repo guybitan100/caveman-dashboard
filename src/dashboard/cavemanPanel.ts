@@ -3,6 +3,8 @@ import { CavemanSavings, CombinedSavings, CopilotSavings } from '../types';
 import { CavemanUpdateStatus, readCavemanVersion, readInstalledCaveman } from '../collectors/updateChecker';
 import { claudeDirOverride, showCost, shortSha } from '../util';
 
+type InstallerAction = 'install' | 'uninstall';
+
 /**
  * Standalone webview for caveman savings, split by provider (Claude Code + Copilot).
  * Renders per-provider savings cards, Claude status + daily USD chart, a Copilot
@@ -19,7 +21,7 @@ export class CavemanPanel {
   private cavemanInstalled: boolean;
   private cavemanVersion: string | null;
   private cavemanSha: string | null;
-  private installStatePoll: ReturnType<typeof setInterval> | undefined;
+  private installerActionPending: InstallerAction | undefined;
 
   static show(context: vscode.ExtensionContext, data: CombinedSavings, readLatestData: () => CombinedSavings) {
     if (CavemanPanel.currentPanel) {
@@ -44,7 +46,7 @@ export class CavemanPanel {
     this.cavemanInstalled = false;
     this.cavemanVersion = null;
     this.cavemanSha = null;
-    this.installStatePoll = undefined;
+    this.installerActionPending = undefined;
     this.refreshInstallMetadata();
     this.panel.webview.onDidReceiveMessage(message => {
       if (message?.command === 'refresh') vscode.commands.executeCommand('cavemanDashboard.refresh');
@@ -57,7 +59,6 @@ export class CavemanPanel {
       if (!event.webviewPanel.visible) return;
       this.update(this.readLatestData());
     }, undefined, context.subscriptions);
-    this.panel.onDidDispose(() => this.stopInstallStatePolling(), undefined, context.subscriptions);
     this.syncInstallSnapshot();
     this.ensureUpdateStatus();
     this.render();
@@ -72,60 +73,8 @@ export class CavemanPanel {
     this.render();
   }
 
-  /** Reflect a confirmed local installer action before a full refresh re-reads disk state. */
-  applyInstallerAction(action: string) {
-    const installAction = action === 'install' || action === 'all' || action === 'minimal' || action === 'force';
-    if (!installAction && action !== 'uninstall') return;
-
-    if (installAction) {
-      this.refreshInstallMetadata();
-      this.syncInstallSnapshot();
-      this.updateStatus = undefined;
-      this.updateStatusPending = false;
-      this.ensureUpdateStatus();
-      this.render();
-      this.startInstallStatePolling();
-      return;
-    }
-
-    this.stopInstallStatePolling();
-    this.updateStatusPending = false;
-    this.data = {
-      claude: {
-        ...this.data.claude,
-        active: false,
-        sessions: 0,
-        outputTokens: 0,
-        savedTokens: 0,
-        savedUsd: 0,
-        byDay: [],
-        source: 'none',
-        installed: false,
-        activeMode: null,
-      },
-      copilot: {
-        ...this.data.copilot,
-        active: false,
-        sessions: 0,
-        turns: 0,
-        outputTokens: 0,
-        savedTokens: 0,
-        byDay: [],
-        configured: false,
-        source: 'none',
-      },
-    };
-    if (this.updateStatus) {
-      this.updateStatus = {
-        ...this.updateStatus,
-        installed: false,
-        installedSha: null,
-        updateAvailable: false,
-        compareUrl: null,
-      };
-    }
-    this.cavemanVersion = null;
-    this.cavemanSha = null;
+  setInstallerActionPending(action: InstallerAction | undefined) {
+    this.installerActionPending = action;
     this.render();
   }
 
@@ -164,36 +113,6 @@ export class CavemanPanel {
     };
   }
 
-  private startInstallStatePolling() {
-    this.stopInstallStatePolling();
-    let attempts = 0;
-    this.installStatePoll = setInterval(() => {
-      attempts += 1;
-      const previousInstalled = this.cavemanInstalled;
-      const previousSha = this.cavemanSha;
-      const previousVersion = this.cavemanVersion;
-      this.refreshInstallMetadata();
-      const changed = previousInstalled !== this.cavemanInstalled
-        || previousSha !== this.cavemanSha
-        || previousVersion !== this.cavemanVersion;
-      if (changed) {
-        this.syncInstallSnapshot();
-        this.syncUpdateStatus(this.data.claude.installed);
-        this.ensureUpdateStatus();
-        this.render();
-      }
-      if (this.cavemanInstalled || attempts >= 15) {
-        this.stopInstallStatePolling();
-      }
-    }, 2000);
-  }
-
-  private stopInstallStatePolling() {
-    if (!this.installStatePoll) return;
-    clearInterval(this.installStatePoll);
-    this.installStatePoll = undefined;
-  }
-
   private syncUpdateStatus(installed: boolean) {
     if (!this.updateStatus) return;
     const knownSha = this.updateStatus.installedSha ?? null;
@@ -219,7 +138,7 @@ export class CavemanPanel {
   }
 
   private render() {
-    this.panel.webview.html = renderHtml(this.data, this.updateStatus, this.updateStatusPending, this.version, this.cavemanVersion, this.cavemanSha);
+    this.panel.webview.html = renderHtml(this.data, this.updateStatus, this.updateStatusPending, this.installerActionPending, this.version, this.cavemanVersion, this.cavemanSha);
   }
 }
 
@@ -270,6 +189,22 @@ function renderInlinePills(items: string[]): string {
 
 function renderStatusBadge(on: boolean, text: string): string {
   return `<span class="cv-badge ${on ? 'cv-on' : 'cv-off'}">${escapeHtml(text)}</span>`;
+}
+
+function renderInstallerActionButton(installed: boolean, pendingAction: InstallerAction | undefined): string {
+  const action: InstallerAction = installed ? 'uninstall' : 'install';
+  const busy = pendingAction === action;
+  const disabled = pendingAction !== undefined;
+  const label = action === 'install'
+    ? (busy ? 'Installing...' : 'Install caveman')
+    : (busy ? 'Uninstalling...' : 'Uninstall');
+  const title = action === 'install'
+    ? (busy ? 'Installing caveman on this machine' : 'Install the caveman plugin')
+    : (busy ? 'Uninstalling caveman from this machine' : 'Uninstall caveman from this machine');
+  const attrs = disabled ? ' disabled aria-disabled="true" aria-busy="true"' : '';
+  const classes = action === 'install' ? 'cv-chip-action cv-chip-action-primary' : 'cv-chip-action';
+  const icon = action === 'install' ? 'download' : 'trash';
+  return `<button class="${classes}" data-cv="${action}" title="${escapeHtml(title)}"${attrs}>${svgIcon(icon)}<span>${escapeHtml(label)}</span></button>`;
 }
 
 function getNonce(): string {
@@ -485,14 +420,14 @@ function renderOverviewTab(claude: CavemanSavings, cost: boolean): string {
   </div>`;
 }
 
-function renderUnifiedDashboard(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
+function renderUnifiedDashboard(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean, pendingAction: InstallerAction | undefined): string {
   return `<main class="cv-story">
     <section class="cv-story-section cv-story-section-hero" id="sec-overview" aria-label="Overview">
       ${renderOverviewTab(claude, cost)}
     </section>
 
     <section class="cv-story-section" id="sec-claude" aria-label="Claude Code details">
-      ${renderClaudeTab(claude, cost)}
+      ${renderClaudeTab(claude, cost, pendingAction)}
     </section>
 
     <section class="cv-story-section" id="sec-history" aria-label="Monthly history details">
@@ -639,16 +574,20 @@ function renderClaudeStatus(c: CavemanSavings): string {
   </div>`;
 }
 
-function renderClaude(c: CavemanSavings, cost: boolean): string {
+function renderClaude(c: CavemanSavings, cost: boolean, pendingAction: InstallerAction | undefined): string {
   if (!c.active) {
     const installBtn = !c.installed
-      ? `<button class="cv-chip-action cv-chip-action-primary" data-cv="install" title="Install the caveman plugin">${svgIcon('download')}<span>Install caveman</span></button>`
+      ? renderInstallerActionButton(false, pendingAction)
       : '';
-    const hint = !c.installed
-      ? 'caveman is not installed. Install it, then run a Claude session with caveman on and Refresh.'
-      : !c.activeMode
-        ? 'caveman is installed but the mode flag is off. Run <code>/caveman full</code> in a Claude session, then Refresh.'
-        : 'caveman is active but no session usage detected yet. Run a Claude session, then Refresh.';
+    const hint = pendingAction === 'install'
+      ? 'Installing caveman. Status changes after the installer command completes successfully.'
+      : pendingAction === 'uninstall'
+        ? 'Uninstalling caveman. Status changes after the uninstall command completes.'
+        : !c.installed
+          ? 'caveman is not installed. Install it, then run a Claude session with caveman on and Refresh.'
+          : !c.activeMode
+            ? 'caveman is installed but the mode flag is off. Run <code>/caveman full</code> in a Claude session, then Refresh.'
+            : 'caveman is active but no session usage detected yet. Run a Claude session, then Refresh.';
     return `${renderClaudeStatus(c)}
       <div class="cv-empty-cta">
         <div class="muted cv-empty">${hint}</div>
@@ -673,26 +612,28 @@ function renderClaude(c: CavemanSavings, cost: boolean): string {
     ${chart}`;
 }
 
-function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, updateStatusPending: boolean): string {
+function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, updateStatusPending: boolean, pendingAction: InstallerAction | undefined): string {
   const { claude, copilot } = data;
   const totalSessions = claude.sessions + copilot.sessions;
   const month = fmtMonth(claude.currentMonth);
   const totalSaved = fmtTokens(claude.savedTokens + copilot.savedTokens);
   const confidence = claudeConfidenceLabel(claude.source);
-  const updateLabel = !updateStatus
-    ? (!claude.installed ? 'caveman not installed' : updateStatusPending ? 'Checking updates...' : 'Update status unknown')
-    : updateStatus.error
-      ? 'Update check failed'
-      : !updateStatus.installed
-        ? 'caveman not installed'
-        : updateStatus.updateAvailable
-          ? 'Update available'
-          : 'Up to date';
+  const updateLabel = pendingAction === 'install'
+    ? 'Installing caveman...'
+    : pendingAction === 'uninstall'
+      ? 'Uninstalling caveman...'
+      : !updateStatus
+        ? (!claude.installed ? 'caveman not installed' : updateStatusPending ? 'Checking updates...' : 'Update status unknown')
+        : updateStatus.error
+          ? 'Update check failed'
+          : !updateStatus.installed
+            ? 'caveman not installed'
+            : updateStatus.updateAvailable
+              ? 'Update available'
+              : 'Up to date';
   const modeLabel = claude.activeMode ? `Claude mode: ${claude.activeMode}` : 'Claude mode inactive';
   const installLabel = claude.installed ? 'Installed locally' : 'Needs install';
-  const primaryAction = !claude.installed
-    ? `<button class="cv-chip-action cv-chip-action-primary" data-cv="install" title="Install the caveman plugin">${svgIcon('download')}<span>Install caveman</span></button>`
-    : `<button class="cv-chip-action" data-cv="uninstall" title="Uninstall caveman from this machine">${svgIcon('trash')}<span>Uninstall</span></button>`;
+  const primaryAction = renderInstallerActionButton(claude.installed, pendingAction);
   return `<section class="cv-hero-shell">
     <div class="cv-hero-topline">
       <div class="cv-kicker">Developer telemetry for caveman compression</div>
@@ -734,7 +675,7 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
   </section>`;
 }
 
-function renderClaudeTab(claude: CavemanSavings, cost: boolean): string {
+function renderClaudeTab(claude: CavemanSavings, cost: boolean, pendingAction: InstallerAction | undefined): string {
   const confidence = claudeConfidenceLabel(claude.source);
   const usdState = cost ? 'USD view on' : 'USD view off';
   const mode = claude.activeMode ? `Mode ${claude.activeMode}` : 'Mode inactive';
@@ -751,7 +692,7 @@ function renderClaudeTab(claude: CavemanSavings, cost: boolean): string {
     </div>
     <section class="cv-provider">
       ${renderProviderHeader('Claude Code', 'Measured from caveman activity and local ledger history.', 'layers')}
-      ${renderClaude(claude, cost)}
+      ${renderClaude(claude, cost, pendingAction)}
     </section>
   </div>`;
 }
@@ -788,7 +729,7 @@ function renderVersionFooter(version: string, cavemanVersion: string | null, cav
   </footer>`;
 }
 
-function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, updateStatusPending: boolean, version: string, cavemanVersion: string | null, cavemanSha: string | null): string {
+function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, updateStatusPending: boolean, pendingAction: InstallerAction | undefined, version: string, cavemanVersion: string | null, cavemanSha: string | null): string {
   const nonce = getNonce();
   const cost = showCost();
   const { claude, copilot } = data;
@@ -901,6 +842,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-chip-action { min-height: 32px; display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px; border-radius: 999px; border: 1px solid var(--cv-border-soft); background: color-mix(in srgb, var(--vscode-editor-background) 48%, transparent); color: var(--vscode-foreground); font-size: 0.77rem; font-weight: 800; line-height: 1; box-shadow: none; }
   .cv-chip-action .cv-ico { width: 14px; height: 14px; }
   .cv-chip-action:hover { border-color: var(--cv-border-strong); background: color-mix(in srgb, var(--cv-surface-3) 96%, transparent); transform: translateY(-1px); }
+  .cv-chip-action:disabled, .cv-chip-action:disabled:hover { cursor: not-allowed; opacity: 0.62; transform: none; box-shadow: none; border-color: var(--cv-border-soft); background: color-mix(in srgb, var(--vscode-editor-background) 58%, transparent); }
   .cv-chip-action-primary { background: linear-gradient(135deg, #5eb6ff, #4dabf7); border-color: #74c0fc; color: #08203a; box-shadow: 0 10px 22px rgba(77,171,247,0.24); }
   .cv-chip-action-primary:hover { background: linear-gradient(135deg, #7cc7ff, #5eb6ff); border-color: #a5d8ff; }
   .cv-hero-summary { margin-top: 20px; padding: 17px 18px; border-radius: 18px; border: 1px solid color-mix(in srgb, var(--cv-accent-blue) 18%, var(--cv-border-soft)); background: linear-gradient(180deg, color-mix(in srgb, var(--cv-surface-3) 94%, transparent), transparent); box-shadow: inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
@@ -1047,9 +989,9 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
 </head>
 <body>
   <div class="cv-shell">
-  ${renderHeaderHero(data, updateStatus, updateStatusPending)}
+  ${renderHeaderHero(data, updateStatus, updateStatusPending, pendingAction)}
 
-  ${renderUnifiedDashboard(claude, copilot, cost)}
+  ${renderUnifiedDashboard(claude, copilot, cost, pendingAction)}
 
   ${renderVersionFooter(version, cavemanVersion, cavemanSha)}
   </div>
