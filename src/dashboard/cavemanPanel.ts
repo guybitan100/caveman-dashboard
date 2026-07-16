@@ -15,8 +15,10 @@ export class CavemanPanel {
   private data: CombinedSavings;
   private updateStatus: CavemanUpdateStatus | undefined;
   private readonly version: string;
+  private cavemanInstalled: boolean;
   private cavemanVersion: string | null;
   private cavemanSha: string | null;
+  private installStatePoll: ReturnType<typeof setInterval> | undefined;
 
   static show(context: vscode.ExtensionContext, data: CombinedSavings, readLatestData: () => CombinedSavings) {
     if (CavemanPanel.currentPanel) {
@@ -37,8 +39,10 @@ export class CavemanPanel {
     this.readLatestData = readLatestData;
     this.data = data;
     this.version = (context.extension.packageJSON as { version?: string })?.version ?? '';
+    this.cavemanInstalled = false;
     this.cavemanVersion = null;
     this.cavemanSha = null;
+    this.installStatePoll = undefined;
     this.refreshInstallMetadata();
     this.panel.webview.onDidReceiveMessage(message => {
       if (message?.command === 'refresh') vscode.commands.executeCommand('cavemanDashboard.refresh');
@@ -51,13 +55,15 @@ export class CavemanPanel {
       if (!event.webviewPanel.visible) return;
       this.update(this.readLatestData());
     }, undefined, context.subscriptions);
+    this.panel.onDidDispose(() => this.stopInstallStatePolling(), undefined, context.subscriptions);
     this.render();
   }
 
   update(data: CombinedSavings) {
     this.data = data;
     this.refreshInstallMetadata();
-    this.syncUpdateStatus(data.claude.installed);
+    this.syncInstallSnapshot();
+    this.syncUpdateStatus(this.data.claude.installed);
     this.render();
   }
 
@@ -67,21 +73,16 @@ export class CavemanPanel {
     if (!installAction && action !== 'uninstall') return;
 
     if (installAction) {
-      this.data = {
-        claude: {
-          ...this.data.claude,
-          installed: true,
-        },
-        copilot: {
-          ...this.data.copilot,
-          configured: true,
-        },
-      };
+      this.updateStatus = undefined;
+      this.refreshInstallMetadata();
+      this.syncInstallSnapshot();
       this.updateStatus = undefined;
       this.render();
+      this.startInstallStatePolling();
       return;
     }
 
+    this.stopInstallStatePolling();
     this.data = {
       claude: {
         ...this.data.claude,
@@ -133,8 +134,55 @@ export class CavemanPanel {
   }
 
   private refreshInstallMetadata() {
-    this.cavemanVersion = readCavemanVersion(claudeDirOverride());
-    this.cavemanSha = readInstalledCaveman(claudeDirOverride()).sha;
+    const info = readInstalledCaveman(claudeDirOverride());
+    this.cavemanInstalled = info.installed;
+    this.cavemanSha = info.sha;
+    this.cavemanVersion = this.cavemanInstalled ? readCavemanVersion(claudeDirOverride()) : null;
+  }
+
+  private syncInstallSnapshot() {
+    if (this.data.claude.installed === this.cavemanInstalled && this.data.copilot.configured === this.cavemanInstalled) {
+      return;
+    }
+    this.data = {
+      claude: {
+        ...this.data.claude,
+        installed: this.cavemanInstalled,
+      },
+      copilot: {
+        ...this.data.copilot,
+        configured: this.cavemanInstalled,
+      },
+    };
+  }
+
+  private startInstallStatePolling() {
+    this.stopInstallStatePolling();
+    let attempts = 0;
+    this.installStatePoll = setInterval(() => {
+      attempts += 1;
+      const previousInstalled = this.cavemanInstalled;
+      const previousSha = this.cavemanSha;
+      const previousVersion = this.cavemanVersion;
+      this.refreshInstallMetadata();
+      const changed = previousInstalled !== this.cavemanInstalled
+        || previousSha !== this.cavemanSha
+        || previousVersion !== this.cavemanVersion;
+      if (changed) {
+        this.syncInstallSnapshot();
+        this.syncUpdateStatus(this.data.claude.installed);
+        this.render();
+      }
+      if (this.cavemanInstalled || attempts >= 15) {
+        this.stopInstallStatePolling();
+      }
+    }, 2000);
+  }
+
+  private stopInstallStatePolling() {
+    if (!this.installStatePoll) return;
+    clearInterval(this.installStatePoll);
+    this.installStatePoll = undefined;
   }
 
   private syncUpdateStatus(installed: boolean) {
