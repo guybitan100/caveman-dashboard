@@ -14,6 +14,7 @@ export class CavemanPanel {
   private readonly readLatestData: () => CombinedSavings;
   private data: CombinedSavings;
   private updateStatus: CavemanUpdateStatus | undefined;
+  private updateStatusPending: boolean;
   private readonly version: string;
   private cavemanInstalled: boolean;
   private cavemanVersion: string | null;
@@ -38,6 +39,7 @@ export class CavemanPanel {
     this.panel = panel;
     this.readLatestData = readLatestData;
     this.data = data;
+    this.updateStatusPending = false;
     this.version = (context.extension.packageJSON as { version?: string })?.version ?? '';
     this.cavemanInstalled = false;
     this.cavemanVersion = null;
@@ -56,6 +58,8 @@ export class CavemanPanel {
       this.update(this.readLatestData());
     }, undefined, context.subscriptions);
     this.panel.onDidDispose(() => this.stopInstallStatePolling(), undefined, context.subscriptions);
+    this.syncInstallSnapshot();
+    this.ensureUpdateStatus();
     this.render();
   }
 
@@ -64,6 +68,7 @@ export class CavemanPanel {
     this.refreshInstallMetadata();
     this.syncInstallSnapshot();
     this.syncUpdateStatus(this.data.claude.installed);
+    this.ensureUpdateStatus();
     this.render();
   }
 
@@ -73,16 +78,18 @@ export class CavemanPanel {
     if (!installAction && action !== 'uninstall') return;
 
     if (installAction) {
-      this.updateStatus = undefined;
       this.refreshInstallMetadata();
       this.syncInstallSnapshot();
       this.updateStatus = undefined;
+      this.updateStatusPending = false;
+      this.ensureUpdateStatus();
       this.render();
       this.startInstallStatePolling();
       return;
     }
 
     this.stopInstallStatePolling();
+    this.updateStatusPending = false;
     this.data = {
       claude: {
         ...this.data.claude,
@@ -130,6 +137,7 @@ export class CavemanPanel {
   /** Reflect the latest caveman update-check result in the dashboard banner. */
   setUpdateStatus(status: CavemanUpdateStatus) {
     this.updateStatus = status;
+    this.updateStatusPending = false;
     this.render();
   }
 
@@ -171,6 +179,7 @@ export class CavemanPanel {
       if (changed) {
         this.syncInstallSnapshot();
         this.syncUpdateStatus(this.data.claude.installed);
+        this.ensureUpdateStatus();
         this.render();
       }
       if (this.cavemanInstalled || attempts >= 15) {
@@ -193,8 +202,24 @@ export class CavemanPanel {
     }
   }
 
+  private ensureUpdateStatus() {
+    if (!this.data.claude.installed) {
+      this.updateStatusPending = false;
+      return;
+    }
+    if (this.updateStatus || this.updateStatusPending) return;
+    this.updateStatusPending = true;
+    void vscode.commands.executeCommand('cavemanDashboard.checkUpdateSilent').then(
+      () => undefined,
+      () => {
+        this.updateStatusPending = false;
+        this.render();
+      },
+    );
+  }
+
   private render() {
-    this.panel.webview.html = renderHtml(this.data, this.updateStatus, this.version, this.cavemanVersion, this.cavemanSha);
+    this.panel.webview.html = renderHtml(this.data, this.updateStatus, this.updateStatusPending, this.version, this.cavemanVersion, this.cavemanSha);
   }
 }
 
@@ -648,14 +673,14 @@ function renderClaude(c: CavemanSavings, cost: boolean): string {
     ${chart}`;
 }
 
-function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined): string {
+function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, updateStatusPending: boolean): string {
   const { claude, copilot } = data;
   const totalSessions = claude.sessions + copilot.sessions;
   const month = fmtMonth(claude.currentMonth);
   const totalSaved = fmtTokens(claude.savedTokens + copilot.savedTokens);
   const confidence = claudeConfidenceLabel(claude.source);
   const updateLabel = !updateStatus
-    ? (!claude.installed ? 'caveman not installed' : 'Update status unknown')
+    ? (!claude.installed ? 'caveman not installed' : updateStatusPending ? 'Checking updates...' : 'Update status unknown')
     : updateStatus.error
       ? 'Update check failed'
       : !updateStatus.installed
@@ -763,7 +788,7 @@ function renderVersionFooter(version: string, cavemanVersion: string | null, cav
   </footer>`;
 }
 
-function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, version: string, cavemanVersion: string | null, cavemanSha: string | null): string {
+function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, updateStatusPending: boolean, version: string, cavemanVersion: string | null, cavemanSha: string | null): string {
   const nonce = getNonce();
   const cost = showCost();
   const { claude, copilot } = data;
@@ -1022,7 +1047,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
 </head>
 <body>
   <div class="cv-shell">
-  ${renderHeaderHero(data, updateStatus)}
+  ${renderHeaderHero(data, updateStatus, updateStatusPending)}
 
   ${renderUnifiedDashboard(claude, copilot, cost)}
 

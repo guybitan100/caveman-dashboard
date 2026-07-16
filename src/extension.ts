@@ -41,20 +41,16 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('cavemanDashboard.openDashboard', () => {
       const data = refreshData();
       CavemanPanel.show(context, data, refreshData);
-      // Resolve the caveman version/update status on open so the dashboard shows the
-      // current version ("up to date" / "update available") instead of "unknown" without
-      // a manual click. Silent (no notification) and only when not already known, so
-      // reopening a panel that already checked doesn't refetch.
-      if (CavemanPanel.currentPanel && !CavemanPanel.currentPanel.updateKnown) {
-        void checkCavemanUpdate(explicitDir).then(status => {
-          CavemanPanel.currentPanel?.setUpdateStatus(status);
-        });
-      }
     }),
     vscode.commands.registerCommand('cavemanDashboard.refresh', () => {
       const data = refreshData();
       if (CavemanPanel.currentPanel) CavemanPanel.currentPanel.update(data);
       vscode.window.showInformationMessage('Caveman Dashboard refreshed');
+    }),
+    vscode.commands.registerCommand('cavemanDashboard.checkUpdateSilent', async () => {
+      const status = await checkCavemanUpdate(explicitDir);
+      if (CavemanPanel.currentPanel) CavemanPanel.currentPanel.setUpdateStatus(status);
+      return status;
     }),
     vscode.commands.registerCommand('cavemanDashboard.checkUpdate', async () => {
       const dir = explicitDir;
