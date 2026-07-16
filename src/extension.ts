@@ -271,6 +271,10 @@ async function presentUpdateStatus(s: CavemanUpdateStatus): Promise<void> {
     if (pick === 'Install') vscode.commands.executeCommand('cavemanDashboard.cavemanCli', 'install');
     return;
   }
+  if (!s.installedSha) {
+    vscode.window.showInformationMessage('caveman hooks are active. No plugin commit SHA is available for an exact version check.');
+    return;
+  }
   if (!s.updateAvailable) {
     // Report the installed commit sha, not the plugin's package.json version — the
     // version rarely bumps, so the sha is the real "which build am I on" signal.

@@ -584,7 +584,7 @@ function renderClaudeStatus(c: CavemanSavings): string {
     ? 'Mode unavailable'
     : c.activeMode
       ? `Active: ${c.activeMode}`
-      : 'Mode not enabled';
+      : 'Mode off';
   return `<div class="cv-status">
     ${renderStatusBadge(c.installed, c.installed ? 'Installed' : 'Not installed')}
     ${renderStatusBadge(!!c.activeMode, modeLabel)}
@@ -604,7 +604,7 @@ function renderClaude(c: CavemanSavings, cost: boolean, pendingAction: Installer
         : !c.installed
           ? 'caveman is not installed. Install it, then run a Claude session with caveman on and Refresh.'
           : !c.activeMode
-            ? 'caveman is installed but the mode flag is off. Run <code>/caveman full</code> in a Claude session, then Refresh.'
+            ? 'caveman is installed, but no mode is active yet. Run <code>/caveman full</code> in a Claude session, then Refresh.'
             : 'caveman is active but no session usage detected yet. Run a Claude session, then Refresh.';
     return `${renderClaudeStatus(c)}
       <div class="cv-empty-cta">
@@ -651,7 +651,7 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
             : updateStatus.updateAvailable
               ? 'Update available'
               : 'Up to date';
-  const modeLabel = claude.activeMode ? `Claude mode: ${claude.activeMode}` : 'Claude mode inactive';
+  const modeLabel = claude.activeMode ? `Claude mode: ${claude.activeMode}` : 'Claude mode off';
   const installLabel = installKind === 'hooks'
     ? 'Hooks active'
     : installKind === 'mixed'
@@ -725,7 +725,7 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
 function renderClaudeTab(claude: CavemanSavings, cost: boolean, pendingAction: InstallerAction | undefined): string {
   const confidence = claudeConfidenceLabel(claude.source);
   const usdState = cost ? 'USD view on' : 'USD view off';
-  const mode = claude.activeMode ? `Mode ${claude.activeMode}` : 'Mode inactive';
+  const mode = claude.activeMode ? `Mode ${claude.activeMode}` : 'Mode off';
   return `<div>
     <div class="cv-page-intro">
       <div>
