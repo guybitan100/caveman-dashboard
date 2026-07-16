@@ -140,6 +140,13 @@ export function activate(context: vscode.ExtensionContext) {
         const data = refreshData();
         CavemanPanel.currentPanel?.update(data);
       }
+      if (installerAction === 'install') {
+        const info = readInstalledCaveman(explicitDir);
+        if (info.installKind === 'hooks') {
+          CavemanPanel.currentPanel?.setInstallerStatusMessage('caveman installed via Claude hooks. Claude plugin install was blocked by managed settings.');
+          return;
+        }
+      }
       CavemanPanel.currentPanel?.setInstallerStatusMessage(undefined);
     })
   );

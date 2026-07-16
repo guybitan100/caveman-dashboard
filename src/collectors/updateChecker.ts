@@ -7,6 +7,8 @@ import * as https from 'https';
 export type CavemanInstallInfo = {
   /** Plugin cache dir present on disk. */
   installed: boolean;
+  /** How caveman is currently wired into Claude on this machine. */
+  installKind: 'none' | 'plugin' | 'hooks' | 'mixed';
   /** Installed commit sha (full 40 or short), or null if the registry has none. */
   sha: string | null;
   /** Source repo "owner/name" from known_marketplaces.json (falls back to the upstream default). */
@@ -83,6 +85,8 @@ export function isCavemanInstalled(explicitDir?: string): boolean {
 export function readInstalledCaveman(explicitDir?: string): CavemanInstallInfo {
   const dir = claudeDir(explicitDir);
   const pluginsDir = path.join(dir, 'plugins');
+  const hasPluginInstall = fs.existsSync(path.join(pluginsDir, 'cache', 'caveman')) || hasRegistryInstallEntry(pluginsDir);
+  const hasHookInstall = hasStandaloneHookInstall(dir);
 
   let repo = DEFAULT_REPO;
   try {
@@ -121,7 +125,11 @@ export function readInstalledCaveman(explicitDir?: string): CavemanInstallInfo {
   } catch { /* registry absent */ }
 
   const installed = isCavemanInstalled(explicitDir);
-  return { installed, sha, repo, installedAt };
+  const installKind = !installed ? 'none'
+    : hasPluginInstall && hasHookInstall ? 'mixed'
+      : hasPluginInstall ? 'plugin'
+        : 'hooks';
+  return { installed, installKind, sha, repo, installedAt };
 }
 
 /**
