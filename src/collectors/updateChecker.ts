@@ -36,6 +36,29 @@ function claudeDir(explicit?: string): string {
 
 function normalizeSha(sha: string): string { return sha.trim().toLowerCase(); }
 
+function hasStandaloneHookInstall(dir: string): boolean {
+  const hooksDir = path.join(dir, 'hooks');
+  const requiredFiles = [
+    'caveman-activate.js',
+    'caveman-config.js',
+    'caveman-mode-tracker.js',
+    'caveman-stats.js',
+  ];
+  if (!requiredFiles.every(file => fs.existsSync(path.join(hooksDir, file)))) return false;
+
+  try {
+    const settings = JSON.parse(fs.readFileSync(path.join(dir, 'settings.json'), 'utf8'));
+    const sessionStart = JSON.stringify(settings?.hooks?.SessionStart ?? []);
+    const promptSubmit = JSON.stringify(settings?.hooks?.UserPromptSubmit ?? []);
+    const statusLine = JSON.stringify(settings?.statusLine ?? {});
+    return sessionStart.includes('caveman-activate.js')
+      && promptSubmit.includes('caveman-mode-tracker.js')
+      && statusLine.includes('caveman-statusline');
+  } catch {
+    return false;
+  }
+}
+
 function hasRegistryInstallEntry(pluginsDir: string): boolean {
   try {
     const reg = JSON.parse(fs.readFileSync(path.join(pluginsDir, 'installed_plugins.json'), 'utf8'));
@@ -47,10 +70,12 @@ function hasRegistryInstallEntry(pluginsDir: string): boolean {
 }
 
 export function isCavemanInstalled(explicitDir?: string): boolean {
-  const pluginsDir = path.join(claudeDir(explicitDir), 'plugins');
+  const dir = claudeDir(explicitDir);
+  const pluginsDir = path.join(dir, 'plugins');
   const cacheRoot = path.join(pluginsDir, 'cache', 'caveman');
   if (fs.existsSync(cacheRoot)) return true;
   if (hasRegistryInstallEntry(pluginsDir)) return true;
+  if (hasStandaloneHookInstall(dir)) return true;
   return readCavemanVersion(explicitDir) !== null;
 }
 
@@ -65,6 +90,12 @@ export function readInstalledCaveman(explicitDir?: string): CavemanInstallInfo {
     const r = mk?.caveman?.source?.repo;
     if (typeof r === 'string' && r.includes('/')) repo = r;
   } catch { /* marketplace file absent -> upstream default */ }
+
+  try {
+    const settings = JSON.parse(fs.readFileSync(path.join(dir, 'settings.json'), 'utf8'));
+    const r = settings?.extraKnownMarketplaces?.caveman?.source?.repo;
+    if (typeof r === 'string' && r.includes('/')) repo = r;
+  } catch { /* settings absent or malformed */ }
 
   let sha: string | null = null;
   let installedAt: string | null = null;

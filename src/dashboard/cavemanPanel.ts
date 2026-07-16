@@ -855,6 +855,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-chip-action:disabled, .cv-chip-action:disabled:hover { cursor: not-allowed; opacity: 0.62; transform: none; box-shadow: none; border-color: var(--cv-border-soft); background: color-mix(in srgb, var(--vscode-editor-background) 58%, transparent); }
   .cv-chip-action-primary { background: linear-gradient(135deg, #5eb6ff, #4dabf7); border-color: #74c0fc; color: #08203a; box-shadow: 0 10px 22px rgba(77,171,247,0.24); }
   .cv-chip-action-primary:hover { background: linear-gradient(135deg, #7cc7ff, #5eb6ff); border-color: #a5d8ff; }
+  .cv-chip-action-primary:disabled, .cv-chip-action-primary:disabled:hover { background: linear-gradient(135deg, #5eb6ff, #4dabf7); border-color: #74c0fc; color: #08203a; opacity: 0.9; }
   .cv-hero-summary { margin-top: 20px; padding: 17px 18px; border-radius: 18px; border: 1px solid color-mix(in srgb, var(--cv-accent-blue) 18%, var(--cv-border-soft)); background: linear-gradient(180deg, color-mix(in srgb, var(--cv-surface-3) 94%, transparent), transparent); box-shadow: inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
   .cv-hero-summary-head { display: grid; gap: 6px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid color-mix(in srgb, var(--vscode-panel-border) 70%, transparent); }
   .cv-hero-summary-kicker { color: var(--cv-accent-cyan); text-transform: uppercase; letter-spacing: 0.09em; font-size: 0.69rem; font-weight: 800; }
