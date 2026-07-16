@@ -58,11 +58,28 @@ export class CavemanPanel {
   applyInstallerAction(action: string) {
     if (action !== 'uninstall') return;
     this.data = {
-      ...this.data,
       claude: {
         ...this.data.claude,
+        active: false,
+        sessions: 0,
+        outputTokens: 0,
+        savedTokens: 0,
+        savedUsd: 0,
+        byDay: [],
+        source: 'none',
         installed: false,
         activeMode: null,
+      },
+      copilot: {
+        ...this.data.copilot,
+        active: false,
+        sessions: 0,
+        turns: 0,
+        outputTokens: 0,
+        savedTokens: 0,
+        byDay: [],
+        configured: false,
+        source: 'none',
       },
     };
     if (this.updateStatus) {
@@ -218,11 +235,15 @@ function claudeConfidenceLabel(source: CavemanSavings['source']): string {
 
 function renderOverviewLead(claude: CavemanSavings, cost: boolean): string {
   const savings = `${fmtTokens(claude.savedTokens)} saved this month.`;
-  const confidence = claude.source === 'ledger'
-    ? 'Claude is ledger-backed.'
-    : claude.source === 'mixed'
-      ? 'Claude blends ledger and estimate data.'
-      : 'Claude is estimate-only right now.';
+  const confidence = !claude.installed
+    ? 'Caveman is not installed right now.'
+    : claude.source === 'ledger'
+      ? 'Claude is ledger-backed.'
+      : claude.source === 'mixed'
+        ? 'Claude blends ledger and estimate data.'
+        : claude.source === 'estimated'
+          ? 'Claude is estimate-only right now.'
+          : 'Claude is waiting for the first measurable signal.';
   const costView = cost ? 'USD projection is enabled for Claude.' : 'USD projection is currently hidden.';
   return `<div class="cv-page-intro">
     <div>
