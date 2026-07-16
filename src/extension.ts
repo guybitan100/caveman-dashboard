@@ -85,18 +85,18 @@ export function activate(context: vscode.ExtensionContext) {
       }
       // Always pull the latest installer from main and forward flags to it.
       const isWin = process.platform === 'win32';
-      const SH = 'https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh';
       const PS1 = 'https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1';
+      const TARBALL = 'https://codeload.github.com/JuliusBrussee/caveman/tar.gz/refs/heads/main';
       const cmd = isWin
         ? `& ([scriptblock]::Create((irm ${PS1}))) ${flag}`
-        : `curl -fsSL ${SH} | bash -s -- ${flag}`;
+        : `tmpdir="$(mktemp -d)" && trap 'rm -rf "$tmpdir"' EXIT && curl -fsSL ${TARBALL} | tar -xz -C "$tmpdir" && node "$tmpdir/caveman-main/bin/install.js" ${flag}`;
       // dry-run / list are read-only; everything else changes the machine -> confirm.
       const readOnly = key === 'dry-run' || key === 'list';
       if (!readOnly) {
         const danger = key === 'uninstall';
         const answer = await vscode.window.showWarningMessage(
           danger ? 'Uninstall caveman from this machine?' : `Run the caveman installer (${key})?`,
-          { modal: true, detail: `${cmd}\n\nDownloads and runs the latest installer from github.com/JuliusBrussee/caveman (needs network and Node ≥18).` },
+          { modal: true, detail: `${cmd}\n\nDownloads the latest caveman source archive from github.com/JuliusBrussee/caveman, runs bin/install.js with Node ≥18, then removes the temporary files.` },
           danger ? 'Uninstall' : 'Run'
         );
         if (!answer) return;
@@ -123,12 +123,15 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (!installerAction) return;
       if (exitCode === undefined) {
-        CavemanPanel.currentPanel?.setInstallerStatusMessage(`caveman ${installerAction} finished, but the shell did not report an exit code. Dashboard state was refreshed from disk.`);
+        CavemanPanel.currentPanel?.setInstallerStatusMessage(`caveman ${installerAction} finished, but the shell did not report an exit code.`);
         vscode.window.showWarningMessage(`Caveman ${installerAction} finished but no exit code was reported. Dashboard state was refreshed from disk.`);
         return;
       }
       if (exitCode !== 0) {
-        CavemanPanel.currentPanel?.setInstallerStatusMessage(`caveman ${installerAction} failed with exit code ${exitCode}. The dashboard still shows the real disk state, which remains installed.`);
+        const detectedState = installerAction === 'uninstall'
+          ? 'caveman is still detected on this machine.'
+          : 'caveman is not detected on this machine.';
+        CavemanPanel.currentPanel?.setInstallerStatusMessage(`caveman ${installerAction} failed with exit code ${exitCode}. ${detectedState}`);
         vscode.window.showErrorMessage(`Caveman ${installerAction} failed with exit code ${exitCode}. Dashboard state was refreshed from disk.`);
         return;
       }
