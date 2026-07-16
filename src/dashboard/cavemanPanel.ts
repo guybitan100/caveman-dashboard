@@ -63,7 +63,25 @@ export class CavemanPanel {
 
   /** Reflect a confirmed local installer action before a full refresh re-reads disk state. */
   applyInstallerAction(action: string) {
-    if (action !== 'uninstall') return;
+    const installAction = action === 'install' || action === 'all' || action === 'minimal' || action === 'force';
+    if (!installAction && action !== 'uninstall') return;
+
+    if (installAction) {
+      this.data = {
+        claude: {
+          ...this.data.claude,
+          installed: true,
+        },
+        copilot: {
+          ...this.data.copilot,
+          configured: true,
+        },
+      };
+      this.updateStatus = undefined;
+      this.render();
+      return;
+    }
+
     this.data = {
       claude: {
         ...this.data.claude,
