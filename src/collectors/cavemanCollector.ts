@@ -3,6 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { CavemanSavings } from '../types';
 import { CavemanSessionInput, aggregateCaveman, detectCavemanMode, todayIso } from '../analytics/cavemanEngine';
+import { isCavemanInstalled } from './updateChecker';
 
 type LedgerEntry = {
   ts?: number;
@@ -64,7 +65,7 @@ export class CavemanCollector {
 
   /** Detect whether caveman is installed and which mode the activation flag holds. */
   private readStatus(dir: string): { installed: boolean; activeMode: string | null } {
-    const installed = fs.existsSync(path.join(dir, 'plugins', 'cache', 'caveman'));
+    const installed = isCavemanInstalled(dir);
     let activeMode: string | null = null;
     try {
       const raw = fs.readFileSync(path.join(dir, '.caveman-active'), 'utf8').trim();

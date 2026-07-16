@@ -480,9 +480,14 @@ function renderHistoryTab(claude: CavemanSavings, copilot: CopilotSavings, cost:
 }
 
 function renderClaudeStatus(c: CavemanSavings): string {
+  const modeLabel = !c.installed
+    ? 'Mode unavailable'
+    : c.activeMode
+      ? `Active: ${c.activeMode}`
+      : 'Mode not enabled';
   return `<div class="cv-status">
     ${renderStatusBadge(c.installed, c.installed ? 'Installed' : 'Not installed')}
-    ${renderStatusBadge(!!c.activeMode, c.activeMode ? `Active: ${c.activeMode}` : 'Mode off')}
+    ${renderStatusBadge(!!c.activeMode, modeLabel)}
     ${renderStatusBadge(c.active, c.active ? `${c.sessions} session${c.sessions === 1 ? '' : 's'} detected` : 'No usage detected')}
   </div>`;
 }
@@ -536,6 +541,9 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
           ? 'Update available'
           : 'Up to date';
   const modeLabel = claude.activeMode ? `Claude mode: ${claude.activeMode}` : 'Claude mode inactive';
+  const primaryAction = !claude.installed
+    ? `<button class="cv-hero cv-cta" data-cv="install" title="Install the caveman plugin">${svgIcon('download')}<span>Install caveman</span></button>`
+    : `<button class="cv-ghost cv-cta cv-cta-danger" data-cv="uninstall" title="Uninstall caveman from this machine">${svgIcon('trash')}<span>Uninstall</span></button>`;
   return `<section class="cv-hero-shell">
     <div class="cv-hero-main">
       <div class="cv-kicker">Developer telemetry for caveman compression</div>
@@ -550,7 +558,7 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
       </div>
     </div>
     <div class="cv-hero-actions">
-      <button class="cv-ghost cv-cta cv-cta-danger" data-cv="uninstall" title="Uninstall caveman from this machine">${svgIcon('trash')}<span>Uninstall</span></button>
+      ${primaryAction}
       <button class="cv-ghost cv-cta" data-command="checkUpdate">${svgIcon('refresh')}<span>Check update</span></button>
       <button class="cv-hero cv-cta" data-command="refresh">${svgIcon('download')}<span>Refresh dashboard</span></button>
     </div>

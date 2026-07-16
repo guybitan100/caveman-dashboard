@@ -36,6 +36,24 @@ function claudeDir(explicit?: string): string {
 
 function normalizeSha(sha: string): string { return sha.trim().toLowerCase(); }
 
+function hasRegistryInstallEntry(pluginsDir: string): boolean {
+  try {
+    const reg = JSON.parse(fs.readFileSync(path.join(pluginsDir, 'installed_plugins.json'), 'utf8'));
+    const entries = reg?.plugins?.['caveman@caveman'];
+    return Array.isArray(entries) && entries.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+export function isCavemanInstalled(explicitDir?: string): boolean {
+  const pluginsDir = path.join(claudeDir(explicitDir), 'plugins');
+  const cacheRoot = path.join(pluginsDir, 'cache', 'caveman');
+  if (fs.existsSync(cacheRoot)) return true;
+  if (hasRegistryInstallEntry(pluginsDir)) return true;
+  return readCavemanVersion(explicitDir) !== null;
+}
+
 /** Read the installed caveman commit sha + source repo from the Claude plugin registry. */
 export function readInstalledCaveman(explicitDir?: string): CavemanInstallInfo {
   const dir = claudeDir(explicitDir);
@@ -71,7 +89,7 @@ export function readInstalledCaveman(explicitDir?: string): CavemanInstallInfo {
     }
   } catch { /* registry absent */ }
 
-  const installed = fs.existsSync(path.join(pluginsDir, 'cache', 'caveman'));
+  const installed = isCavemanInstalled(explicitDir);
   return { installed, sha, repo, installedAt };
 }
 
