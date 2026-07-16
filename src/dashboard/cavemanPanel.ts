@@ -301,11 +301,6 @@ function renderOverviewRail(claude: CavemanSavings, cost: boolean): string {
   const totalSaved = claude.savedTokens;
   const totalSessions = claude.sessions;
   const claudeConfidence = claudeConfidenceLabel(claude.source);
-  const nextStep = !claude.installed
-    ? 'Install caveman from the Updates tab, then rerun a Claude session.'
-    : !claude.active
-      ? 'Generate the first Claude session so the dashboard can switch from setup to measured savings.'
-      : 'Review Monthly history to confirm the current month is sustaining momentum.';
   return `<aside class="cv-signal-rail">
     <section class="cv-rail-card">
       <div class="cv-rail-eyebrow">At a glance</div>
@@ -314,13 +309,6 @@ function renderOverviewRail(claude: CavemanSavings, cost: boolean): string {
       <div class="cv-rail-line"><span>Observed sessions</span><strong>${totalSessions}</strong></div>
       <div class="cv-rail-line"><span>Claude confidence</span><strong>${escapeHtml(claudeConfidence)}</strong></div>
       <div class="cv-rail-line"><span>USD projection</span><strong>${cost ? 'Enabled for Claude' : 'Hidden'}</strong></div>
-    </section>
-    <section class="cv-rail-card">
-      <div class="cv-rail-eyebrow">Operator guidance</div>
-      <h3>Recommended sequence</h3>
-      <div class="cv-step">1. Check that Claude is producing measured savings instead of only installer state.</div>
-      <div class="cv-step">2. Track streaks and momentum to spot whether adoption is sustaining.</div>
-      <div class="cv-step">3. ${escapeHtml(nextStep)}</div>
     </section>
   </aside>`;
 }
@@ -340,7 +328,6 @@ function renderOverviewTab(claude: CavemanSavings, cost: boolean): string {
 
 function renderUnifiedDashboard(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean): string {
   return `<main class="cv-story">
-    ${renderSectionNav(claude, copilot)}
     <section class="cv-story-section cv-story-section-hero" id="sec-overview" aria-label="Overview">
       ${renderOverviewTab(claude, cost)}
     </section>
@@ -588,26 +575,6 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
   </section>`;
 }
 
-function renderSectionNav(claude: CavemanSavings, copilot: CopilotSavings): string {
-  const overviewState = claude.savedTokens > 0 ? `${fmtTokens(claude.savedTokens)} saved` : claude.installed ? 'Waiting for activity' : 'Needs setup';
-  const claudeState = claude.activeMode ? `Mode ${claude.activeMode}` : claude.installed ? 'Mode not enabled' : 'Not installed';
-  const historyState = trackedMonthCount(claude.byMonth) + trackedMonthCount(copilot.byMonth) > 1 ? 'Trend view ready' : 'History is just starting';
-  return `<nav class="cv-section-nav" aria-label="Dashboard sections">
-    <a class="cv-section-link cv-section-link-active" href="#sec-overview">
-      <span class="cv-section-link-label">Overview</span>
-      <strong class="cv-section-link-value">${escapeHtml(overviewState)}</strong>
-    </a>
-    <a class="cv-section-link" href="#sec-claude">
-      <span class="cv-section-link-label">Claude Code</span>
-      <strong class="cv-section-link-value">${escapeHtml(claudeState)}</strong>
-    </a>
-    <a class="cv-section-link" href="#sec-history">
-      <span class="cv-section-link-label">History</span>
-      <strong class="cv-section-link-value">${escapeHtml(historyState)}</strong>
-    </a>
-  </nav>`;
-}
-
 function renderClaudeTab(claude: CavemanSavings, cost: boolean): string {
   const confidence = claudeConfidenceLabel(claude.source);
   const usdState = cost ? 'USD view on' : 'USD view off';
@@ -788,12 +755,6 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-cta .cv-ico { width: 15px; height: 15px; }
   .cv-cta-danger { border-color: #e0384555; color: var(--cv-accent-red); }
   .cv-cta-danger:hover { background: #e0384518; border-color: var(--cv-accent-red); color: var(--cv-accent-red); }
-  .cv-section-nav { position: sticky; top: 12px; z-index: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin-top: 20px; margin-bottom: 6px; padding: 8px; border-radius: 24px; border: 1px solid var(--cv-border-soft); background: color-mix(in srgb, var(--cv-surface-1) 92%, transparent); box-shadow: var(--cv-shadow-sm); backdrop-filter: blur(12px); overflow: hidden; }
-  .cv-section-link { display: grid; gap: 4px; padding: 14px 18px; border-radius: 16px; border: 1px solid transparent; text-decoration: none; background: transparent; transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease; }
-  .cv-section-link:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--cv-accent-blue) 24%, transparent); background: color-mix(in srgb, var(--cv-surface-3) 88%, transparent); }
-  .cv-section-link-active { background: linear-gradient(180deg, color-mix(in srgb, var(--cv-surface-3) 96%, transparent), transparent); border-color: color-mix(in srgb, var(--cv-accent-blue) 30%, transparent); box-shadow: inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
-  .cv-section-link-label { color: var(--cv-accent-cyan); text-transform: uppercase; letter-spacing: 0.09em; font-size: 0.69rem; font-weight: 800; }
-  .cv-section-link-value { color: var(--vscode-foreground); font-size: 0.9rem; line-height: 1.35; }
   .cv-story { display: grid; gap: 24px; margin-top: 22px; }
   .cv-story-section { position: relative; padding: 24px; border: 1px solid var(--cv-border-soft); border-radius: 22px; background: linear-gradient(180deg, var(--cv-surface-1), var(--cv-surface-2)); box-shadow: var(--cv-shadow-md); }
   .cv-story-section::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 1px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--vscode-focusBorder) 55%, transparent), transparent); }
@@ -920,7 +881,6 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   }
   @media (max-width: 980px) {
     .cv-overview, .provider-grid, .cv-hero-summary-grid { grid-template-columns: 1fr; }
-    .cv-section-nav { grid-template-columns: 1fr; gap: 8px; }
     .cv-hero-topline { flex-direction: column; }
     .cv-hero-meta-row { align-items: stretch; }
     .cv-page-intro, .cv-action-head { align-items: start; }
