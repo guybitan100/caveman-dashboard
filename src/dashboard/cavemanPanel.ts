@@ -682,13 +682,14 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
             <span class="cv-chip" role="listitem">${totalSaved} saved tokens this month</span>
             <span class="cv-chip" role="listitem">${escapeHtml(modeLabel)}</span>
             <span class="cv-chip" role="listitem">${totalSessions} total sessions observed</span>
+            <span class="cv-chip" role="listitem">${escapeHtml(installLabel)}</span>
             <span class="cv-chip" role="listitem">${escapeHtml(updateLabel)}</span>
           </div>
         </div>
         <div class="cv-hero-actions-card" aria-label="Hero actions">
           <span class="cv-hero-actions-kicker">Operate</span>
           <strong class="cv-hero-actions-title">Machine control</strong>
-          <span class="cv-hero-actions-copy">Install state, update checks, and dashboard refresh stay close to the live status.</span>
+          <span class="cv-hero-actions-copy">Update checks and dashboard refresh stay close to the live status.</span>
           <div class="cv-hero-actions">
             ${primaryAction}
             <button class="cv-chip-action" data-command="checkUpdate">${svgIcon('refresh')}<span>Check update</span></button>
