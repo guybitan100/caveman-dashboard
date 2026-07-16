@@ -545,8 +545,8 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
   const modeLabel = claude.activeMode ? `Claude mode: ${claude.activeMode}` : 'Claude mode inactive';
   const installLabel = claude.installed ? 'Installed locally' : 'Needs install';
   const primaryAction = !claude.installed
-    ? `<button class="cv-hero cv-cta" data-cv="install" title="Install the caveman plugin">${svgIcon('download')}<span>Install caveman</span></button>`
-    : `<button class="cv-ghost cv-cta cv-cta-danger" data-cv="uninstall" title="Uninstall caveman from this machine">${svgIcon('trash')}<span>Uninstall</span></button>`;
+    ? `<button class="cv-chip-action cv-chip-action-primary" data-cv="install" title="Install the caveman plugin">${svgIcon('download')}<span>Install caveman</span></button>`
+    : `<button class="cv-chip-action" data-cv="uninstall" title="Uninstall caveman from this machine">${svgIcon('trash')}<span>Uninstall</span></button>`;
   return `<section class="cv-hero-shell">
     <div class="cv-hero-topline">
       <div class="cv-kicker">Developer telemetry for caveman compression</div>
@@ -554,35 +554,34 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
     <div class="cv-hero-main">
       <h1>Caveman Dashboard</h1>
       <div class="cv-hero-copy">Track measured Claude savings, compare them with projected Copilot impact, and keep install, mode, and update actions directly in the operating path.</div>
-      <div class="cv-hero-meta-row">
-        <div class="cv-hero-chips">
-          <span class="cv-chip cv-chip-good">${escapeHtml(month)}</span>
-          <span class="cv-chip">${totalSaved} saved tokens this month</span>
-          <span class="cv-chip">${escapeHtml(modeLabel)}</span>
-          <span class="cv-chip">${totalSessions} total sessions observed</span>
-          <span class="cv-chip">${escapeHtml(updateLabel)}</span>
-        </div>
-        <div class="cv-hero-actions">
-          ${primaryAction}
-          <button class="cv-ghost cv-cta" data-command="checkUpdate">${svgIcon('refresh')}<span>Check update</span></button>
-          <button class="cv-hero cv-cta" data-command="refresh">${svgIcon('download')}<span>Refresh dashboard</span></button>
-        </div>
+      <div class="cv-hero-meta-row" role="list" aria-label="Hero status and actions">
+        <span class="cv-chip cv-chip-good" role="listitem">${escapeHtml(month)}</span>
+        <span class="cv-chip" role="listitem">${totalSaved} saved tokens this month</span>
+        <span class="cv-chip" role="listitem">${escapeHtml(modeLabel)}</span>
+        <span class="cv-chip" role="listitem">${totalSessions} total sessions observed</span>
+        <span class="cv-chip" role="listitem">${escapeHtml(updateLabel)}</span>
+        ${primaryAction}
+        <button class="cv-chip-action" data-command="checkUpdate">${svgIcon('refresh')}<span>Check update</span></button>
+        <button class="cv-chip-action cv-chip-action-primary" data-command="refresh">${svgIcon('download')}<span>Refresh dashboard</span></button>
       </div>
-      <div class="cv-hero-stats" role="list" aria-label="Hero summary metrics">
-        <div class="cv-hero-stat" role="listitem">
-          <span class="cv-hero-stat-label">Install state</span>
-          <strong class="cv-hero-stat-value">${escapeHtml(installLabel)}</strong>
-          <small class="cv-hero-stat-copy">${claude.installed ? 'Plugin footprint detected in Claude.' : 'Install caveman to begin measuring real sessions.'}</small>
+      <div class="cv-hero-summary" aria-label="Hero summary metrics">
+        <div class="cv-hero-summary-head">
+          <span class="cv-hero-summary-kicker">Operational summary</span>
+          <strong class="cv-hero-summary-title">${escapeHtml(installLabel)} · ${escapeHtml(confidence)} · ${totalSessions} observed session${totalSessions === 1 ? '' : 's'}</strong>
         </div>
-        <div class="cv-hero-stat" role="listitem">
-          <span class="cv-hero-stat-label">Claude confidence</span>
-          <strong class="cv-hero-stat-value">${escapeHtml(confidence)}</strong>
-          <small class="cv-hero-stat-copy">${claude.source === 'ledger' ? 'Numbers are ledger-backed.' : claude.source === 'mixed' ? 'Live view blends ledger and estimation.' : claude.source === 'estimated' ? 'Current results are estimate-only.' : 'Waiting for the first measurable signal.'}</small>
-        </div>
-        <div class="cv-hero-stat" role="listitem">
-          <span class="cv-hero-stat-label">Observed sessions</span>
-          <strong class="cv-hero-stat-value">${totalSessions}</strong>
-          <small class="cv-hero-stat-copy">${claude.sessions} Claude sessions and ${copilot.sessions} Copilot sessions in the current month.</small>
+        <div class="cv-hero-summary-grid" role="list">
+          <div class="cv-hero-summary-item" role="listitem">
+            <span class="cv-hero-summary-label">Install state</span>
+            <span class="cv-hero-summary-copy">${claude.installed ? 'Plugin footprint detected in Claude.' : 'Install caveman to begin measuring real sessions.'}</span>
+          </div>
+          <div class="cv-hero-summary-item" role="listitem">
+            <span class="cv-hero-summary-label">Claude confidence</span>
+            <span class="cv-hero-summary-copy">${claude.source === 'ledger' ? 'Numbers are ledger-backed.' : claude.source === 'mixed' ? 'Live view blends ledger and estimation.' : claude.source === 'estimated' ? 'Current results are estimate-only.' : 'Waiting for the first measurable signal.'}</span>
+          </div>
+          <div class="cv-hero-summary-item" role="listitem">
+            <span class="cv-hero-summary-label">Observed sessions</span>
+            <span class="cv-hero-summary-copy">${claude.sessions} Claude sessions and ${copilot.sessions} Copilot sessions in the current month.</span>
+          </div>
         </div>
       </div>
     </div>
@@ -767,15 +766,23 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-hero-topline { position: relative; z-index: 1; display: flex; justify-content: flex-start; align-items: flex-start; gap: 16px; }
   .cv-hero-main { position: relative; z-index: 1; }
   .cv-hero-copy { max-width: 68ch; color: var(--vscode-descriptionForeground); line-height: 1.65; font-size: 0.96rem; }
-  .cv-hero-meta-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-top: 14px; }
+  .cv-hero-meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; max-width: 100%; }
   .cv-hero-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
   .cv-chip { display: inline-flex; align-items: center; min-height: 32px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--cv-border-soft); background: color-mix(in srgb, var(--vscode-editor-background) 55%, transparent); color: var(--vscode-descriptionForeground); font-size: 0.77rem; font-weight: 700; backdrop-filter: blur(10px); }
   .cv-chip-good { color: #b2f2bb; border-color: #51cf6655; background: #51cf6618; }
-  .cv-hero-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
-  .cv-hero-stat { padding: 14px 14px 13px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--cv-accent-blue) 18%, var(--cv-border-soft)); background: linear-gradient(180deg, color-mix(in srgb, var(--cv-surface-3) 94%, transparent), transparent); box-shadow: inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
-  .cv-hero-stat-label { display: block; color: var(--cv-accent-cyan); text-transform: uppercase; letter-spacing: 0.09em; font-size: 0.69rem; font-weight: 800; margin-bottom: 8px; }
-  .cv-hero-stat-value { display: block; font-size: 1.06rem; line-height: 1.25; letter-spacing: -0.015em; }
-  .cv-hero-stat-copy { display: block; color: var(--vscode-descriptionForeground); font-size: 0.76rem; line-height: 1.5; margin-top: 6px; }
+  .cv-chip-action { min-height: 32px; display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px; border-radius: 999px; border: 1px solid var(--cv-border-soft); background: color-mix(in srgb, var(--vscode-editor-background) 48%, transparent); color: var(--vscode-foreground); font-size: 0.77rem; font-weight: 800; line-height: 1; box-shadow: none; }
+  .cv-chip-action .cv-ico { width: 14px; height: 14px; }
+  .cv-chip-action:hover { border-color: var(--cv-border-strong); background: color-mix(in srgb, var(--cv-surface-3) 96%, transparent); transform: translateY(-1px); }
+  .cv-chip-action-primary { background: linear-gradient(135deg, #5eb6ff, #4dabf7); border-color: #74c0fc; color: #08203a; box-shadow: 0 10px 22px rgba(77,171,247,0.24); }
+  .cv-chip-action-primary:hover { background: linear-gradient(135deg, #7cc7ff, #5eb6ff); border-color: #a5d8ff; }
+  .cv-hero-summary { margin-top: 18px; padding: 16px 18px; border-radius: 18px; border: 1px solid color-mix(in srgb, var(--cv-accent-blue) 18%, var(--cv-border-soft)); background: linear-gradient(180deg, color-mix(in srgb, var(--cv-surface-3) 94%, transparent), transparent); box-shadow: inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
+  .cv-hero-summary-head { display: grid; gap: 6px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid color-mix(in srgb, var(--vscode-panel-border) 70%, transparent); }
+  .cv-hero-summary-kicker { color: var(--cv-accent-cyan); text-transform: uppercase; letter-spacing: 0.09em; font-size: 0.69rem; font-weight: 800; }
+  .cv-hero-summary-title { font-size: 1.02rem; line-height: 1.35; letter-spacing: -0.015em; }
+  .cv-hero-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .cv-hero-summary-item { display: grid; gap: 6px; }
+  .cv-hero-summary-label { color: var(--cv-accent-cyan); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.68rem; font-weight: 800; }
+  .cv-hero-summary-copy { color: var(--vscode-descriptionForeground); font-size: 0.78rem; line-height: 1.5; }
   .cv-hero-actions { position: relative; z-index: 1; display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; align-items: center; margin-top: 14px; }
   .cv-cta { min-height: 42px; display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 12px; font-weight: 800; }
   .cv-cta .cv-ico { width: 15px; height: 15px; }
@@ -911,9 +918,9 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     .cv-shell, .card, .cv-btn, .cv-tabpanel, button, .cv-story-section, .cv-section-link { animation: none !important; transition: none !important; transform: none !important; }
   }
   @media (max-width: 980px) {
-    .cv-overview, .provider-grid, .cv-section-nav, .cv-hero-stats { grid-template-columns: 1fr; }
-    .cv-hero-topline, .cv-hero-meta-row { flex-direction: column; }
-    .cv-hero-actions { justify-content: flex-start; }
+    .cv-overview, .provider-grid, .cv-section-nav, .cv-hero-summary-grid { grid-template-columns: 1fr; }
+    .cv-hero-topline { flex-direction: column; }
+    .cv-hero-meta-row { align-items: stretch; }
     .cv-page-intro, .cv-action-head { align-items: start; }
     .cv-page-intro, .cv-action-head { flex-direction: column; }
     .cv-inline-facts { justify-content: flex-start; }
