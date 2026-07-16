@@ -548,8 +548,15 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
     ? `<button class="cv-hero cv-cta" data-cv="install" title="Install the caveman plugin">${svgIcon('download')}<span>Install caveman</span></button>`
     : `<button class="cv-ghost cv-cta cv-cta-danger" data-cv="uninstall" title="Uninstall caveman from this machine">${svgIcon('trash')}<span>Uninstall</span></button>`;
   return `<section class="cv-hero-shell">
-    <div class="cv-hero-main">
+    <div class="cv-hero-topline">
       <div class="cv-kicker">Developer telemetry for caveman compression</div>
+      <div class="cv-hero-actions">
+        ${primaryAction}
+        <button class="cv-ghost cv-cta" data-command="checkUpdate">${svgIcon('refresh')}<span>Check update</span></button>
+        <button class="cv-hero cv-cta" data-command="refresh">${svgIcon('download')}<span>Refresh dashboard</span></button>
+      </div>
+    </div>
+    <div class="cv-hero-main">
       <h1>Caveman Dashboard</h1>
       <div class="cv-hero-copy">Track measured Claude savings, compare them with projected Copilot impact, and keep install, mode, and update actions directly in the operating path.</div>
       <div class="cv-hero-chips">
@@ -576,11 +583,6 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
           <small class="cv-hero-stat-copy">${claude.sessions} Claude sessions and ${copilot.sessions} Copilot sessions in the current month.</small>
         </div>
       </div>
-    </div>
-    <div class="cv-hero-actions">
-      ${primaryAction}
-      <button class="cv-ghost cv-cta" data-command="checkUpdate">${svgIcon('refresh')}<span>Check update</span></button>
-      <button class="cv-hero cv-cta" data-command="refresh">${svgIcon('download')}<span>Refresh dashboard</span></button>
     </div>
   </section>`;
 }
@@ -756,10 +758,11 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-share-bar { width: 100%; height: 8px; border-radius: 999px; background: rgba(128,128,128,0.14); overflow: hidden; margin-top: 2px; }
   .cv-share-bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--cv-accent-green), var(--cv-accent-blue)); }
   .toolbar { display: flex; gap: 8px; margin: 0; }
-  .cv-hero-shell { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: end; padding: 28px 28px 24px; border: 1px solid var(--cv-border-soft); border-radius: 24px; background: linear-gradient(135deg, var(--cv-surface-1), var(--cv-surface-2)); box-shadow: var(--cv-shadow-lg); overflow: hidden; }
+  .cv-hero-shell { position: relative; display: grid; gap: 20px; align-items: start; padding: 28px 28px 24px; border: 1px solid var(--cv-border-soft); border-radius: 24px; background: linear-gradient(135deg, var(--cv-surface-1), var(--cv-surface-2)); box-shadow: var(--cv-shadow-lg); overflow: hidden; }
   .cv-hero-shell::before { content: ''; position: absolute; inset: -10% auto auto 55%; width: 380px; height: 380px; border-radius: 999px; background: radial-gradient(circle, color-mix(in srgb, var(--cv-accent-blue) 18%, transparent), transparent 68%); pointer-events: none; }
   .cv-hero-shell::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; border: 1px solid color-mix(in srgb, white 5%, transparent); mask-image: linear-gradient(160deg, rgba(0,0,0,0.7), transparent 55%); }
   .cv-kicker { color: var(--cv-accent-amber); text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.72rem; font-weight: 800; margin-bottom: 10px; }
+  .cv-hero-topline { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
   .cv-hero-main { position: relative; z-index: 1; }
   .cv-hero-copy { max-width: 68ch; color: var(--vscode-descriptionForeground); line-height: 1.65; font-size: 0.96rem; }
   .cv-hero-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
@@ -770,7 +773,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-hero-stat-label { display: block; color: var(--cv-accent-cyan); text-transform: uppercase; letter-spacing: 0.09em; font-size: 0.69rem; font-weight: 800; margin-bottom: 8px; }
   .cv-hero-stat-value { display: block; font-size: 1.06rem; line-height: 1.25; letter-spacing: -0.015em; }
   .cv-hero-stat-copy { display: block; color: var(--vscode-descriptionForeground); font-size: 0.76rem; line-height: 1.5; margin-top: 6px; }
-  .cv-hero-actions { position: relative; z-index: 1; display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; align-items: center; align-self: start; }
+  .cv-hero-actions { position: relative; z-index: 1; display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
   .cv-cta { min-height: 42px; display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 12px; font-weight: 800; }
   .cv-cta .cv-ico { width: 15px; height: 15px; }
   .cv-cta-danger { border-color: #e0384555; color: var(--cv-accent-red); }
@@ -905,7 +908,8 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     .cv-shell, .card, .cv-btn, .cv-tabpanel, button, .cv-story-section, .cv-section-link { animation: none !important; transition: none !important; transform: none !important; }
   }
   @media (max-width: 980px) {
-    .cv-overview, .provider-grid, .cv-hero-shell, .cv-section-nav, .cv-hero-stats { grid-template-columns: 1fr; }
+    .cv-overview, .provider-grid, .cv-section-nav, .cv-hero-stats { grid-template-columns: 1fr; }
+    .cv-hero-topline { flex-direction: column; }
     .cv-hero-actions { justify-content: flex-start; }
     .cv-page-intro, .cv-action-head { align-items: start; }
     .cv-page-intro, .cv-action-head { flex-direction: column; }
