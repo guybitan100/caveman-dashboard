@@ -22,6 +22,7 @@ export class CavemanPanel {
   private cavemanVersion: string | null;
   private cavemanSha: string | null;
   private installerActionPending: InstallerAction | undefined;
+  private installerStatusMessage: string | undefined;
 
   static show(context: vscode.ExtensionContext, data: CombinedSavings, readLatestData: () => CombinedSavings) {
     if (CavemanPanel.currentPanel) {
@@ -47,6 +48,7 @@ export class CavemanPanel {
     this.cavemanVersion = null;
     this.cavemanSha = null;
     this.installerActionPending = undefined;
+    this.installerStatusMessage = undefined;
     this.refreshInstallMetadata();
     this.panel.webview.onDidReceiveMessage(message => {
       if (message?.command === 'refresh') vscode.commands.executeCommand('cavemanDashboard.refresh');
@@ -75,6 +77,12 @@ export class CavemanPanel {
 
   setInstallerActionPending(action: InstallerAction | undefined) {
     this.installerActionPending = action;
+    if (action) this.installerStatusMessage = undefined;
+    this.render();
+  }
+
+  setInstallerStatusMessage(message: string | undefined) {
+    this.installerStatusMessage = message;
     this.render();
   }
 
@@ -138,7 +146,7 @@ export class CavemanPanel {
   }
 
   private render() {
-    this.panel.webview.html = renderHtml(this.data, this.updateStatus, this.updateStatusPending, this.installerActionPending, this.version, this.cavemanVersion, this.cavemanSha);
+    this.panel.webview.html = renderHtml(this.data, this.updateStatus, this.updateStatusPending, this.installerActionPending, this.installerStatusMessage, this.version, this.cavemanVersion, this.cavemanSha);
   }
 }
 
@@ -612,7 +620,7 @@ function renderClaude(c: CavemanSavings, cost: boolean, pendingAction: Installer
     ${chart}`;
 }
 
-function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, updateStatusPending: boolean, pendingAction: InstallerAction | undefined): string {
+function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, updateStatusPending: boolean, pendingAction: InstallerAction | undefined, installerStatusMessage: string | undefined): string {
   const { claude, copilot } = data;
   const totalSessions = claude.sessions + copilot.sessions;
   const month = fmtMonth(claude.currentMonth);
@@ -651,6 +659,7 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
         <button class="cv-chip-action" data-command="checkUpdate">${svgIcon('refresh')}<span>Check update</span></button>
         <button class="cv-chip-action cv-chip-action-primary" data-command="refresh">${svgIcon('download')}<span>Refresh dashboard</span></button>
       </div>
+      ${installerStatusMessage ? `<div class="cv-hero-alert" role="status">${escapeHtml(installerStatusMessage)}</div>` : ''}
       <div class="cv-hero-summary" aria-label="Hero summary metrics">
         <div class="cv-hero-summary-head">
           <span class="cv-hero-summary-kicker">Operational summary</span>
@@ -729,7 +738,7 @@ function renderVersionFooter(version: string, cavemanVersion: string | null, cav
   </footer>`;
 }
 
-function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, updateStatusPending: boolean, pendingAction: InstallerAction | undefined, version: string, cavemanVersion: string | null, cavemanSha: string | null): string {
+function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, updateStatusPending: boolean, pendingAction: InstallerAction | undefined, installerStatusMessage: string | undefined, version: string, cavemanVersion: string | null, cavemanSha: string | null): string {
   const nonce = getNonce();
   const cost = showCost();
   const { claude, copilot } = data;
@@ -836,6 +845,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-hero-main { position: relative; z-index: 1; }
   .cv-hero-copy { max-width: 68ch; color: var(--vscode-descriptionForeground); line-height: 1.65; font-size: 0.96rem; }
   .cv-hero-meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; max-width: 100%; }
+  .cv-hero-alert { margin-top: 14px; padding: 11px 13px; border-radius: 14px; border: 1px solid #e0384555; background: #e0384522; color: var(--cv-accent-red); font-size: 0.83rem; line-height: 1.5; }
   .cv-hero-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
   .cv-chip { display: inline-flex; align-items: center; min-height: 32px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--cv-border-soft); background: color-mix(in srgb, var(--vscode-editor-background) 55%, transparent); color: var(--vscode-descriptionForeground); font-size: 0.77rem; font-weight: 700; backdrop-filter: blur(10px); }
   .cv-chip-good { color: #b2f2bb; border-color: #51cf6655; background: #51cf6618; }
@@ -989,7 +999,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
 </head>
 <body>
   <div class="cv-shell">
-  ${renderHeaderHero(data, updateStatus, updateStatusPending, pendingAction)}
+  ${renderHeaderHero(data, updateStatus, updateStatusPending, pendingAction, installerStatusMessage)}
 
   ${renderUnifiedDashboard(claude, copilot, cost, pendingAction)}
 

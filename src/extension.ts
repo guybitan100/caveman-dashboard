@@ -110,6 +110,7 @@ export function activate(context: vscode.ExtensionContext) {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         logError('Caveman installer command failed to launch', error);
+        CavemanPanel.currentPanel?.setInstallerStatusMessage(`Could not start caveman ${installerAction ?? 'command'}: ${message}`);
         vscode.window.showErrorMessage(`Caveman Dashboard: ${message}`);
         return;
       } finally {
@@ -122,12 +123,16 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (!installerAction) return;
       if (exitCode === undefined) {
+        CavemanPanel.currentPanel?.setInstallerStatusMessage(`caveman ${installerAction} finished, but the shell did not report an exit code. Dashboard state was refreshed from disk.`);
         vscode.window.showWarningMessage(`Caveman ${installerAction} finished but no exit code was reported. Dashboard state was refreshed from disk.`);
         return;
       }
       if (exitCode !== 0) {
+        CavemanPanel.currentPanel?.setInstallerStatusMessage(`caveman ${installerAction} failed with exit code ${exitCode}. The dashboard still shows the real disk state, which remains installed.`);
         vscode.window.showErrorMessage(`Caveman ${installerAction} failed with exit code ${exitCode}. Dashboard state was refreshed from disk.`);
+        return;
       }
+      CavemanPanel.currentPanel?.setInstallerStatusMessage(undefined);
     })
   );
 
