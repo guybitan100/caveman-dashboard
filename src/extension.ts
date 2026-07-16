@@ -68,9 +68,9 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('cavemanDashboard.cavemanCli', async (action?: unknown) => {
       // Map dashboard actions to caveman installer CLI flags (bin/install.js).
       const FLAGS: Record<string, string> = {
-        // The default dashboard install should always take the full caveman install path.
-        'install': '--all --non-interactive',
-        'all': '--all --non-interactive',
+        // Install plugin plus standalone hooks, but never write per-repo init files.
+        'install': '--with-hooks --non-interactive',
+        'all': '--with-hooks --non-interactive',
         'minimal': '--minimal --non-interactive',
         'dry-run': '--dry-run',
         'list': '--list',
