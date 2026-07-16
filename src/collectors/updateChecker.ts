@@ -120,6 +120,34 @@ export function readCavemanVersion(explicitDir?: string): string | null {
   return null;
 }
 
+/** Remove stale Claude-side caveman registry/cache entries after a successful uninstall. */
+export function cleanupStaleCavemanInstall(explicitDir?: string): void {
+  const pluginsDir = path.join(claudeDir(explicitDir), 'plugins');
+  const installedPluginsFile = path.join(pluginsDir, 'installed_plugins.json');
+  const knownMarketplacesFile = path.join(pluginsDir, 'known_marketplaces.json');
+  const cacheRoot = path.join(pluginsDir, 'cache', 'caveman');
+  const marketplaceRoot = path.join(pluginsDir, 'marketplaces', 'caveman');
+
+  try {
+    const reg = JSON.parse(fs.readFileSync(installedPluginsFile, 'utf8'));
+    if (reg?.plugins && Object.prototype.hasOwnProperty.call(reg.plugins, 'caveman@caveman')) {
+      delete reg.plugins['caveman@caveman'];
+      fs.writeFileSync(installedPluginsFile, `${JSON.stringify(reg, null, 2)}\n`, 'utf8');
+    }
+  } catch { /* registry absent or malformed */ }
+
+  try {
+    const mk = JSON.parse(fs.readFileSync(knownMarketplacesFile, 'utf8'));
+    if (mk && Object.prototype.hasOwnProperty.call(mk, 'caveman')) {
+      delete mk.caveman;
+      fs.writeFileSync(knownMarketplacesFile, `${JSON.stringify(mk, null, 2)}\n`, 'utf8');
+    }
+  } catch { /* marketplaces absent or malformed */ }
+
+  try { fs.rmSync(cacheRoot, { recursive: true, force: true }); } catch { /* ignore */ }
+  try { fs.rmSync(marketplaceRoot, { recursive: true, force: true }); } catch { /* ignore */ }
+}
+
 /** GET a URL as text, following up to `redirects` redirects; resolves { status, body }. */
 function httpGet(
   url: string,

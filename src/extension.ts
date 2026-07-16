@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { CavemanCollector } from './collectors/cavemanCollector';
 import { CopilotCollector } from './collectors/copilotCollector';
-import { checkCavemanUpdate, CavemanUpdateStatus, readInstalledCaveman } from './collectors/updateChecker';
+import { checkCavemanUpdate, cleanupStaleCavemanInstall, CavemanUpdateStatus, readInstalledCaveman } from './collectors/updateChecker';
 import { CavemanPanel } from './dashboard/cavemanPanel';
 import { CavemanStatusBar } from './statusbar/statusBar';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from './types';
@@ -134,6 +134,11 @@ export function activate(context: vscode.ExtensionContext) {
         CavemanPanel.currentPanel?.setInstallerStatusMessage(`caveman ${installerAction} failed with exit code ${exitCode}. ${detectedState}`);
         vscode.window.showErrorMessage(`Caveman ${installerAction} failed with exit code ${exitCode}. Dashboard state was refreshed from disk.`);
         return;
+      }
+      if (installerAction === 'uninstall') {
+        cleanupStaleCavemanInstall(explicitDir);
+        const data = refreshData();
+        CavemanPanel.currentPanel?.update(data);
       }
       CavemanPanel.currentPanel?.setInstallerStatusMessage(undefined);
     })
