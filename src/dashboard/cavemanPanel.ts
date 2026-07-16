@@ -11,13 +11,14 @@ import { claudeDirOverride, showCost, shortSha } from '../util';
 export class CavemanPanel {
   static currentPanel: CavemanPanel | undefined;
   private readonly panel: vscode.WebviewPanel;
+  private readonly readLatestData: () => CombinedSavings;
   private data: CombinedSavings;
   private updateStatus: CavemanUpdateStatus | undefined;
   private readonly version: string;
   private cavemanVersion: string | null;
   private cavemanSha: string | null;
 
-  static show(context: vscode.ExtensionContext, data: CombinedSavings) {
+  static show(context: vscode.ExtensionContext, data: CombinedSavings, readLatestData: () => CombinedSavings) {
     if (CavemanPanel.currentPanel) {
       CavemanPanel.currentPanel.panel.reveal(vscode.ViewColumn.One);
       CavemanPanel.currentPanel.update(data);
@@ -27,12 +28,13 @@ export class CavemanPanel {
       enableScripts: true,
       retainContextWhenHidden: true,
     });
-    CavemanPanel.currentPanel = new CavemanPanel(panel, context, data);
+    CavemanPanel.currentPanel = new CavemanPanel(panel, context, data, readLatestData);
     panel.onDidDispose(() => CavemanPanel.currentPanel = undefined, null, context.subscriptions);
   }
 
-  private constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext, data: CombinedSavings) {
+  private constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext, data: CombinedSavings, readLatestData: () => CombinedSavings) {
     this.panel = panel;
+    this.readLatestData = readLatestData;
     this.data = data;
     this.version = (context.extension.packageJSON as { version?: string })?.version ?? '';
     this.cavemanVersion = null;
@@ -45,12 +47,17 @@ export class CavemanPanel {
       if (message?.command === 'restart') vscode.commands.executeCommand('cavemanDashboard.restart');
       if (message?.command === 'cavemanCli') vscode.commands.executeCommand('cavemanDashboard.cavemanCli', message.action);
     }, undefined, context.subscriptions);
+    this.panel.onDidChangeViewState(event => {
+      if (!event.webviewPanel.visible) return;
+      this.update(this.readLatestData());
+    }, undefined, context.subscriptions);
     this.render();
   }
 
   update(data: CombinedSavings) {
     this.data = data;
     this.refreshInstallMetadata();
+    this.syncUpdateStatus(data.claude.installed);
     this.render();
   }
 
@@ -110,6 +117,14 @@ export class CavemanPanel {
   private refreshInstallMetadata() {
     this.cavemanVersion = readCavemanVersion(claudeDirOverride());
     this.cavemanSha = readInstalledCaveman(claudeDirOverride()).sha;
+  }
+
+  private syncUpdateStatus(installed: boolean) {
+    if (!this.updateStatus) return;
+    const knownSha = this.updateStatus.installedSha ?? null;
+    if (this.updateStatus.installed !== installed || knownSha !== this.cavemanSha) {
+      this.updateStatus = undefined;
+    }
   }
 
   private render() {
@@ -574,7 +589,7 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
   const totalSaved = fmtTokens(claude.savedTokens + copilot.savedTokens);
   const confidence = claudeConfidenceLabel(claude.source);
   const updateLabel = !updateStatus
-    ? 'Update status unknown'
+    ? (!claude.installed ? 'caveman not installed' : 'Update status unknown')
     : updateStatus.error
       ? 'Update check failed'
       : !updateStatus.installed

@@ -40,7 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('cavemanDashboard.openDashboard', () => {
       const data = refreshData();
-      CavemanPanel.show(context, data);
+      CavemanPanel.show(context, data, refreshData);
       // Resolve the caveman version/update status on open so the dashboard shows the
       // current version ("up to date" / "update available") instead of "unknown" without
       // a manual click. Silent (no notification) and only when not already known, so
