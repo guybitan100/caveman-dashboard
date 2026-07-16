@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { CavemanCollector } from './collectors/cavemanCollector';
 import { CopilotCollector } from './collectors/copilotCollector';
-import { checkCavemanUpdate, CavemanUpdateStatus } from './collectors/updateChecker';
+import { checkCavemanUpdate, CavemanUpdateStatus, readInstalledCaveman } from './collectors/updateChecker';
 import { CavemanPanel } from './dashboard/cavemanPanel';
 import { CavemanStatusBar } from './statusbar/statusBar';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from './types';
@@ -111,6 +111,36 @@ export function activate(context: vscode.ExtensionContext) {
   // Populate the status bar badge after activation returns — the collectors read
   // thousands of transcript files synchronously, so defer them off the activation path.
   setTimeout(refreshData, 0);
+
+  // On first activation, nudge the user to install caveman if it is absent — the
+  // dashboard can only measure savings once the plugin is producing markers/ledger.
+  void promptInstallOnFirstRun(context, explicitDir);
+}
+
+const FIRST_RUN_KEY = 'cavemanDashboard.installPrompted';
+
+/**
+ * Once per machine, check whether caveman is installed and offer to install it if not.
+ * Guarded by globalState so we never nag on every window reload; a manual install (or
+ * dashboard Install button) still works regardless.
+ */
+async function promptInstallOnFirstRun(context: vscode.ExtensionContext, explicitDir?: string): Promise<void> {
+  if (context.globalState.get<boolean>(FIRST_RUN_KEY)) return;
+  let installed = false;
+  try { installed = readInstalledCaveman(explicitDir).installed; }
+  catch (error) { logError('First-run caveman install check failed', error); }
+  if (installed) {
+    // Already installed — remember so we don't re-check on future startups.
+    await context.globalState.update(FIRST_RUN_KEY, true);
+    return;
+  }
+  await context.globalState.update(FIRST_RUN_KEY, true);
+  const pick = await vscode.window.showInformationMessage(
+    'Caveman Dashboard: the caveman plugin is not installed, so no savings can be measured yet.',
+    'Install caveman', 'Open dashboard',
+  );
+  if (pick === 'Install caveman') vscode.commands.executeCommand('cavemanDashboard.cavemanCli', 'install');
+  else if (pick === 'Open dashboard') vscode.commands.executeCommand('cavemanDashboard.openDashboard');
 }
 
 function refreshData(): CombinedSavings {

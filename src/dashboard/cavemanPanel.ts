@@ -489,7 +489,19 @@ function renderClaudeStatus(c: CavemanSavings): string {
 
 function renderClaude(c: CavemanSavings, cost: boolean): string {
   if (!c.active) {
-    return `${renderClaudeStatus(c)}<div class="muted cv-empty">No caveman compression detected in Claude Code yet. Install it, run a session with caveman on, then Refresh.</div>`;
+    const installBtn = !c.installed
+      ? `<button class="cv-hero cv-cta" data-cv="install" title="Install the caveman plugin">${svgIcon('download')}<span>Install caveman</span></button>`
+      : '';
+    const hint = !c.installed
+      ? 'caveman is not installed. Install it, then run a Claude session with caveman on and Refresh.'
+      : !c.activeMode
+        ? 'caveman is installed but the mode flag is off. Run <code>/caveman full</code> in a Claude session, then Refresh.'
+        : 'caveman is active but no session usage detected yet. Run a Claude session, then Refresh.';
+    return `${renderClaudeStatus(c)}
+      <div class="cv-empty-cta">
+        <div class="muted cv-empty">${hint}</div>
+        ${installBtn ? `<div class="cv-panel-actions">${installBtn}</div>` : ''}
+      </div>`;
   }
   const srcLabel = c.source === 'ledger' ? 'from caveman ledger' : c.source === 'mixed' ? 'ledger + estimate' : 'estimated';
   const days = c.byDay.map(d => d.day);
@@ -700,6 +712,8 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-down { color: #ffa94d; }
   .cv-flat { color: var(--vscode-descriptionForeground); }
   .cv-note, .cv-empty { padding: 12px 14px; background: var(--vscode-editorWidget-background); border-radius: 8px; }
+  .cv-empty-cta { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+  .cv-empty-cta .cv-panel-actions { margin-top: 2px; }
   .provider-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; margin-top: 8px; }
   .cv-provider { padding: 16px 16px 18px; border: 1px solid var(--vscode-panel-border); border-radius: 16px; background: linear-gradient(180deg, color-mix(in srgb, var(--vscode-editorWidget-background) 94%, transparent), color-mix(in srgb, var(--vscode-editorWidget-background) 100%, black 3%)); min-width: 0; box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
   .cv-provider h2 { margin: 0; border-bottom: none; padding-bottom: 0; }

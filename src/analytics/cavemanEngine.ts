@@ -112,8 +112,15 @@ export function aggregateCaveman(
   };
 }
 
-/** Extract the caveman mode from a transcript line carrying the activation marker. */
+/**
+ * Extract the caveman mode from a transcript line carrying the activation marker.
+ * caveman writes two marker shapes and modes can be hyphenated (e.g. wenyan-ultra):
+ *   - UserPromptSubmit tracker: `CAVEMAN MODE ACTIVE (full)`
+ *   - SessionStart hook:        `CAVEMAN MODE ACTIVE — level: full`
+ * Match both so em-dash-only sessions are not misread as "No usage detected".
+ */
 export function detectCavemanMode(text: string): string | undefined {
-  const m = /CAVEMAN MODE ACTIVE \((\w+)\)/.exec(text);
-  return m ? m[1].toLowerCase() : undefined;
+  const m = /CAVEMAN MODE ACTIVE\s*(?:\(([\w-]+)\)|(?:—|–|-)\s*level:\s*([\w-]+))/i.exec(text);
+  const mode = m?.[1] ?? m?.[2];
+  return mode ? mode.toLowerCase() : undefined;
 }
