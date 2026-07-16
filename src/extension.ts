@@ -299,8 +299,8 @@ async function runTrackedTerminalCommand(name: string, commandLine: string): Pro
     throw new Error('Terminal shell integration did not activate, so install/uninstall progress cannot be tracked.');
   }
 
-  const execution = shellIntegration.executeCommand(commandLine);
   return new Promise<number | undefined>(resolve => {
+    let execution: vscode.TerminalShellExecution | undefined;
     const endDisposable = vscode.window.onDidEndTerminalShellExecution(event => {
       if (event.terminal !== term || event.execution !== execution) return;
       cleanup();
@@ -315,6 +315,7 @@ async function runTrackedTerminalCommand(name: string, commandLine: string): Pro
       endDisposable.dispose();
       closeDisposable.dispose();
     };
+    execution = shellIntegration.executeCommand(commandLine);
   });
 }
 
