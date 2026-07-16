@@ -14,8 +14,8 @@ export class CavemanPanel {
   private data: CombinedSavings;
   private updateStatus: CavemanUpdateStatus | undefined;
   private readonly version: string;
-  private readonly cavemanVersion: string | null;
-  private readonly cavemanSha: string | null;
+  private cavemanVersion: string | null;
+  private cavemanSha: string | null;
 
   static show(context: vscode.ExtensionContext, data: CombinedSavings) {
     if (CavemanPanel.currentPanel) {
@@ -35,8 +35,9 @@ export class CavemanPanel {
     this.panel = panel;
     this.data = data;
     this.version = (context.extension.packageJSON as { version?: string })?.version ?? '';
-    this.cavemanVersion = readCavemanVersion(claudeDirOverride());
-    this.cavemanSha = readInstalledCaveman(claudeDirOverride()).sha;
+    this.cavemanVersion = null;
+    this.cavemanSha = null;
+    this.refreshInstallMetadata();
     this.panel.webview.onDidReceiveMessage(message => {
       if (message?.command === 'refresh') vscode.commands.executeCommand('cavemanDashboard.refresh');
       if (message?.command === 'checkUpdate') vscode.commands.executeCommand('cavemanDashboard.checkUpdate');
@@ -49,6 +50,32 @@ export class CavemanPanel {
 
   update(data: CombinedSavings) {
     this.data = data;
+    this.refreshInstallMetadata();
+    this.render();
+  }
+
+  /** Reflect a confirmed local installer action before a full refresh re-reads disk state. */
+  applyInstallerAction(action: string) {
+    if (action !== 'uninstall') return;
+    this.data = {
+      ...this.data,
+      claude: {
+        ...this.data.claude,
+        installed: false,
+        activeMode: null,
+      },
+    };
+    if (this.updateStatus) {
+      this.updateStatus = {
+        ...this.updateStatus,
+        installed: false,
+        installedSha: null,
+        updateAvailable: false,
+        compareUrl: null,
+      };
+    }
+    this.cavemanVersion = null;
+    this.cavemanSha = null;
     this.render();
   }
 
@@ -61,6 +88,11 @@ export class CavemanPanel {
   setUpdateStatus(status: CavemanUpdateStatus) {
     this.updateStatus = status;
     this.render();
+  }
+
+  private refreshInstallMetadata() {
+    this.cavemanVersion = readCavemanVersion(claudeDirOverride());
+    this.cavemanSha = readInstalledCaveman(claudeDirOverride()).sha;
   }
 
   private render() {
