@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from '../types';
-import { CavemanUpdateStatus, readCavemanVersion, readInstalledCaveman } from '../collectors/updateChecker';
+import { CavemanInstallInfo, CavemanUpdateStatus, readCavemanVersion, readInstalledCaveman } from '../collectors/updateChecker';
 import { claudeDirOverride, showCost, shortSha } from '../util';
 
 type InstallerAction = 'install' | 'uninstall';
@@ -19,6 +19,7 @@ export class CavemanPanel {
   private updateStatusPending: boolean;
   private readonly version: string;
   private cavemanInstalled: boolean;
+  private cavemanInstallKind: CavemanInstallInfo['installKind'];
   private cavemanVersion: string | null;
   private cavemanSha: string | null;
   private installerActionPending: InstallerAction | undefined;
@@ -45,6 +46,7 @@ export class CavemanPanel {
     this.updateStatusPending = false;
     this.version = (context.extension.packageJSON as { version?: string })?.version ?? '';
     this.cavemanInstalled = false;
+    this.cavemanInstallKind = 'none';
     this.cavemanVersion = null;
     this.cavemanSha = null;
     this.installerActionPending = undefined;
@@ -101,6 +103,7 @@ export class CavemanPanel {
   private refreshInstallMetadata() {
     const info = readInstalledCaveman(claudeDirOverride());
     this.cavemanInstalled = info.installed;
+    this.cavemanInstallKind = info.installKind;
     this.cavemanSha = info.sha;
     this.cavemanVersion = this.cavemanInstalled ? readCavemanVersion(claudeDirOverride()) : null;
   }
@@ -146,7 +149,7 @@ export class CavemanPanel {
   }
 
   private render() {
-    this.panel.webview.html = renderHtml(this.data, this.updateStatus, this.updateStatusPending, this.installerActionPending, this.installerStatusMessage, this.version, this.cavemanVersion, this.cavemanSha);
+    this.panel.webview.html = renderHtml(this.data, this.updateStatus, this.updateStatusPending, this.installerActionPending, this.installerStatusMessage, this.cavemanInstallKind, this.version, this.cavemanVersion, this.cavemanSha);
   }
 }
 
@@ -620,7 +623,7 @@ function renderClaude(c: CavemanSavings, cost: boolean, pendingAction: Installer
     ${chart}`;
 }
 
-function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, updateStatusPending: boolean, pendingAction: InstallerAction | undefined, installerStatusMessage: string | undefined): string {
+function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, updateStatusPending: boolean, pendingAction: InstallerAction | undefined, installerStatusMessage: string | undefined, installKind: CavemanInstallInfo['installKind']): string {
   const { claude, copilot } = data;
   const totalSessions = claude.sessions + copilot.sessions;
   const month = fmtMonth(claude.currentMonth);
@@ -636,11 +639,26 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
           ? 'Update check failed'
           : !updateStatus.installed
             ? 'caveman not installed'
+            : !updateStatus.installedSha
+              ? 'Hooks active'
             : updateStatus.updateAvailable
               ? 'Update available'
               : 'Up to date';
   const modeLabel = claude.activeMode ? `Claude mode: ${claude.activeMode}` : 'Claude mode inactive';
-  const installLabel = claude.installed ? 'Installed locally' : 'Needs install';
+  const installLabel = installKind === 'hooks'
+    ? 'Hooks active'
+    : installKind === 'mixed'
+      ? 'Plugin + hooks active'
+      : claude.installed
+        ? 'Installed locally'
+        : 'Needs install';
+  const installStateCopy = installKind === 'hooks'
+    ? 'caveman is installed and Claude hooks are active. Managed settings skipped the optional plugin install.'
+    : installKind === 'mixed'
+      ? 'Claude plugin and standalone hooks are both present.'
+      : claude.installed
+        ? 'Plugin footprint detected in Claude.'
+        : 'Install caveman to begin measuring real sessions.';
   const primaryAction = renderInstallerActionButton(claude.installed, pendingAction);
   return `<section class="cv-hero-shell">
     <div class="cv-hero-topline">
@@ -668,7 +686,7 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
         <div class="cv-hero-summary-grid" role="list">
           <div class="cv-hero-summary-item" role="listitem">
             <span class="cv-hero-summary-label">Install state</span>
-            <span class="cv-hero-summary-copy">${claude.installed ? 'Plugin footprint detected in Claude.' : 'Install caveman to begin measuring real sessions.'}</span>
+            <span class="cv-hero-summary-copy">${escapeHtml(installStateCopy)}</span>
           </div>
           <div class="cv-hero-summary-item" role="listitem">
             <span class="cv-hero-summary-label">Claude confidence</span>
@@ -738,7 +756,7 @@ function renderVersionFooter(version: string, cavemanVersion: string | null, cav
   </footer>`;
 }
 
-function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, updateStatusPending: boolean, pendingAction: InstallerAction | undefined, installerStatusMessage: string | undefined, version: string, cavemanVersion: string | null, cavemanSha: string | null): string {
+function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | undefined, updateStatusPending: boolean, pendingAction: InstallerAction | undefined, installerStatusMessage: string | undefined, installKind: CavemanInstallInfo['installKind'], version: string, cavemanVersion: string | null, cavemanSha: string | null): string {
   const nonce = getNonce();
   const cost = showCost();
   const { claude, copilot } = data;
@@ -1000,7 +1018,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
 </head>
 <body>
   <div class="cv-shell">
-  ${renderHeaderHero(data, updateStatus, updateStatusPending, pendingAction, installerStatusMessage)}
+  ${renderHeaderHero(data, updateStatus, updateStatusPending, pendingAction, installerStatusMessage, installKind)}
 
   ${renderUnifiedDashboard(claude, copilot, cost, pendingAction)}
 
