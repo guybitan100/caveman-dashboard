@@ -68,7 +68,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('cavemanDashboard.cavemanCli', async (action?: unknown) => {
       // Map dashboard actions to caveman installer CLI flags (bin/install.js).
       const FLAGS: Record<string, string> = {
-        // Install plugin plus standalone hooks, but never write per-repo init files.
+        // Install caveman through standalone Claude hooks only.
         'install': '--with-hooks --non-interactive',
         'all': '--with-hooks --non-interactive',
         'minimal': '--minimal --non-interactive',
@@ -87,17 +87,20 @@ export function activate(context: vscode.ExtensionContext) {
       const isWin = process.platform === 'win32';
       const PS1 = 'https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1';
       const TARBALL = 'https://codeload.github.com/JuliusBrussee/caveman/tar.gz/refs/heads/main';
-      const cmd = isWin
-        ? `& ([scriptblock]::Create((irm ${PS1}))) ${flag}`
-        : `tmpdir="$(mktemp -d)" && trap 'rm -rf "$tmpdir"' EXIT && curl -fsSL ${TARBALL} | tar -xz -C "$tmpdir" && node "$tmpdir/caveman-main/bin/install.js" ${flag}`;
+      const hooksOnly = !isWin && (key === 'install' || key === 'all' || key === 'force' || key === 'uninstall');
+      const cmd = hooksOnly
+        ? buildClaudeHooksCommand(key, TARBALL, explicitDir)
+        : isWin
+          ? `& ([scriptblock]::Create((irm ${PS1}))) ${flag}`
+          : `tmpdir="$(mktemp -d)" && trap 'rm -rf "$tmpdir"' EXIT && curl -fsSL ${TARBALL} | tar -xz -C "$tmpdir" && node "$tmpdir/caveman-main/bin/install.js" ${flag}`;
       // dry-run / list are read-only; everything else changes the machine -> confirm.
       const readOnly = key === 'dry-run' || key === 'list';
       if (!readOnly) {
         const danger = key === 'uninstall';
         const answer = await vscode.window.showWarningMessage(
-          danger ? 'Uninstall caveman from this machine?' : `Run the caveman installer (${key})?`,
-          { modal: true, detail: `${cmd}\n\nDownloads the latest caveman source archive from github.com/JuliusBrussee/caveman, runs bin/install.js with Node ≥18, then removes the temporary files.` },
-          danger ? 'Uninstall' : 'Run'
+          danger ? 'Remove caveman integration from Claude Code on this machine?' : `Run the caveman installer (${key})?`,
+          { modal: true, detail: `${cmd}\n\n${hooksOnly ? `Downloads the latest caveman source archive from github.com/JuliusBrussee/caveman and runs the standalone Claude hooks ${danger ? 'uninstaller' : 'installer'} from that archive.` : `Downloads the latest caveman source archive from github.com/JuliusBrussee/caveman, runs bin/install.js with Node ≥18, then removes the temporary files.`}${danger ? ' This removes caveman hooks/plugin integration from Claude Code. It does not uninstall Claude Code itself.' : ''}` },
+          danger ? 'Remove caveman' : 'Run'
         );
         if (!answer) return;
       }
@@ -110,7 +113,7 @@ export function activate(context: vscode.ExtensionContext) {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         logError('Caveman installer command failed to launch', error);
-        CavemanPanel.currentPanel?.setInstallerStatusMessage(`Could not start caveman ${installerAction ?? 'command'}: ${message}`);
+        CavemanPanel.currentPanel?.setInstallerStatusMessage(`Could not start caveman ${installerAction ?? 'command'}: ${message}`, 'error');
         vscode.window.showErrorMessage(`Caveman Dashboard: ${message}`);
         return;
       } finally {
@@ -123,15 +126,15 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (!installerAction) return;
       if (exitCode === undefined) {
-        CavemanPanel.currentPanel?.setInstallerStatusMessage(`caveman ${installerAction} finished, but the shell did not report an exit code.`);
+        CavemanPanel.currentPanel?.setInstallerStatusMessage(`caveman ${installerAction} finished, but the shell did not report an exit code.`, 'warning');
         vscode.window.showWarningMessage(`Caveman ${installerAction} finished but no exit code was reported. Dashboard state was refreshed from disk.`);
         return;
       }
       if (exitCode !== 0) {
         const detectedState = installerAction === 'uninstall'
-          ? 'caveman is still detected on this machine.'
-          : 'caveman is not detected on this machine.';
-        CavemanPanel.currentPanel?.setInstallerStatusMessage(`caveman ${installerAction} failed with exit code ${exitCode}. ${detectedState}`);
+          ? 'caveman integration is still detected in Claude Code on this machine.'
+          : 'caveman integration is not detected in Claude Code on this machine.';
+        CavemanPanel.currentPanel?.setInstallerStatusMessage(`caveman ${installerAction} failed with exit code ${exitCode}. ${detectedState}`, 'error');
         vscode.window.showErrorMessage(`Caveman ${installerAction} failed with exit code ${exitCode}. Dashboard state was refreshed from disk.`);
         return;
       }
@@ -139,13 +142,13 @@ export function activate(context: vscode.ExtensionContext) {
         cleanupStaleCavemanInstall(explicitDir);
         const data = refreshData();
         CavemanPanel.currentPanel?.update(data);
-        vscode.window.showInformationMessage('caveman uninstalled.');
+        vscode.window.showInformationMessage('caveman removed from Claude Code on this machine.');
       }
       if (installerAction === 'install') {
         const info = readInstalledCaveman(explicitDir);
         if (info.installKind === 'hooks') {
-          CavemanPanel.currentPanel?.setInstallerStatusMessage('caveman installed. Claude hooks are active. Managed settings skipped the optional plugin install.');
-          vscode.window.showInformationMessage('caveman installed. Claude hooks are active. Managed settings skipped the optional plugin install.');
+          CavemanPanel.currentPanel?.setInstallerStatusMessage('caveman installed. Claude hooks are active.', 'success');
+          vscode.window.showInformationMessage('caveman installed. Claude hooks are active.');
           return;
         }
         vscode.window.showInformationMessage('caveman installed successfully.');
@@ -291,6 +294,17 @@ function normalizeInstallerAction(action: string): InstallerAction | undefined {
   if (action === 'uninstall') return 'uninstall';
   if (action === 'install' || action === 'all' || action === 'minimal' || action === 'force') return 'install';
   return undefined;
+}
+
+function buildClaudeHooksCommand(action: string, tarballUrl: string, explicitDir?: string): string {
+  const envPrefix = explicitDir ? `CLAUDE_CONFIG_DIR=${shellQuote(explicitDir)} ` : '';
+  const script = action === 'uninstall' ? 'uninstall.sh' : 'install.sh';
+  const forceArg = action === 'force' ? ' --force' : '';
+  return `tmpdir="$(mktemp -d)" && trap 'rm -rf "$tmpdir"' EXIT && curl -fsSL ${tarballUrl} | tar -xz -C "$tmpdir" && ${envPrefix}bash "$tmpdir/caveman-main/src/hooks/${script}"${forceArg}`;
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
 async function runTrackedTerminalCommand(name: string, commandLine: string): Promise<number | undefined> {
