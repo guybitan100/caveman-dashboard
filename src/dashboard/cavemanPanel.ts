@@ -593,7 +593,7 @@ function renderSectionNav(claude: CavemanSavings, copilot: CopilotSavings): stri
   const claudeState = claude.activeMode ? `Mode ${claude.activeMode}` : claude.installed ? 'Mode not enabled' : 'Not installed';
   const historyState = trackedMonthCount(claude.byMonth) + trackedMonthCount(copilot.byMonth) > 1 ? 'Trend view ready' : 'History is just starting';
   return `<nav class="cv-section-nav" aria-label="Dashboard sections">
-    <a class="cv-section-link" href="#sec-overview">
+    <a class="cv-section-link cv-section-link-active" href="#sec-overview">
       <span class="cv-section-link-label">Overview</span>
       <strong class="cv-section-link-value">${escapeHtml(overviewState)}</strong>
     </a>
@@ -788,9 +788,10 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-cta .cv-ico { width: 15px; height: 15px; }
   .cv-cta-danger { border-color: #e0384555; color: var(--cv-accent-red); }
   .cv-cta-danger:hover { background: #e0384518; border-color: var(--cv-accent-red); color: var(--cv-accent-red); }
-  .cv-section-nav { position: sticky; top: 12px; z-index: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 20px; margin-bottom: 6px; }
-  .cv-section-link { display: grid; gap: 4px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--cv-border-soft); text-decoration: none; background: color-mix(in srgb, var(--cv-surface-1) 90%, transparent); box-shadow: var(--cv-shadow-sm); backdrop-filter: blur(12px); transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease; }
-  .cv-section-link:hover { transform: translateY(-2px); border-color: var(--cv-border-strong); box-shadow: var(--cv-shadow-md); }
+  .cv-section-nav { position: sticky; top: 12px; z-index: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin-top: 20px; margin-bottom: 6px; padding: 8px; border-radius: 24px; border: 1px solid var(--cv-border-soft); background: color-mix(in srgb, var(--cv-surface-1) 92%, transparent); box-shadow: var(--cv-shadow-sm); backdrop-filter: blur(12px); overflow: hidden; }
+  .cv-section-link { display: grid; gap: 4px; padding: 14px 18px; border-radius: 16px; border: 1px solid transparent; text-decoration: none; background: transparent; transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease; }
+  .cv-section-link:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--cv-accent-blue) 24%, transparent); background: color-mix(in srgb, var(--cv-surface-3) 88%, transparent); }
+  .cv-section-link-active { background: linear-gradient(180deg, color-mix(in srgb, var(--cv-surface-3) 96%, transparent), transparent); border-color: color-mix(in srgb, var(--cv-accent-blue) 30%, transparent); box-shadow: inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
   .cv-section-link-label { color: var(--cv-accent-cyan); text-transform: uppercase; letter-spacing: 0.09em; font-size: 0.69rem; font-weight: 800; }
   .cv-section-link-value { color: var(--vscode-foreground); font-size: 0.9rem; line-height: 1.35; }
   .cv-story { display: grid; gap: 24px; margin-top: 22px; }
@@ -918,7 +919,8 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
     .cv-shell, .card, .cv-btn, .cv-tabpanel, button, .cv-story-section, .cv-section-link { animation: none !important; transition: none !important; transform: none !important; }
   }
   @media (max-width: 980px) {
-    .cv-overview, .provider-grid, .cv-section-nav, .cv-hero-summary-grid { grid-template-columns: 1fr; }
+    .cv-overview, .provider-grid, .cv-hero-summary-grid { grid-template-columns: 1fr; }
+    .cv-section-nav { grid-template-columns: 1fr; gap: 8px; }
     .cv-hero-topline { flex-direction: column; }
     .cv-hero-meta-row { align-items: stretch; }
     .cv-page-intro, .cv-action-head { align-items: start; }
