@@ -52,6 +52,8 @@ export class CavemanStatusBar {
       `Total: ${formatTokens(totalSaved)}`,
       `Claude: ${formatTokens(claude.savedTokens)}${showCost ? ` ($${claude.savedUsd.toFixed(2)})` : ''} — ${claude.sessions} sessions`,
       `Copilot (est): ${formatTokens(copilot.savedTokens)} — ${copilot.sessions} chats / ${copilot.turns} turns`,
+      `Lifetime tracked: ${formatTokens(claude.lifetimeSavedTokens)} — ${claude.lifetimeSessions} Claude sessions`,
+      claude.statuslineSavingsText ? `Statusline: ${claude.statuslineSavingsText}` : 'Statusline: run /caveman-stats to write suffix',
       claude.activeMode ? `Mode: active ${claude.activeMode}` : mode ? `Mode: default ${mode}` : 'Mode: off',
       'Resets on the 1st — history in the dashboard.',
       this.versionSuffix,

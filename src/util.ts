@@ -3,7 +3,19 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-const CONFIGURED_CAVEMAN_MODES = new Set(['off', 'lite', 'full', 'ultra', 'wenyan', 'wenyan-ultra']);
+const CONFIGURED_CAVEMAN_MODES = new Set([
+  'off',
+  'lite',
+  'full',
+  'ultra',
+  'wenyan-lite',
+  'wenyan',
+  'wenyan-full',
+  'wenyan-ultra',
+  'commit',
+  'review',
+  'compress',
+]);
 
 /** Whether to surface estimated USD cost figures (on by default via the showCost setting). */
 export function showCost(): boolean {

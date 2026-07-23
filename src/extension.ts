@@ -75,6 +75,8 @@ export function activate(context: vscode.ExtensionContext) {
         'install': '--with-hooks --non-interactive',
         'all': '--with-hooks --non-interactive',
         'minimal': '--minimal --non-interactive',
+        'init': '--with-init --non-interactive',
+        'mcp-shrink': '--with-mcp-shrink --non-interactive',
         'dry-run': '--dry-run',
         'list': '--list',
         'force': '--force --non-interactive',
@@ -303,7 +305,7 @@ function logError(message: string, error: unknown): void {
 
 function normalizeInstallerAction(action: string): InstallerAction | undefined {
   if (action === 'uninstall') return 'uninstall';
-  if (action === 'install' || action === 'all' || action === 'minimal' || action === 'force') return 'install';
+  if (action === 'install' || action === 'all' || action === 'minimal' || action === 'init' || action === 'mcp-shrink' || action === 'force') return 'install';
   return undefined;
 }
 

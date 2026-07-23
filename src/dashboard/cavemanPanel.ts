@@ -478,7 +478,7 @@ function renderOverviewTab(claude: CavemanSavings, copilot: CopilotSavings, cost
   </div>`;
 }
 
-function renderUnifiedDashboard(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean, pendingAction: InstallerAction | undefined): string {
+function renderUnifiedDashboard(claude: CavemanSavings, copilot: CopilotSavings, cost: boolean, pendingAction: InstallerAction | undefined, installKind: CavemanInstallInfo['installKind']): string {
   return `<main class="cv-story">
     <section class="cv-story-section cv-story-section-hero" id="sec-overview" aria-label="Overview">
       ${renderOverviewTab(claude, copilot, cost)}
@@ -490,6 +490,10 @@ function renderUnifiedDashboard(claude: CavemanSavings, copilot: CopilotSavings,
 
     <section class="cv-story-section" id="sec-history" aria-label="Monthly history details">
       ${renderHistoryTab(claude, copilot, cost)}
+    </section>
+
+    <section class="cv-story-section" id="sec-rollout" aria-label="Caveman rollout details">
+      ${renderProductTab(claude, pendingAction, installKind)}
     </section>
   </main>`;
 }
@@ -743,10 +747,12 @@ function renderClaude(c: CavemanSavings, cost: boolean, pendingAction: Installer
       ? `<div class="muted cv-note">Daily savings trend appears after 2+ days — <b>${singleDayValue}</b> saved so far on ${escapeHtml(c.byDay[0].day.slice(5))}.</div>`
       : '';
   return `${renderClaudeStatus(c)}
+    ${renderTrackedReceiptsCard(c)}
     <div class="cards">
       ${cost ? `<div class="card accent-green"><span>Saved (USD)</span><b>${money(c.savedUsd)}</b><small>${srcLabel}</small></div>` : ''}
       <div class="card accent-purple"><span>Saved Output Tokens</span><b>${fmtTokens(c.savedTokens)}</b></div>
       <div class="card accent-blue"><span>Sessions</span><b>${c.sessions}</b></div>
+      <div class="card accent-orange"><span>Cache-read Tokens</span><b>${fmtTokens(c.cacheReadTokens)}</b><small>Current month only</small></div>
     </div>
     ${chart}`;
 }
@@ -1114,6 +1120,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-panel-sub { font-size: 0.8rem; color: var(--vscode-descriptionForeground); margin-top: 2px; }
   .cv-panel-facts { display: flex; flex-wrap: wrap; gap: 8px; }
   .cv-panel-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .cv-panel-actions-wrap { margin-top: 6px; }
   .cv-ghost { background: transparent; color: var(--vscode-foreground); border: 1px solid var(--cv-border-soft); }
   .cv-ghost:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.14)); border-color: var(--cv-accent-blue); }
   .cv-foot { margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: rgba(128,128,128,0.08); border-left: 2px solid var(--vscode-panel-border); line-height: 1.55; }
@@ -1148,6 +1155,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   .cv-story-section:nth-of-type(1) { animation: cv-fade-up 260ms ease both; }
   .cv-story-section:nth-of-type(2) { animation: cv-fade-up 300ms ease both; }
   .cv-story-section:nth-of-type(3) { animation: cv-fade-up 340ms ease both; }
+  .cv-story-section:nth-of-type(4) { animation: cv-fade-up 380ms ease both; }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     .cv-shell, .card, .cv-tabpanel, button, .cv-story-section { animation: none !important; transition: none !important; transform: none !important; }
@@ -1175,7 +1183,7 @@ function renderHtml(data: CombinedSavings, updateStatus: CavemanUpdateStatus | u
   <div class="cv-shell">
   ${renderHeaderHero(data, updateStatus, updateStatusPending, pendingAction, installerStatusMessage, installerStatusTone, installKind)}
 
-  ${renderUnifiedDashboard(claude, copilot, cost, pendingAction)}
+  ${renderUnifiedDashboard(claude, copilot, cost, pendingAction, installKind)}
 
   ${renderVersionFooter(version, cavemanVersion, cavemanSha)}
   </div>
