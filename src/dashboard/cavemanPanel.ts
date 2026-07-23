@@ -620,6 +620,77 @@ function renderHistoryTab(claude: CavemanSavings, copilot: CopilotSavings, cost:
   </div>`;
 }
 
+function renderTrackedReceiptsCard(claude: CavemanSavings): string {
+  const reduction = outputReductionPercent(claude.lifetimeSavedTokens, claude.lifetimeOutputTokens);
+  const memoryCopy = claude.memoryCompressed
+    ? `${claude.memoryCompressed.count} file${claude.memoryCompressed.count === 1 ? '' : 's'} compressed, ~${fmtTokens(claude.memoryCompressed.tokensSaved)} saved per session start.`
+    : 'No compressed memory receipts detected in the Claude config or workspace root.';
+  return `<section class="cv-credit-card">
+    <div class="cv-credit-head">
+      <div>
+        <div class="cv-credit-title">caveman-stats receipts</div>
+        <div class="cv-credit-sub">Lifetime figures, statusline badge text, and compressed-memory receipts written by upstream caveman itself.</div>
+      </div>
+      <span class="cv-credit-badge">${escapeHtml(claude.statuslineSavingsText ?? 'No statusline suffix yet')}</span>
+    </div>
+    <div class="cv-credit-body">
+      <div class="cv-credit-value">${fmtTokens(claude.lifetimeSavedTokens)} lifetime tokens saved</div>
+      <div class="cv-credit-summary">${reduction != null ? `Tracked output reduction is ~${reduction}% across ${claude.lifetimeSessions} logged Claude sessions.` : 'Run /caveman-stats inside Claude to start lifetime tracking and statusline suffix updates.'}</div>
+      <div class="cv-credit-meter"><span style="width:${reduction ?? 0}%"></span></div>
+      <div class="cv-credit-grid">
+        <div class="cv-credit-stat"><span class="cv-credit-label">Lifetime sessions</span><strong class="cv-credit-strong">${claude.lifetimeSessions.toLocaleString()}</strong></div>
+        <div class="cv-credit-stat"><span class="cv-credit-label">Lifetime output</span><strong class="cv-credit-strong">${fmtTokens(claude.lifetimeOutputTokens)}</strong></div>
+        <div class="cv-credit-stat"><span class="cv-credit-label">This month cache-read</span><strong class="cv-credit-strong">${fmtTokens(claude.cacheReadTokens)}</strong></div>
+        <div class="cv-credit-stat"><span class="cv-credit-label">Lifetime saved USD</span><strong class="cv-credit-strong">${money(claude.lifetimeSavedUsd)}</strong></div>
+      </div>
+      <div class="cv-credit-meta">
+        <span class="cv-credit-note">${escapeHtml(memoryCopy)}</span>
+      </div>
+    </div>
+  </section>`;
+}
+
+function renderProductTab(claude: CavemanSavings, pendingAction: InstallerAction | undefined, installKind: CavemanInstallInfo['installKind']): string {
+  const defaultMode = claude.defaultMode ?? 'full';
+  const installCopy = installKind === 'hooks'
+    ? 'Standalone hooks + statusline'
+    : installKind === 'mixed'
+      ? 'Plugin + hooks active'
+      : installKind === 'plugin'
+        ? 'Plugin registry only'
+        : 'Not installed';
+  return `<div>
+    <div class="cv-page-intro">
+      <div>
+        <div class="cv-page-eyebrow">Ecosystem</div>
+        <h2 class="cv-page-title">Rollout more of upstream caveman</h2>
+        <div class="cv-page-copy">This extension measures Claude and Copilot locally. Upstream caveman also ships repo rules, MCP shrink, cavecrew subagents, statusline savings, and a 30+ agent installer. Manage those surfaces here without faking telemetry for every target.</div>
+      </div>
+      <div class="cv-inline-facts">
+        ${renderInlinePills(['30+ upstream targets', `Default mode ${defaultMode}`, installCopy])}
+      </div>
+    </div>
+    <div class="cards cv-summary-cards">
+      <div class="card accent-blue"><span>Supported agents</span><b>30+</b><small>Upstream smart installer coverage across Claude, IDE, and CLI agents</small></div>
+      <div class="card accent-green"><span>Statusline savings</span><b>${escapeHtml(claude.statuslineSavingsText ?? 'Pending')}</b><small>Written by <code>/caveman-stats</code> into Claude's local suffix file</small></div>
+      <div class="card accent-purple"><span>Repo rules</span><b>${claude.memoryCompressed ? `${claude.memoryCompressed.count}` : 'Ready'}</b><small>${claude.memoryCompressed ? 'Compressed memory files detected locally' : 'Install per-repo caveman rules where useful'}</small></div>
+      <div class="card accent-orange"><span>Default mode</span><b>${escapeHtml(defaultMode)}</b><small>Resolved from env, repo config, or user config</small></div>
+    </div>
+    <section class="cv-provider">
+      ${renderProviderHeader('Caveman rollout actions', 'Expose more of upstream caveman than install/remove alone.', 'rocket')}
+      <div class="cv-panel-actions cv-panel-actions-wrap">
+        ${renderCliActionButton('minimal', 'Minimal install', 'download', 'Install caveman without repo rules or MCP additions', pendingAction)}
+        ${renderCliActionButton('init', 'Install repo rules', 'layers', 'Write caveman rule files into the current repository', pendingAction)}
+        ${renderCliActionButton('mcp-shrink', 'Install MCP shrink', 'package', 'Register the caveman-shrink MCP proxy if supported', pendingAction)}
+        ${renderCliActionButton('force', 'Force repair', 'refresh', 'Reinstall caveman and repair managed files', pendingAction)}
+        ${renderCliActionButton('dry-run', 'Preview changes', 'eye', 'Show what caveman would install without writing anything', pendingAction)}
+        ${renderCliActionButton('list', 'List agents', 'list', 'Print the upstream caveman target matrix', pendingAction)}
+      </div>
+      <div class="cv-foot">Telemetry here stays honest: this dashboard measures Claude receipts and Copilot transcript estimates only. Other upstream targets are manageable from here, but not yet attributed with local savings data.</div>
+    </section>
+  </div>`;
+}
+
 function renderClaudeStatus(c: CavemanSavings): string {
   const effectiveMode = effectiveCavemanMode(c.activeMode, c.defaultMode);
   const modeLabel = !c.installed
