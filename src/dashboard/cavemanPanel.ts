@@ -260,6 +260,11 @@ function bestMonth(rows: { month: string; savedTokens: number }[]): { month: str
   return rows.reduce((best, row) => row.savedTokens > best.savedTokens ? row : best, rows[0]);
 }
 
+function latestMonth(rows: { month: string }[]): string | null {
+  if (!rows.length) return null;
+  return [...rows].sort((a, b) => b.month.localeCompare(a.month))[0]?.month ?? null;
+}
+
 function trackedMonthCount(rows: { month: string; savedTokens: number }[]): number {
   return rows.filter(r => r.savedTokens > 0).length;
 }
@@ -340,6 +345,12 @@ function renderOverviewLead(claude: CavemanSavings, copilot: CopilotSavings, cos
         : claude.source === 'estimated'
           ? 'Claude is estimate-only right now.'
           : 'Claude is waiting for the first measurable signal.';
+      const latestCopilotMonth = latestMonth(copilot.byMonth);
+      const copilotContext = copilot.sessions > 0
+        ? `Copilot activity detected this month.`
+        : latestCopilotMonth
+          ? `No Copilot chats this month. Last seen ${fmtMonth(latestCopilotMonth)}.`
+          : 'No Copilot chat history detected yet.';
   const costView = cost ? 'USD projection is enabled for Claude.' : 'USD projection is currently hidden.';
   return `<div class="cv-page-intro">
     <div>
@@ -348,7 +359,7 @@ function renderOverviewLead(claude: CavemanSavings, copilot: CopilotSavings, cos
           <div class="cv-page-copy">A concise read on combined monthly savings, Claude signal quality, and whether usage momentum is sustaining.</div>
     </div>
     <div class="cv-inline-facts">
-      ${renderInlinePills([savings, confidence, costView])}
+      ${renderInlinePills([savings, confidence, copilotContext, costView])}
     </div>
   </div>`;
 }
@@ -546,11 +557,17 @@ function renderTotals(claude: CavemanSavings, copilot: CopilotSavings, cost: boo
   const prev = prevMonthKey(claude.currentMonth);
   const prevTotal = savedInMonth(claude.byMonth, prev) + savedInMonth(copilot.byMonth, prev);
   const trend = deltaChip(total, prevTotal);
+  const latestCopilotMonth = latestMonth(copilot.byMonth);
+  const copilotCopy = copilot.sessions > 0
+    ? `${copilot.sessions} chats · ${copilot.turns} turns`
+    : latestCopilotMonth
+      ? `No Copilot chats this month · last seen ${fmtMonth(latestCopilotMonth)}`
+      : 'No Copilot chats detected yet';
   return `<div class="muted cv-month">This month · <b>${escapeHtml(label)}</b> <span class="cv-reset">(resets on the 1st — history kept below)</span></div>
   <div class="cards cv-totals-grid">
     <div class="card card-primary accent-green"><span>Total Saved Tokens</span><b>${fmtTokens(total)}</b>${trend || '<small>Claude + Copilot</small>'}</div>
     <div class="card card-secondary accent-orange"><span>Claude Saved</span><b>${fmtTokens(claude.savedTokens)}</b>${claudeUsd || '<small>Claude Code</small>'}</div>
-    <div class="card card-secondary accent-purple"><span>Copilot Estimated</span><b>${fmtTokens(copilot.savedTokens)}</b><small>${copilot.sessions} chats · ${copilot.turns} turns</small></div>
+    <div class="card card-secondary accent-purple"><span>Copilot Estimated</span><b>${fmtTokens(copilot.savedTokens)}</b><small>${escapeHtml(copilotCopy)}</small></div>
   </div>`;
 }
 

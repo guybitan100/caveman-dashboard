@@ -36,10 +36,12 @@ export class CavemanStatusBar {
     const { claude, copilot } = data;
     const mode = effectiveCavemanMode(claude.activeMode, claude.defaultMode);
     const totalSaved = claude.savedTokens + copilot.savedTokens;
+    const latestCopilotMonth = [...copilot.byMonth].sort((a, b) => b.month.localeCompare(a.month))[0]?.month;
     if (totalSaved <= 0) {
       this.item.text = claude.installed ? `$(graph) ${this.label} 0` : `$(circle-slash) ${this.label} Off`;
       this.item.tooltip = [
         claude.installed ? 'Caveman installed — no savings detected yet.' : 'Caveman not installed.',
+        latestCopilotMonth ? `Copilot last seen: ${latestCopilotMonth}` : 'Copilot has no local chat history yet.',
         mode ? `Configured mode: ${mode}` : 'Configured mode: off',
         this.versionSuffix,
       ].filter(Boolean).join('\n');
@@ -51,7 +53,11 @@ export class CavemanStatusBar {
       `Caveman savings this month (${claude.currentMonth}) — Claude + Copilot`,
       `Total: ${formatTokens(totalSaved)}`,
       `Claude: ${formatTokens(claude.savedTokens)}${showCost ? ` ($${claude.savedUsd.toFixed(2)})` : ''} — ${claude.sessions} sessions`,
-      `Copilot (est): ${formatTokens(copilot.savedTokens)} — ${copilot.sessions} chats / ${copilot.turns} turns`,
+      copilot.sessions > 0
+        ? `Copilot (est): ${formatTokens(copilot.savedTokens)} — ${copilot.sessions} chats / ${copilot.turns} turns`
+        : latestCopilotMonth
+          ? `Copilot (est): ${formatTokens(copilot.savedTokens)} — no chats this month, last seen ${latestCopilotMonth}`
+          : `Copilot (est): ${formatTokens(copilot.savedTokens)} — no local chat history yet`,
       `Lifetime tracked: ${formatTokens(claude.lifetimeSavedTokens)} — ${claude.lifetimeSessions} Claude sessions`,
       claude.statuslineSavingsText ? `Statusline: ${claude.statuslineSavingsText}` : 'Statusline: run /caveman-stats to write suffix',
       claude.activeMode ? `Mode: active ${claude.activeMode}` : mode ? `Mode: default ${mode}` : 'Mode: off',
