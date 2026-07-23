@@ -6,7 +6,7 @@ import { CavemanPanel } from './dashboard/cavemanPanel';
 import { CavemanStatusBar } from './statusbar/statusBar';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from './types';
 import { currentMonthKey } from './analytics/cavemanEngine';
-import { claudeDirOverride, showCost, shortSha } from './util';
+import { claudeDirOverride, effectiveCavemanMode, resolveCavemanDefaultMode, showCost, shortSha } from './util';
 
 type InstallerAction = 'install' | 'uninstall';
 
@@ -18,7 +18,10 @@ let lastData: CombinedSavings | undefined;
 
 const EMPTY_CLAUDE: CavemanSavings = {
   active: false, currentMonth: currentMonthKey(), sessions: 0, outputTokens: 0, savedTokens: 0, savedUsd: 0,
-  byDay: [], byMonth: [], source: 'none', installed: false, activeMode: null,
+  cacheReadTokens: 0,
+  byDay: [], byMonth: [], source: 'none', installed: false, activeMode: null, defaultMode: null,
+  lifetimeSessions: 0, lifetimeOutputTokens: 0, lifetimeSavedTokens: 0, lifetimeSavedUsd: 0,
+  statuslineSavingsText: null, memoryCompressed: null,
 };
 const EMPTY_COPILOT: CopilotSavings = {
   active: false, currentMonth: currentMonthKey(), sessions: 0, turns: 0, outputTokens: 0, savedTokens: 0,
@@ -32,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
   const config = vscode.workspace.getConfiguration('cavemanDashboard');
   const explicitDir = claudeDirOverride();
   const vscodeUserPath = config.get<string>('vscodeUserPath');
-  cavemanCollector = new CavemanCollector(explicitDir);
+  cavemanCollector = new CavemanCollector(explicitDir, vscode.workspace.workspaceFolders?.[0]?.uri.fsPath);
   copilotCollector = new CopilotCollector(vscodeUserPath && vscodeUserPath.trim() ? vscodeUserPath.trim() : undefined);
 
   const version = (context.extension.packageJSON as { version?: string })?.version;
@@ -196,14 +199,18 @@ function refreshData(): CombinedSavings {
   let claude = EMPTY_CLAUDE;
   let copilot = EMPTY_COPILOT;
   let failed = false;
+  const defaultMode = resolveCavemanDefaultMode();
 
   try { claude = cavemanCollector.collect(); }
   catch (error) { logError('Claude caveman scan failed', error); failed = true; }
 
+  claude = { ...claude, defaultMode };
+
   try {
-    // Estimate Copilot compression using caveman's active/benchmarked mode; gate the
-    // "configured" flag on caveman being installed on this machine.
-    copilot = copilotCollector.collect(claude.installed, claude.activeMode ?? 'full');
+    // Estimate Copilot compression using the live caveman mode when present, otherwise
+    // the resolved configured default mode. This avoids silently assuming "full" when
+    // the machine is configured for lite/ultra/wenyan/off instead.
+    copilot = copilotCollector.collect(claude.installed, effectiveCavemanMode(claude.activeMode, claude.defaultMode) ?? undefined);
   } catch (error) { logError('Copilot estimate scan failed', error); failed = true; }
 
   lastData = { claude, copilot };

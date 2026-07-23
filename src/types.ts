@@ -1,5 +1,10 @@
 export type CavemanDayPoint = { day: string; savedTokens: number; savedUsd: number };
 
+export type CavemanMemoryCompression = {
+  count: number;
+  tokensSaved: number;
+};
+
 /** One calendar month of caveman savings (YYYY-MM), for the reset-each-month history. */
 export type CavemanMonthPoint = {
   month: string;
@@ -26,6 +31,8 @@ export type CavemanSavings = {
   savedTokens: number;
   /** Estimated USD saved this month (saved output tokens at each model's output rate). */
   savedUsd: number;
+  /** Cache-read input tokens observed this month from Claude session logs. */
+  cacheReadTokens: number;
   /** Per-day saved tokens / USD for the current month, ascending by day. */
   byDay: CavemanDayPoint[];
   /** Per-month history (all months, ascending), preserved across the monthly reset. */
@@ -36,6 +43,20 @@ export type CavemanSavings = {
   installed: boolean;
   /** Current caveman mode from the .caveman-active flag (e.g. "full"), or null if off/absent. */
   activeMode: string | null;
+  /** Resolved caveman default mode from env/repo/user config (e.g. "lite", "full", "off"). */
+  defaultMode: string | null;
+  /** Lifetime caveman sessions tracked by /caveman-stats history. */
+  lifetimeSessions: number;
+  /** Lifetime output tokens tracked by /caveman-stats history. */
+  lifetimeOutputTokens: number;
+  /** Lifetime saved output tokens tracked by /caveman-stats history. */
+  lifetimeSavedTokens: number;
+  /** Lifetime saved USD tracked by /caveman-stats history. */
+  lifetimeSavedUsd: number;
+  /** Pre-rendered caveman statusline suffix (e.g. "⛏ 12.4k"), when present. */
+  statuslineSavingsText: string | null;
+  /** Approximate memory compression receipts from *.original.md backups, when present. */
+  memoryCompressed: CavemanMemoryCompression | null;
 };
 
 /**

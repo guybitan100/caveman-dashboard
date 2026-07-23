@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { CavemanSavings, CombinedSavings, CopilotSavings } from '../types';
 import { CavemanInstallInfo, CavemanUpdateStatus, readCavemanVersion, readInstalledCaveman } from '../collectors/updateChecker';
-import { claudeDirOverride, showCost, shortSha } from '../util';
+import { claudeDirOverride, effectiveCavemanMode, showCost, shortSha } from '../util';
 
 type InstallerAction = 'install' | 'uninstall';
 type InstallerStatusTone = 'success' | 'warning' | 'error';
@@ -225,6 +225,13 @@ function renderInstallerActionButton(installed: boolean, pendingAction: Installe
   return `<button class="${classes}" data-cv="${action}" title="${escapeHtml(title)}"${attrs}>${svgIcon(icon)}<span>${escapeHtml(label)}</span></button>`;
 }
 
+function renderCliActionButton(action: string, label: string, icon: string, title: string, pendingAction: InstallerAction | undefined, primary = false): string {
+  const disabled = pendingAction !== undefined;
+  const attrs = disabled ? ' disabled aria-disabled="true"' : '';
+  const classes = primary ? 'cv-chip-action cv-chip-action-primary' : 'cv-chip-action';
+  return `<button class="${classes}" data-cv="${escapeHtml(action)}" title="${escapeHtml(title)}"${attrs}>${svgIcon(icon)}<span>${escapeHtml(label)}</span></button>`;
+}
+
 function getNonce(): string {
   let text = '';
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -301,6 +308,13 @@ function longestStreak(rows: { day: string; savedTokens: number }[]): number {
     previousDay = row.day;
   }
   return longest;
+}
+
+function outputReductionPercent(savedTokens: number, outputTokens: number): number | null {
+  if (savedTokens <= 0 || outputTokens < 0) return null;
+  const total = savedTokens + outputTokens;
+  if (total <= 0) return null;
+  return Math.round((savedTokens / total) * 100);
 }
 
 /** Human label for the Claude data-source confidence, shared across views. */
@@ -443,6 +457,8 @@ function renderOverviewRail(claude: CavemanSavings, copilot: CopilotSavings, cos
       <div class="cv-rail-line"><span>Total saved this month</span><strong>${fmtTokens(totalSaved)}</strong></div>
       <div class="cv-rail-line"><span>Observed sessions</span><strong>${totalSessions}</strong></div>
       <div class="cv-rail-line"><span>Copilot estimate</span><strong>${fmtTokens(copilot.savedTokens)}</strong></div>
+      <div class="cv-rail-line"><span>Lifetime tracked</span><strong>${fmtTokens(claude.lifetimeSavedTokens)}</strong></div>
+      <div class="cv-rail-line"><span>Statusline suffix</span><strong>${escapeHtml(claude.statuslineSavingsText ?? 'Not written yet')}</strong></div>
       <div class="cv-rail-line"><span>Claude confidence</span><strong>${escapeHtml(claudeConfidence)}</strong></div>
       <div class="cv-rail-line"><span>USD projection</span><strong>${cost ? 'Enabled for Claude' : 'Hidden'}</strong></div>
     </section>
@@ -605,19 +621,23 @@ function renderHistoryTab(claude: CavemanSavings, copilot: CopilotSavings, cost:
 }
 
 function renderClaudeStatus(c: CavemanSavings): string {
+  const effectiveMode = effectiveCavemanMode(c.activeMode, c.defaultMode);
   const modeLabel = !c.installed
     ? 'Mode unavailable'
     : c.activeMode
       ? `Active: ${c.activeMode}`
+      : effectiveMode
+        ? `Default: ${effectiveMode}`
       : 'Mode off';
   return `<div class="cv-status">
     ${renderStatusBadge(c.installed, c.installed ? 'Installed' : 'Not installed')}
-    ${renderStatusBadge(!!c.activeMode, modeLabel)}
+    ${renderStatusBadge(!!effectiveMode, modeLabel)}
     ${renderStatusBadge(c.active, c.active ? `${c.sessions} session${c.sessions === 1 ? '' : 's'} detected` : 'No usage detected')}
   </div>`;
 }
 
 function renderClaude(c: CavemanSavings, cost: boolean, pendingAction: InstallerAction | undefined): string {
+  const effectiveMode = effectiveCavemanMode(c.activeMode, c.defaultMode);
   if (!c.active) {
     const installBtn = !c.installed
       ? renderInstallerActionButton(false, pendingAction)
@@ -628,8 +648,10 @@ function renderClaude(c: CavemanSavings, cost: boolean, pendingAction: Installer
         ? 'Removing caveman from Claude Code. Status changes after the uninstall command completes.'
         : !c.installed
           ? 'caveman is not installed. Install it, then run a Claude session with caveman on and Refresh.'
-          : !c.activeMode
-            ? 'caveman is installed, but no mode is active yet. Run <code>/caveman full</code> in a Claude session, then Refresh.'
+          : !effectiveMode
+            ? 'caveman is installed, but the configured default mode is off. Run <code>/caveman full</code> in a Claude session, then Refresh.'
+            : !c.activeMode
+              ? `No Claude session is active right now. Default mode is <code>${escapeHtml(effectiveMode)}</code>. Start a Claude session, then Refresh.`
             : 'caveman is active but no session usage detected yet. Run a Claude session, then Refresh.';
     return `${renderClaudeStatus(c)}
       <div class="cv-empty-cta">
@@ -679,7 +701,11 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
             : updateStatus.updateAvailable
               ? 'Update available'
               : 'Up to date';
-  const modeLabel = claude.activeMode ? `Claude mode: ${claude.activeMode}` : 'Claude mode off';
+  const modeLabel = claude.activeMode
+    ? `Claude mode: ${claude.activeMode}`
+    : effectiveCavemanMode(claude.activeMode, claude.defaultMode)
+      ? `Claude default: ${effectiveCavemanMode(claude.activeMode, claude.defaultMode)}`
+      : 'Claude mode off';
   const installLabel = installKind === 'hooks'
     ? 'Hooks active'
     : installKind === 'mixed'
@@ -753,7 +779,8 @@ function renderHeaderHero(data: CombinedSavings, updateStatus: CavemanUpdateStat
 function renderClaudeTab(claude: CavemanSavings, cost: boolean, pendingAction: InstallerAction | undefined): string {
   const confidence = claudeConfidenceLabel(claude.source);
   const usdState = cost ? 'USD view on' : 'USD view off';
-  const mode = claude.activeMode ? `Mode ${claude.activeMode}` : 'Mode off';
+  const effectiveMode = effectiveCavemanMode(claude.activeMode, claude.defaultMode);
+  const mode = claude.activeMode ? `Mode ${claude.activeMode}` : effectiveMode ? `Default ${effectiveMode}` : 'Mode off';
   return `<div>
     <div class="cv-page-intro">
       <div>

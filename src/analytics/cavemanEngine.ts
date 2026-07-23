@@ -11,18 +11,29 @@ export function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+const CAVEMAN_COMPRESSING_MODES = new Set([
+  'lite',
+  'full',
+  'ultra',
+  'wenyan',
+  'wenyan-ultra',
+  'commit',
+  'review',
+  'compress',
+]);
+
 /**
- * Mean per-task output compression by caveman mode, taken from the plugin's own
- * benchmarks (caveman-stats.js: only 'full' has measured data — others get no
- * estimate). Saved output tokens for a session: round(output / (1 - ratio)) - output.
+ * Upstream caveman now states one flat headline savings number: 65% output-token
+ * reduction across caveman brevity modes. Apply that ratio to recognized caveman
+ * modes so local estimates do not silently drop to zero for non-full sessions.
  */
-export const CAVEMAN_COMPRESSION: Record<string, number> = { full: 0.65 };
+export const CAVEMAN_COMPRESSION = 0.65;
 
 /** Estimated output tokens saved by caveman for one session, mirroring caveman-stats.js. */
 export function estimateSavedTokens(outputTokens: number, mode: string | undefined): number {
-  const ratio = mode ? CAVEMAN_COMPRESSION[mode] : undefined;
-  if (!ratio || outputTokens <= 0) return 0;
-  return Math.round(outputTokens / (1 - ratio)) - outputTokens;
+  const normalizedMode = mode?.trim().toLowerCase();
+  if (!normalizedMode || outputTokens <= 0 || !CAVEMAN_COMPRESSING_MODES.has(normalizedMode)) return 0;
+  return Math.round(outputTokens / (1 - CAVEMAN_COMPRESSION)) - outputTokens;
 }
 
 /** USD value of saved output tokens at the given model's output rate. */
@@ -37,6 +48,7 @@ export type CavemanSessionInput = {
   day: string;
   model: string;
   outputTokens: number;
+  cacheReadTokens?: number;
   /** Detected caveman mode for the session, or undefined if unknown. */
   mode?: string;
   /** Pre-computed values from caveman's own ledger; preferred when present. */
@@ -52,11 +64,12 @@ export type CavemanSessionInput = {
  */
 export function aggregateCaveman(
   sessions: CavemanSessionInput[],
-  status?: { installed?: boolean; activeMode?: string | null },
+  status?: { installed?: boolean; activeMode?: string | null; defaultMode?: string | null },
   currentMonth: string = currentMonthKey(),
 ): CavemanSavings {
   const days = new Map<string, CavemanDayPoint>();          // current month only
   const months = new Map<string, CavemanMonthPoint>();       // full history
+  let currentMonthCacheReadTokens = 0;
   let counted = 0;
   let anyLedger = false;
   let anyEstimated = false;
@@ -89,6 +102,7 @@ export function aggregateCaveman(
       d.savedTokens += sTokens;
       d.savedUsd = round2(d.savedUsd + sUsd);
       days.set(s.day, d);
+      currentMonthCacheReadTokens += s.cacheReadTokens ?? 0;
     }
   }
 
@@ -104,11 +118,19 @@ export function aggregateCaveman(
     outputTokens: cur?.outputTokens ?? 0,
     savedTokens: cur?.savedTokens ?? 0,
     savedUsd: cur?.savedUsd ?? 0,
+    cacheReadTokens: currentMonthCacheReadTokens,
     byDay: Array.from(days.values()).sort((a, b) => a.day.localeCompare(b.day)),
     byMonth: Array.from(months.values()).sort((a, b) => a.month.localeCompare(b.month)),
     source,
     installed: status?.installed ?? false,
     activeMode: status?.activeMode ?? null,
+    defaultMode: status?.defaultMode ?? null,
+    lifetimeSessions: 0,
+    lifetimeOutputTokens: 0,
+    lifetimeSavedTokens: 0,
+    lifetimeSavedUsd: 0,
+    statuslineSavingsText: null,
+    memoryCompressed: null,
   };
 }
 

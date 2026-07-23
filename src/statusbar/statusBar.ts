@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { CombinedSavings } from '../types';
+import { effectiveCavemanMode } from '../util';
 
 /** Right-aligned status bar badge showing combined caveman savings; click opens the dashboard. */
 export class CavemanStatusBar {
@@ -33,11 +34,13 @@ export class CavemanStatusBar {
 
   update(data: CombinedSavings, showCost: boolean): void {
     const { claude, copilot } = data;
+    const mode = effectiveCavemanMode(claude.activeMode, claude.defaultMode);
     const totalSaved = claude.savedTokens + copilot.savedTokens;
     if (totalSaved <= 0) {
       this.item.text = claude.installed ? `$(graph) ${this.label} 0` : `$(circle-slash) ${this.label} Off`;
       this.item.tooltip = [
         claude.installed ? 'Caveman installed — no savings detected yet.' : 'Caveman not installed.',
+        mode ? `Configured mode: ${mode}` : 'Configured mode: off',
         this.versionSuffix,
       ].filter(Boolean).join('\n');
       this.item.show();
@@ -49,7 +52,7 @@ export class CavemanStatusBar {
       `Total: ${formatTokens(totalSaved)}`,
       `Claude: ${formatTokens(claude.savedTokens)}${showCost ? ` ($${claude.savedUsd.toFixed(2)})` : ''} — ${claude.sessions} sessions`,
       `Copilot (est): ${formatTokens(copilot.savedTokens)} — ${copilot.sessions} chats / ${copilot.turns} turns`,
-      claude.activeMode ? `Mode: ${claude.activeMode}` : 'Mode: off',
+      claude.activeMode ? `Mode: active ${claude.activeMode}` : mode ? `Mode: default ${mode}` : 'Mode: off',
       'Resets on the 1st — history in the dashboard.',
       this.versionSuffix,
     ].filter(Boolean).join('\n');
