@@ -15,5 +15,3 @@ node_modules/**
 # Sourcemaps not needed at runtime (big bytes, esp. gpt-tokenizer)
 **/*.js.map
 node_modules/**/*.ts
-out/**/*.js
-!out/extension.js
